@@ -1,3 +1,7 @@
+"""
+Incremental CVI variants.
+"""
+
 import numpy as np
 
 

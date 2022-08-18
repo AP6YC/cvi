@@ -7,5 +7,6 @@ API
    :recursive:
 
    cluster_validity_indices
-   cvis
+   cvi
+   icvi
    lib

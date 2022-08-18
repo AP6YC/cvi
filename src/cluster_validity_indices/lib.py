@@ -3,6 +3,9 @@ Library for the cluster-validity-indices package.
 """
 
 def my_function():
+    """
+    Prints hello world.
+    """
     print("Hello world!")
     return
 

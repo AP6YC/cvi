@@ -5,9 +5,9 @@ cluster-validity-indices - A Python library
 __version__ = "0.1.0"
 
 from .lib import *
-from .cvis import *
+from .icvi import *
+from .cvi import *
 
-import param
 import math
 import tqdm
 import sklearn
