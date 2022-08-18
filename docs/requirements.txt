@@ -1,1 +1,3 @@
 param
+tqdm
+scikit-learn
