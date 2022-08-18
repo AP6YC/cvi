@@ -3,6 +3,7 @@
 A Python package implementing both batch and incremental cluster validity indices.
 
 [![Documentation Status](https://readthedocs.org/projects/cluster-validity-indices/badge/?version=latest)](https://cluster-validity-indices.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/cluster-validity-indices/badge/?version=develop)](https://cluster-validity-indices.readthedocs.io/en/develop/?badge=develop)
 [![GitHub issues](https://img.shields.io/github/issues/AP6YC/cluster_validity_indices?style=flat-square)](https://github.com/AP6YC/cluster_validity_indices/issues)
 [![GitHub stars](https://img.shields.io/github/stars/AP6YC/cluster_validity_indices?style=flat-square)](https://github.com/AP6YC/cluster_validity_indices/stargazers)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/AP6YC/cluster_validity_indices?style=flat-square)
