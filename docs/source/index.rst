@@ -10,7 +10,8 @@ Welcome to cluster-validity-indices's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
+   usage
+   api
 
 Indices and tables
 ==================
