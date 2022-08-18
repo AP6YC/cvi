@@ -58,3 +58,12 @@ html_static_path = ['_static']
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
+
+# # Skip param objects because of their weird rendering in docs
+# def maybe_skip_member(app, what, name, obj, skip, options):
+#     # print app, what, name, obj, skip, options
+#     # if name == ""
+#     return True
+
+# def setup(app):
+#     app.connect('autodoc-skip-member', maybe_skip_member)
