@@ -16,9 +16,10 @@ class InvalidKindError(Exception):
     pass
 
 
-def get_random_ingredients(kind=None):
+def get_random_ingredients(kind:str=None):
     """
     Return a list of random ingredients as strings.
+
     :param kind: Optional "kind" of ingredients.
     :type kind: list[str] or None
     :raise lumache.InvalidKindError: If the kind is invalid.
