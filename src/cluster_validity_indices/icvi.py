@@ -4,6 +4,65 @@ Incremental CVI variants.
 
 import numpy as np
 
+class Cluster:
+    def __init__(self,radial=True, box=False):
+        self.radial = radial
+        self.box = box
+        self.len = 0
+        self.center = 0
+        self.bounding_box = []
+        self.points = []
+        self.indicies = []
+        self.dim = 0
+
+    def add_point(self, x, i=None):
+        if not self.points:
+            self.dim = len(x)
+        assert self.dim == len(x)
+        if self.radial:
+            new_center = (self.center*self.len + x)/ (self.len+1)
+            self.center = new_center
+        if self.box:
+            assert np.max(x) <= 1
+            assert np.min(x) >= 0
+            cc_x = np.append(x, 1-x)
+            if self.bounding_box:
+                self.bounding_box = np.minimum(self.bounding_box, cc_x)
+            else:
+                self.bounding_box = cc_x
+
+        self.points.append(x)
+        if i is not None:
+            self.indicies.append(i)
+        self.len += 1
+
+    def min_distance(self, x, norm_ord=2):
+        min_d = np.inf
+        for y in self.points:
+            d_y = np.linalg.norm((x-y),norm_ord)
+            min_d = np.minimum(min_d,d_y)
+        return min_d
+
+    def avg_distance(self,x,norm_ord=2):
+        avg_d = 0
+        for y in self.points:
+            avg_d += np.linalg.norm((x - y), norm_ord)
+        avg_d /= self.len
+        return avg_d
+
+    def center_distance(self,x,norm_ord=2):
+        return np.linalg.norm(self.center-x,norm_ord)
+
+    def within_bounding_box(self,x):
+        return np.array_equal(np.minimum(x,self.bounding_box), self.bounding_box)
+
+
+class Clusters(list):
+    def from_list(self, X, C):
+        for x, c in zip(X, C):
+            if c >= self.__len__():
+                self.append(Cluster)
+            self[c].add_point(c, c)
 
 def norm22(x):
     return np.linalg.norm(x,2)**2
