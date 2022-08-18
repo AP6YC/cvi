@@ -19,7 +19,7 @@ class InvalidKindError(Exception):
     pass
 
 
-def get_random_ingredients(kind:str=None):
+def get_rest_ingredients(kind:str=None):
     """
     Return a list of random ingredients as strings.
 
@@ -28,12 +28,26 @@ def get_random_ingredients(kind:str=None):
     :raise lumache.InvalidKindError: If the kind is invalid.
     :return: The ingredients list.
     :rtype: list[str]
+    """
+    return ["shells", "gorgonzola", "parsley"]
+
+def get_napoleon_ingredients(kind:str=None):
+    """
+    Return a list of random ingredients as strings.
 
     Parameters
     ----------
-    kind : list[str]
-        stuff and things
-    asdf : str
-        does something i guess
+    kind : list[str] or None
+        Optional "kind" of ingredients.
+
+    Raises
+    ------
+    lumache.InvalidKindError
+        If the kind is invalid.
+
+    Returns
+    -------
+    list[str]
+        The ingredients list.
     """
     return ["shells", "gorgonzola", "parsley"]

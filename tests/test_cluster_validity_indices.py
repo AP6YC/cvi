@@ -33,3 +33,7 @@ class TestCVI:
     def test_opts(self):
         my_opts = cvi.CVIOpts()
         print(my_opts)
+
+    def test_cvi(self):
+        my_cvi =cvi.cvi.CH(3)
+        print(my_cvi)
