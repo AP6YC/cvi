@@ -7,13 +7,13 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, os.path.abspath('../../src'))
-sys.path.insert(0, os.path.abspath('../../src/cluster-validity-indices'))
+sys.path.insert(0, os.path.abspath('../../src/cluster_validity_indices'))
 
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'cluster-validity-indices'
+project = 'cluster_validity_indices'
 copyright = '2022, Sasha Petrenko'
 author = 'Sasha Petrenko'
 release = '0.1.0'

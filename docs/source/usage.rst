@@ -6,11 +6,11 @@ Usage
 Installation
 ------------
 
-To use **cluster-validity-indices**, first install it using pip:
+To use **cluster_validity_indices**, first install it using pip:
 
 .. code-block:: console
 
-   (.venv) $ pip install cluster-validity-indices
+   (.venv) $ pip install cluster_validity_indices
 
 Instantiation
 -------------
