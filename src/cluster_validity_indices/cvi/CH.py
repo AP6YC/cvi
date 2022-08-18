@@ -1,4 +1,6 @@
-class CH():
+from .common import *
+
+class CH(CVI):
     """
     CH
 
@@ -15,5 +17,6 @@ class CH():
     # """
 
     def __init__(self):
-        print("Hello world!")
-        self.data = []
+        super().__init__(self)
+        # print("Hello world!")
+        # self.data = []

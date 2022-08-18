@@ -1,17 +1,19 @@
 """
-cluster-validity-indices - A Python library
+cluster-validity-indices - A Python library for both incremental and batch cluster validity indices.
 """
 
 __version__ = "0.1.0"
-
-from .lib import *
-from .icvi import *
-from .cvi import *
 
 import math
 import tqdm
 import sklearn
 from pathlib import Path
+import numpy as np
+
+from .lib import *
+from .icvi import *
+from .cvi import *
+
 
 class CVIOpts():
 
