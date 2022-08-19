@@ -19,16 +19,10 @@ class CH(CVI):
     # Calinski-Harabasz (CH) Cluster Validity Index.
     # """
 
-    """
-    Parameters
-    ----------
-    dim : int
-        Dimensionality of the cluster features.
-    """
-
-
     def __init__(self, dim:int):
-
+        # """
+        # Test documentation.
+        # """
         super().__init__(dim)
 
         return
