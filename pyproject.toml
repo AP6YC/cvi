@@ -3,6 +3,6 @@ requires = ["setuptools>=42"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cluster_validity_indices"
+name = "cvi"
 authors = [{name = "Sasha Petrenko", email = "sap625@mst.edu"}]
 dynamic = ["version", "description"]

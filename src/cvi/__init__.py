@@ -1,5 +1,5 @@
 """
-cluster-validity-indices - A Python library for both incremental and batch cluster validity indices.
+cvi - A Python library for both incremental and batch cluster validity indices.
 """
 
 __version__ = "0.1.0"

@@ -1,13 +1,10 @@
+import numpy as np
+
 from .common import *
 
 class CH(CVI):
     """
     The stateful information of the Calinski-Harabasz (CH) Cluster Validity Index
-
-    Parameters
-    ----------
-    dim : int
-        Dimensionality of the cluster features.
     """
 
     # # References
@@ -19,12 +16,31 @@ class CH(CVI):
     # Calinski-Harabasz (CH) Cluster Validity Index.
     # """
 
-    def __init__(self, dim:int):
+    def __init__(self):
+        """
+        CH initialization routine.
+        """
         # """
         # Test documentation.
         # """
-        super().__init__(dim)
+        super().__init__()
 
         return
         # print("Hello world!")
         # self.data = []
+
+    def param_inc(self, sample:np.array, label:np.array):
+        i_label = self.label_map.get_internal_label(label)
+
+        n_samples_new = self.n_samples + 1
+        if not self.mu.any():
+            mu_new = sample
+            self.setup(sample)
+        else:
+            mu_new = (1 - 1/n_samples_new) * cvi.mu + (1/n_samples_new) * sample
+
+        if i_label > self.n_clusters:
+            n_new = 1
+            v_new = sample
+            CP_new = 0.0
+            G_new = np.zeros(self.dim)
