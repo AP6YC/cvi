@@ -6,7 +6,7 @@ API
    :template: custom-module-template.rst
    :recursive:
 
-   cluster_validity_indices
+   cvi
    cvi
    icvi
    lib

@@ -1,7 +1,7 @@
 """
-    test_cluster_validity_indices.py
+    test_cvi.py
 
-Tests the cluster_validity_indices package.
+Tests the cvi package.
 """
 
 # --------------------------------------------------------------------------- #
@@ -21,7 +21,7 @@ import pytest
 # LOCAL IMPORTS
 # --------------------------------------------------------------------------- #
 print(f"\nTesting path is: {os.getcwd()}")
-import src.cluster_validity_indices as cvi
+import src.cvi as cvi
 # import ..
 
 # --------------------------------------------------------------------------- #

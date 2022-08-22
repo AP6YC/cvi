@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to cluster_validity_indices's documentation!
+Welcome to cvi's documentation!
 ====================================================
 
 .. toctree::
