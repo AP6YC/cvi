@@ -44,3 +44,10 @@ class CH(CVI):
             v_new = sample
             CP_new = 0.0
             G_new = np.zeros(self.dim)
+            # Update 1-D parameters with list appends
+            cvi.n_clusters += 1
+            cvi.n.append(n_new)
+            cvi.CP.append(CP_new)
+            # Update 2-D parameters with numpy appends
+            cvi.v = np.append(cvi.v)
+

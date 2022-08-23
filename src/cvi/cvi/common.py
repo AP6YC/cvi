@@ -44,8 +44,8 @@ class CVI():
         self.mu = np.empty([0])     # dim
         self.n = []                 # dim
         self.v = np.empty([0, 0])   # dim x n_clusters
-        self.CP = np.empty([0])     # dim
-        self.SEP = np.empty([0])    # dim
+        self.CP = []                # dim
+        self.SEP = []               # dim
         self.G = np.empty([0, 0])   # dim x n_clusters
         self.BGSS = 0.0
         self.WGSS = 0.0
