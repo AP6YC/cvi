@@ -66,12 +66,12 @@ class CVI():
         # self.v = np.empty([dim, 0])
         # self.G = np.empty([dim, 0])
 
-        self.mu = np.empty([dim])
+        self.mu = np.empty([self.dim])
         self.n = []
-        self.v = np.empty([dim, 0])
-        self.CP = np.empty([dim])
-        self.SEP = np.empty([dim])
-        self.G = np.empty([dim, 0])
+        self.v = np.empty([self.dim, 0])
+        self.CP = np.empty([self.dim])
+        self.SEP = np.empty([self.dim])
+        self.G = np.empty([self.dim, 0])
 
         return
 

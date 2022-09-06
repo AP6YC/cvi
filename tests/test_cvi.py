@@ -17,6 +17,7 @@ import logging as lg
 # --------------------------------------------------------------------------- #
 
 import pytest
+import numpy as np
 
 # --------------------------------------------------------------------------- #
 # LOCAL IMPORTS
@@ -43,5 +44,8 @@ class TestCVI:
 
     def test_all_cvis(sefl):
         my_cvi = cvi.CH()
+        sample = np.ones(3)
+        my_cvi.setup(sample)
         lg.info("asdf")
+        lg.info(my_cvi)
         return
