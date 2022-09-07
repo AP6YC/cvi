@@ -38,5 +38,5 @@ TODO
 
 ## Related Projects
 
-- https://github.com/crew102/validclust
-- https://github.com/Nuno09/clusterval
+- [https://github.com/crew102/validclust](validclust)
+- [https://github.com/Nuno09/clusterval](clusterval)

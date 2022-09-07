@@ -12,7 +12,7 @@ import numpy as np
 
 from .lib import *
 from .icvi import *
-from .cvi import *
+from .modules import *
 
 
 class CVIOpts():

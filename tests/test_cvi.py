@@ -38,12 +38,12 @@ class TestCVI:
         return
 
     def test_cvi(self):
-        my_cvi =cvi.cvi.CH()
+        my_cvi =cvi.modules.CH()
         lg.info(my_cvi)
         return
 
     def test_all_cvis(sefl):
-        my_cvi = cvi.CH()
+        my_cvi = cvi.modules.CH()
         sample = np.ones(3)
         my_cvi.setup(sample)
         lg.info("asdf")
