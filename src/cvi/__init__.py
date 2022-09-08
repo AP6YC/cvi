@@ -2,7 +2,7 @@
 cvi - A Python library for both incremental and batch cluster validity indices.
 """
 
-__version__ = "0.0.1"
+__version__ = "0.1.0-alpha.1"
 
 import math
 import tqdm
