@@ -31,7 +31,13 @@ import src.cvi as cvi
 # FIXTURES
 # --------------------------------------------------------------------------- #
 
-
+@pytest.fixture
+def data():
+    correct = pd.read_csv("tests/data/correct_partition.csv")
+    over = pd.read_csv("tests/data/over_partition.csv")
+    under = pd.read_csv("tests/data/under_partition.csv")
+    data_dict = {"correct": correct, "over": over, "under": under}
+    return data_dict
 
 # --------------------------------------------------------------------------- #
 # TESTS
@@ -39,12 +45,12 @@ import src.cvi as cvi
 
 class TestCVI:
 
-    def test_load_data(self):
+    def test_load_data(self, data):
         # Load the test datasets
-        cp = pd.read_csv("data/correct_partition.csv")
-        op = pd.read_csv("data/over_partition.csv")
-        up = pd.read_csv("data/under_partition.csv")
-        lg.info(cp); lg.info(op); lg.info(up)
+        # cp = pd.read_csv("data/correct_partition.csv")
+        # op = pd.read_csv("data/over_partition.csv")
+        # up = pd.read_csv("data/under_partition.csv")
+        lg.info(data["correct"]); lg.info(data["over"]); lg.info(data["under"])
         return
 
     def test_opts(self):
