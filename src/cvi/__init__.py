@@ -14,7 +14,6 @@ from .lib import *
 from .icvi import *
 from .modules import *
 
-
 class CVIOpts():
 
     def __init__(self):
