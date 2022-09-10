@@ -17,8 +17,8 @@ class LabelMap():
         if label in self.map:
             internal_label = label
         else:
-            internal_label = len(self.map.items) + 1
-            self.map.items[label] = internal_label
+            internal_label = len(self.map.items()) + 1
+            self.map[label] = internal_label
 
         return internal_label
 
@@ -43,23 +43,23 @@ class CVI():
         # self.G = np.empty([dim, 0])
         self.mu = np.empty([0])     # dim
         self.n = []                 # dim
-        self.v = np.empty([0, 0])   # dim x n_clusters
+        self.v = np.empty([0, 0])   # n_clusters x dim
         self.CP = []                # dim
         self.SEP = []               # dim
-        self.G = np.empty([0, 0])   # dim x n_clusters
+        self.G = np.empty([0, 0])   # n_clusters x dim
         self.BGSS = 0.0
         self.WGSS = 0.0
         self.n_clusters = 0
 
         return
 
-    def setup(self, sample):
+    def setup(self, sample:np.ndarray):
         """
         Sets up the dimensions of the CVI based on the sample size.
 
         Parameters
         ----------
-        sample : numpy.array
+        sample : numpy.ndarray
             A sample vector of features.
         """
         self.dim = len(sample)
@@ -67,11 +67,12 @@ class CVI():
         # self.G = np.empty([dim, 0])
 
         self.mu = np.empty([self.dim])
-        self.n = []
-        self.v = np.empty([self.dim, 0])
-        self.CP = np.empty([self.dim])
+        # self.n = []
+        self.v = np.empty([0, self.dim])
+        # self.CP = np.empty([self.dim])
+        # self.CP = []
         self.SEP = np.empty([self.dim])
-        self.G = np.empty([self.dim, 0])
+        self.G = np.empty([0, self.dim])
 
         return
 

@@ -3,6 +3,7 @@ import numpy as np
 import re
 
 from .common import *
+import logging as lg
 
 class CH(CVI):
     """
@@ -31,7 +32,8 @@ class CH(CVI):
         # print("Hello world!")
         # self.data = []
 
-    def param_inc(self, sample:np.ndarray, label:np.ndarray):
+    # def param_inc(self, sample:np.ndarray, label:np.ndarray):
+    def param_inc(self, sample:np.ndarray, label:int):
         i_label = self.label_map.get_internal_label(label)
 
         n_samples_new = self.n_samples + 1
@@ -50,12 +52,15 @@ class CH(CVI):
             self.n_clusters += 1
             self.n.append(n_new)
             self.CP.append(CP_new)
+
             # Update 2-D parameters with numpy appends
-            self.v = np.append(self.v, v_new)
-            self.G = np.append(self.G, G_new)
+            self.v = np.append(self.v, v_new, axis=0)
+            self.G = np.append(self.G, G_new, axis=0)
         else:
             n_new = self.n[i_label] + 1
             v_new = (1 - 1/n_new) * self.v[:, i_label] + (1/n_new) * sample
+            # lg.info(v_new)
+            print(v_new)
             delta_v = self.v[:, i_label] - v_new
             diff_x_v = sample - v_new
             CP_new = self.P[i_label] + transpose(diff_x_v[np.newaxis])
@@ -72,7 +77,7 @@ class CH(CVI):
 
         return
 
-    def param_batch(self, data:np.ndarray, labels:np.array):
+    def param_batch(self, data:np.ndarray, labels:np.ndarray):
         self.dim, self.n_samples = data.shape
         # Take the average across all samples, but cast to 1-D vector
         self.mu = np.mean(data, axis=1)
