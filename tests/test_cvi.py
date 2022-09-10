@@ -166,6 +166,7 @@ class TestCVI:
 
         for key, local_data in data["datasets"].items():
             lg.info(f"Testing data: {key}")
+            # Incremental
             i_cvis = get_cvis()
             for local_cvi in i_cvis:
                 lg.info(local_cvi)
@@ -176,7 +177,11 @@ class TestCVI:
                     # lg.info(f"Sample: {type(sample)}, {sample}, label: {type(label)}, {label}")
                     local_cvi.param_inc(sample, label)
                     local_cvi.evaluate()
+            # Batch
             b_cvis = get_cvis()
+            for local_cvi in b_cvis:
+                local_cvi.param_batch(local_data["samples"], local_data["labels"])
+                local_cvi.evaluate()
 
         return
 

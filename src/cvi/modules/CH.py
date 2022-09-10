@@ -80,18 +80,20 @@ class CH(CVI):
         return
 
     def param_batch(self, data:np.ndarray, labels:np.ndarray):
-        self.dim, self.n_samples = data.shape
+        self.n_samples, self.dim = data.shape
         # Take the average across all samples, but cast to 1-D vector
         self.mu = np.mean(data, axis=0)
         u = np.unique(labels)
         self.n_clusters = u.size
         self.n = np.zeros(self.n_clusters, dtype=int)
-        self.v = np.zeros(self.n_clusters, self.dim)
+        self.v = np.zeros((self.n_clusters, self.dim))
         self.CP = np.zeros(self.n_clusters)
         self.SEP = np.zeros(self.n_clusters)
 
         for ix in range(self.n_clusters):
-            subset = data[lambda x: labels[x] == ix, :]
+            # subset_indices = lambda x: labels[x] == ix
+            subset_indices = [x for x in range(len(labels)) if labels[x] == ix]
+            subset = data[subset_indices, :]
             self.n[ix] = subset.shape[0]
             self.v[ix, :] = np.mean(subset, axis=0)
             diff_x_v = subset - self.v[ix, :] * np.ones((self.n[ix], 1))
