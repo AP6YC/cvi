@@ -91,7 +91,12 @@ class CH(CVI):
         self.SEP = np.zeros(self.n_clusters)
 
         for ix in range(self.n_clusters):
-            subset = data[:, re.findall()]
+            subset = data[lambda x: labels[x] == ix, :]
+            self.n[ix] = subset.shape[0]
+            self.v[ix, :] = np.mean(subset, axis=0)
+            diff_x_v = subset - self.v[ix, :] * np.ones((self.n[ix], 1))
+            self.CP[ix] = np.sum(diff_x_v ** 2)
+            self.SEP[ix] = self.n[ix] * np.sum((self.v[ix, :] - self.mu) **2)
 
         return
 
