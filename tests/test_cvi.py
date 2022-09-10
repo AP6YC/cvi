@@ -87,7 +87,10 @@ def data():
 
     return data_dict
 
-# @pytest.fixture()
+# --------------------------------------------------------------------------- #
+# UTILITY FUNCTIONS
+# --------------------------------------------------------------------------- #
+
 def get_cvis():
     """
     Returns a list of constructed CVI modules.
@@ -98,7 +101,7 @@ def get_cvis():
 
     return cvis
 
-def log_data(local_data):
+def log_data(local_data:dict):
     """
     Info-logs aspects of the passed data dictionary for diagnosis.
     """
@@ -111,7 +114,7 @@ def log_data(local_data):
     )
     return
 
-def get_sample(local_data, index:int) -> tuple:
+def get_sample(local_data:dict, index:int) -> tuple:
     """
     Grabs a sample and label from the data dictionary at the provided index.
     """
@@ -139,7 +142,7 @@ class TestCVI:
 
         return
 
-    def test_loading_again(self, data):
+    def test_loading_again(self, data:dict):
         """
         Tests loading the data again to verify the identity of the data dictionary.
         """
@@ -150,7 +153,7 @@ class TestCVI:
 
         return
 
-    def test_icvis(self, data):
+    def test_icvis(self, data:dict):
         """
         Test the functionality all of the icvis.
         """
@@ -177,13 +180,17 @@ class TestCVI:
         return
 
     def test_opts(self):
+        """
+        Test the CVI options object.
+        """
         my_opts = cvi.CVIOpts()
         lg.info(my_opts)
 
         return
 
     def test_setup_icvi(self):
-        """Test running the setup method on ICVIs.
+        """
+        Test running the setup method on ICVIs.
         """
 
         # Create the cvi/icvi module
