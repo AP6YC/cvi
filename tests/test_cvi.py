@@ -50,9 +50,9 @@ def data():
     # correct = pd.read_csv(data_path.joinpath("correct_partition.csv")).sample(frac=p).convert_dtypes()
     # over = pd.read_csv(data_path.joinpath("over_partition.csv")).sample(frac=p).convert_dtypes()
     # under = pd.read_csv(data_path.joinpath("under_partition.csv")).sample(frac=p).convert_dtypes()
-    correct = pd.read_csv(data_path.joinpath("correct_partition.csv"))
-    over = pd.read_csv(data_path.joinpath("over_partition.csv"))
-    under = pd.read_csv(data_path.joinpath("under_partition.csv"))
+    correct = pd.read_csv(data_path.joinpath("correct_partition.csv")).sample(frac=p).sort_index()
+    over = pd.read_csv(data_path.joinpath("over_partition.csv")).sample(frac=p).sort_index()
+    under = pd.read_csv(data_path.joinpath("under_partition.csv")).sample(frac=p).sort_index()
 
     # Coerce the dataframe as two numpy arrays each for ease
     correct_samples = correct.to_numpy(dtype=float)[:, 0:2]
@@ -166,8 +166,8 @@ class TestCVI:
 
         for key, local_data in data["datasets"].items():
             lg.info(f"Testing data: {key}")
-            cvis = get_cvis()
-            for local_cvi in cvis:
+            i_cvis = get_cvis()
+            for local_cvi in i_cvis:
                 lg.info(local_cvi)
                 for ix in range(data["counts"][key]):
                     # lg.info(f"--- ITERATION {ix} ---")
@@ -176,6 +176,7 @@ class TestCVI:
                     # lg.info(f"Sample: {type(sample)}, {sample}, label: {type(label)}, {label}")
                     local_cvi.param_inc(sample, label)
                     local_cvi.evaluate()
+            b_cvis = get_cvis()
 
         return
 
