@@ -15,9 +15,10 @@ class LabelMap():
 
         """
         if label in self.map:
-            internal_label = label
+            internal_label = self.map[label]
         else:
-            internal_label = len(self.map.items()) + 1
+            # internal_label = len(self.map.items()) + 1
+            internal_label = len(self.map.items())
             self.map[label] = internal_label
 
         return internal_label

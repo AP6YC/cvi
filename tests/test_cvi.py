@@ -47,17 +47,20 @@ def data():
 
     data_path = Path("tests", "data")
     # Load the test datasets
-    correct = pd.read_csv(data_path.joinpath("correct_partition.csv")).sample(frac=p).convert_dtypes()
-    over = pd.read_csv(data_path.joinpath("over_partition.csv")).sample(frac=p).convert_dtypes()
-    under = pd.read_csv(data_path.joinpath("under_partition.csv")).sample(frac=p).convert_dtypes()
+    # correct = pd.read_csv(data_path.joinpath("correct_partition.csv")).sample(frac=p).convert_dtypes()
+    # over = pd.read_csv(data_path.joinpath("over_partition.csv")).sample(frac=p).convert_dtypes()
+    # under = pd.read_csv(data_path.joinpath("under_partition.csv")).sample(frac=p).convert_dtypes()
+    correct = pd.read_csv(data_path.joinpath("correct_partition.csv"))
+    over = pd.read_csv(data_path.joinpath("over_partition.csv"))
+    under = pd.read_csv(data_path.joinpath("under_partition.csv"))
 
     # Coerce the dataframe as two numpy arrays each for ease
-    correct_samples = correct.to_numpy()[:, 0:2]
-    correct_labels = correct.to_numpy()[:, 2]
-    over_samples = over.to_numpy()[:, 0:2]
-    over_labels = over.to_numpy()[:, 2]
-    under_samples = under.to_numpy()[:, 0:2]
-    under_labels = under.to_numpy()[:, 2]
+    correct_samples = correct.to_numpy(dtype=float)[:, 0:2]
+    correct_labels = correct.to_numpy(dtype=int)[:, 2] - 1
+    over_samples = over.to_numpy(dtype=float)[:, 0:2]
+    over_labels = over.to_numpy(dtype=int)[:, 2] - 1
+    under_samples = under.to_numpy(dtype=float)[:, 0:2]
+    under_labels = under.to_numpy(dtype=int)[:, 2] - 1
 
     # Construct the dataset dictionary
     data_dict = {
@@ -84,15 +87,13 @@ def data():
 
     return data_dict
 
-@pytest.fixture()
-def cvis():
+# @pytest.fixture()
+def get_cvis():
     """
     Returns a list of constructed CVI modules.
-
-    This fixture is rerun for every test to create a fresh list of 'untrained' CVIs.
     """
     cvis = [
-        cvi.modules.CH,
+        cvi.modules.CH(),
     ]
 
     return cvis
@@ -112,7 +113,7 @@ def log_data(local_data):
 
 def get_sample(local_data, index:int) -> tuple:
     """
-    Grabs a sample and label fromt he data dictionary at the provided index.
+    Grabs a sample and label from the data dictionary at the provided index.
     """
 
     sample = local_data["samples"][index, :]
@@ -149,7 +150,7 @@ class TestCVI:
 
         return
 
-    def test_icvis(self, data, cvis):
+    def test_icvis(self, data):
         """
         Test the functionality all of the icvis.
         """
@@ -158,29 +159,20 @@ class TestCVI:
 
         tolerance = 1e-1
 
-        n_cvis = len(cvis)
+        # n_cvis = len(cvis)
 
         for key, local_data in data["datasets"].items():
             lg.info(f"Testing data: {key}")
+            cvis = get_cvis()
             for local_cvi in cvis:
                 lg.info(local_cvi)
-                lg.info(dir(local_cvi))
                 for ix in range(data["counts"][key]):
-                # for index, row in local_data.iterrows():
-                # for
-                    # sample = row[0:1]
-                    # label = row[2]
+                    # lg.info(f"--- ITERATION {ix} ---")
                     # Grab a sample and label
-                    # sample = local_data["samples"][ix, :]
-                    # label = local_data["labels"][ix]
                     sample, label = get_sample(local_data, ix)
                     # lg.info(f"Sample: {type(sample)}, {sample}, label: {type(label)}, {label}")
-                    # lg.info()
-                    # local_cvi.param_inc(sample, label)
-                    # local_cvi.evaluate()
-                    # sample =
-
-                # for ix
+                    local_cvi.param_inc(sample, label)
+                    local_cvi.evaluate()
 
         return
 

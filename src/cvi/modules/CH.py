@@ -43,7 +43,8 @@ class CH(CVI):
         else:
             mu_new = (1 - 1/n_samples_new) * self.mu + (1/n_samples_new) * sample
 
-        if i_label > self.n_clusters:
+        # Correct for python 0-indexing
+        if i_label + 1 > self.n_clusters:
             n_new = 1
             v_new = sample
             CP_new = 0.0
@@ -54,37 +55,38 @@ class CH(CVI):
             self.CP.append(CP_new)
 
             # Update 2-D parameters with numpy appends
-            self.v = np.append(self.v, v_new, axis=0)
-            self.G = np.append(self.G, G_new, axis=0)
+            # self.v = np.append(self.v, v_new, axis=0)
+            # self.G = np.append(self.G, G_new, axis=0)
+            self.v = np.vstack([self.v, v_new])
+            self.G = np.vstack([self.G, G_new])
         else:
             n_new = self.n[i_label] + 1
-            v_new = (1 - 1/n_new) * self.v[:, i_label] + (1/n_new) * sample
+            v_new = (1 - 1/n_new) * self.v[i_label, :] + (1/n_new) * sample
             # lg.info(v_new)
-            print(v_new)
-            delta_v = self.v[:, i_label] - v_new
+            delta_v = self.v[i_label, :] - v_new
             diff_x_v = sample - v_new
-            CP_new = self.P[i_label] + transpose(diff_x_v[np.newaxis])
-            G_new = self.G[:, i_label] + diff_x_v + self.n[i_label] * delta_v
+            CP_new = self.CP[i_label] + np.transpose(diff_x_v[np.newaxis])
+            G_new = self.G[i_label, :] + diff_x_v + self.n[i_label] * delta_v
             # Update parameters
             self.n[i_label] = n_new
-            self.v[:, i_label] = v_new
+            self.v[i_label, :] = v_new
             self.CP[i_label] = CP_new
-            self.G[:, i_label] = G_new
+            self.G[i_label, :] = G_new
 
         self.n_samples = n_samples_new
         self.mu = mu_new
-        self.SEP = [self.n[ix] * sum((self.v[:, ix] - self.mu)**2) for ix in range(self.n_clusters)]
+        self.SEP = [self.n[ix] * sum((self.v[ix, :] - self.mu)**2) for ix in range(self.n_clusters)]
 
         return
 
     def param_batch(self, data:np.ndarray, labels:np.ndarray):
         self.dim, self.n_samples = data.shape
         # Take the average across all samples, but cast to 1-D vector
-        self.mu = np.mean(data, axis=1)
+        self.mu = np.mean(data, axis=0)
         u = np.unique(labels)
         self.n_clusters = u.size
         self.n = np.zeros(self.n_clusters, dtype=int)
-        self.v = np.zeros(self.dim, self.n_clusters)
+        self.v = np.zeros(self.n_clusters, self.dim)
         self.CP = np.zeros(self.n_clusters)
         self.SEP = np.zeros(self.n_clusters)
 
@@ -94,9 +96,9 @@ class CH(CVI):
         return
 
     def evaluate(self):
-        # Within group sum of scatters
-        self.WGSS = sum(self.CP)
         if self.n_clusters > 2:
+            # Within group sum of scatters
+            self.WGSS = sum(self.CP)
             # Between groups sum of scatters
             self.BGSS = sum(self.SEP)
             # CH index value
