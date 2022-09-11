@@ -52,6 +52,7 @@ class CVI():
         self.BGSS = 0.0
         self.WGSS = 0.0
         self.n_clusters = 0
+        self.criterion_value = 0.0
 
         return
 

@@ -35,15 +35,20 @@ class CH(CVI):
         Incremental parameter update for the Calinski-Harabasz (CH) CVI.
         """
 
+        # Get the internal label corresponding to the provided label
         i_label = self.label_map.get_internal_label(label)
 
+        # Increment the local number of samples count
         n_samples_new = self.n_samples + 1
+
+        # Check if the module has been setup, then set the mu accordingly
         if not self.mu.any():
             mu_new = sample
             self.setup(sample)
         else:
             mu_new = (1 - 1/n_samples_new) * self.mu + (1/n_samples_new) * sample
 
+        # IF NEW CLUSTER LABEL
         # Correct for python 0-indexing
         if i_label + 1 > self.n_clusters:
             n_new = 1
@@ -56,18 +61,17 @@ class CH(CVI):
             self.n.append(n_new)
             self.CP.append(CP_new)
 
-            # Update 2-D parameters with numpy appends
-            # self.v = np.append(self.v, v_new, axis=0)
-            # self.G = np.append(self.G, G_new, axis=0)
+            # Update 2-D parameters with numpy vstacks
             self.v = np.vstack([self.v, v_new])
             self.G = np.vstack([self.G, G_new])
 
+        # ELSE OLD CLUSTER LABEL
         else:
             n_new = self.n[i_label] + 1
             v_new = (1 - 1/n_new) * self.v[i_label, :] + (1/n_new) * sample
             delta_v = self.v[i_label, :] - v_new
             diff_x_v = sample - v_new
-            CP_new = self.CP[i_label] + np.transpose(diff_x_v[np.newaxis])
+            CP_new = self.CP[i_label] + np.inner(diff_x_v, diff_x_v) + self.n[i_label]*np.inner(delta_v, delta_v) + 2*np.inner(delta_v,self.G[i_label, :])
             G_new = self.G[i_label, :] + diff_x_v + self.n[i_label] * delta_v
             # Update parameters
             self.n[i_label] = n_new
@@ -75,6 +79,7 @@ class CH(CVI):
             self.CP[i_label] = CP_new
             self.G[i_label, :] = G_new
 
+        # Update the parameters that do not depend on label novelty
         self.n_samples = n_samples_new
         self.mu = mu_new
         self.SEP = [self.n[ix] * sum((self.v[ix, :] - self.mu)**2) for ix in range(self.n_clusters)]
@@ -110,6 +115,9 @@ class CH(CVI):
         return
 
     def evaluate(self) -> None:
+        """
+        Criterion value evaluation method for the Calinski-Harabasz (CH) CVI.
+        """
         if self.n_clusters > 2:
             # Within group sum of scatters
             self.WGSS = sum(self.CP)

@@ -35,7 +35,7 @@ import src.cvi as cvi
 
 # Set the fixture scope to the testing session to load the data once
 @pytest.fixture(scope="session")
-def data():
+def data() -> dict:
     """
     Data loading test fixture.
 
@@ -91,7 +91,7 @@ def data():
 # UTILITY FUNCTIONS
 # --------------------------------------------------------------------------- #
 
-def get_cvis():
+def get_cvis() -> list:
     """
     Returns a list of constructed CVI modules.
     """
@@ -101,7 +101,7 @@ def get_cvis():
 
     return cvis
 
-def log_data(local_data:dict):
+def log_data(local_data:dict) -> None:
     """
     Info-logs aspects of the passed data dictionary for diagnosis.
     """
@@ -130,7 +130,7 @@ def get_sample(local_data:dict, index:int) -> tuple:
 
 class TestCVI:
 
-    def test_load_data(self, data):
+    def test_load_data(self, data) -> None:
         """Test loading the partitioning data.
         """
 
@@ -142,7 +142,7 @@ class TestCVI:
 
         return
 
-    def test_loading_again(self, data:dict):
+    def test_loading_again(self, data:dict) -> None:
         """
         Tests loading the data again to verify the identity of the data dictionary.
         """
@@ -153,7 +153,7 @@ class TestCVI:
 
         return
 
-    def test_icvis(self, data:dict):
+    def test_icvis(self, data:dict) -> None:
         """
         Test the functionality all of the icvis.
         """
@@ -162,8 +162,6 @@ class TestCVI:
 
         tolerance = 1e-1
 
-        # n_cvis = len(cvis)
-
         for key, local_data in data["datasets"].items():
             lg.info(f"Testing data: {key}")
             # Incremental
@@ -171,10 +169,8 @@ class TestCVI:
             for local_cvi in i_cvis:
                 lg.info(local_cvi)
                 for ix in range(data["counts"][key]):
-                    # lg.info(f"--- ITERATION {ix} ---")
                     # Grab a sample and label
                     sample, label = get_sample(local_data, ix)
-                    # lg.info(f"Sample: {type(sample)}, {sample}, label: {type(label)}, {label}")
                     local_cvi.param_inc(sample, label)
                     local_cvi.evaluate()
             # Batch
@@ -183,18 +179,24 @@ class TestCVI:
                 local_cvi.param_batch(local_data["samples"], local_data["labels"])
                 local_cvi.evaluate()
 
+            # Test equivalence between batch and incremental results
+            for i in range(len(i_cvis)):
+                assert (i_cvis[i].criterion_value - b_cvis[i].criterion_value) < tolerance
+                lg.info(f"I: {i_cvis[i].criterion_value}, B: {b_cvis[i].criterion_value}")
+
         return
 
-    def test_opts(self):
+    def test_opts(self) -> None:
         """
         Test the CVI options object.
         """
+
         my_opts = cvi.CVIOpts()
         lg.info(my_opts)
 
         return
 
-    def test_setup_icvi(self):
+    def test_setup_icvi(self) -> None:
         """
         Test running the setup method on ICVIs.
         """
