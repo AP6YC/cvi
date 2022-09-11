@@ -1,39 +1,40 @@
-import numpy as np
-
-import re
-
-from .common import *
+# Standard imports
 import logging as lg
 
+# Custom imports
+import numpy as np
+
+# Local imports
+from .common import *
+
+# CH object definition
 class CH(CVI):
     """
-    The stateful information of the Calinski-Harabasz (CH) Cluster Validity Index
-    """
+    The stateful information of the Calinski-Harabasz (CH) Cluster Validity Index.
 
-    # # References
-    # 1. L. E. Brito da Silva, N. M. Melton, and D. C. Wunsch II, "Incremental Cluster Validity Indices for Hard Partitions: Extensions  and  Comparative Study," ArXiv  e-prints, Feb 2019, arXiv:1902.06711v1 [cs.LG].
-    # 2. T. Calinski and J. Harabasz, "A dendrite method for cluster analysis," Communications in Statistics, vol. 3, no. 1, pp. 1–27, 1974.
-    # 3. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML]. [Online].
-    # 4. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
-    # """
-    # Calinski-Harabasz (CH) Cluster Validity Index.
-    # """
+    References
+    ----------
+    1. L. E. Brito da Silva, N. M. Melton, and D. C. Wunsch II, "Incremental Cluster Validity Indices for Hard Partitions: Extensions  and  Comparative Study," ArXiv  e-prints, Feb 2019, arXiv:1902.06711v1 [cs.LG].
+    2. T. Calinski and J. Harabasz, "A dendrite method for cluster analysis," Communications in Statistics, vol. 3, no. 1, pp. 1-27, 1974.
+    3. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML]. [Online].
+    4. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
+    """
 
     def __init__(self):
         """
         CH initialization routine.
         """
-        # """
-        # Test documentation.
-        # """
+
         super().__init__()
 
         return
-        # print("Hello world!")
-        # self.data = []
 
-    # def param_inc(self, sample:np.ndarray, label:np.ndarray):
-    def param_inc(self, sample:np.ndarray, label:int):
+    @add_docs(param_inc_doc)
+    def param_inc(self, sample:np.ndarray, label:int) -> None:
+        """
+        Incremental parameter update for the Calinski-Harabasz (CH) CVI.
+        """
+
         i_label = self.label_map.get_internal_label(label)
 
         n_samples_new = self.n_samples + 1
@@ -49,6 +50,7 @@ class CH(CVI):
             v_new = sample
             CP_new = 0.0
             G_new = np.zeros(self.dim)
+
             # Update 1-D parameters with list appends
             self.n_clusters += 1
             self.n.append(n_new)
@@ -59,10 +61,10 @@ class CH(CVI):
             # self.G = np.append(self.G, G_new, axis=0)
             self.v = np.vstack([self.v, v_new])
             self.G = np.vstack([self.G, G_new])
+
         else:
             n_new = self.n[i_label] + 1
             v_new = (1 - 1/n_new) * self.v[i_label, :] + (1/n_new) * sample
-            # lg.info(v_new)
             delta_v = self.v[i_label, :] - v_new
             diff_x_v = sample - v_new
             CP_new = self.CP[i_label] + np.transpose(diff_x_v[np.newaxis])
@@ -79,7 +81,12 @@ class CH(CVI):
 
         return
 
-    def param_batch(self, data:np.ndarray, labels:np.ndarray):
+    @add_docs(param_batch)
+    def param_batch(self, data:np.ndarray, labels:np.ndarray) -> None:
+        """
+        Batch parameter update for the Calinski-Harabasz (CH) CVI.
+        """
+
         self.n_samples, self.dim = data.shape
         # Take the average across all samples, but cast to 1-D vector
         self.mu = np.mean(data, axis=0)
@@ -102,7 +109,7 @@ class CH(CVI):
 
         return
 
-    def evaluate(self):
+    def evaluate(self) -> None:
         if self.n_clusters > 2:
             # Within group sum of scatters
             self.WGSS = sum(self.CP)

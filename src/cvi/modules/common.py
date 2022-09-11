@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Callable
 
 class LabelMap():
     """
@@ -93,3 +94,34 @@ class CVI():
     #     # self.BGSS = np.single()
     #     # self.WGSS = np.single()
     #     # self.n_clusters = np.intc()
+
+# This decorator appends the docstring of one function to another
+def add_docs(other_func:Callable[[], None]):
+    def dec(func):
+        func.__doc__ = func.__doc__ + other_func.__doc__
+        return func
+    return dec
+
+# This function documents the shared API for incremental parameter updates
+def param_inc_doc() -> None:
+    """
+    Parameters
+    ----------
+    sample : numpy.ndarray
+        A sample row vector of features.
+    label : int
+        An integer label for the cluster, zero-indexed.
+    """
+    pass
+
+# This function documents the shared API for batch parameter updates
+def param_batch() -> None:
+    """
+    Parameters
+    ----------
+    sample : numpy.ndarray
+        A batch of samples; each row is a new sample of features.
+    label : numpy.ndarray
+        A vector of integer labels, zero-indexed.
+    """
+    pass
