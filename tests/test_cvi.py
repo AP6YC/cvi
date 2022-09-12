@@ -134,6 +134,7 @@ def get_cvis() -> List[cvi.CVI]:
     """
 
     cvis = [
+        cvi.cSIL(),
         cvi.CH(),
     ]
 

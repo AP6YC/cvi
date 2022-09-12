@@ -73,14 +73,14 @@ class cSIL(_base.CVI):
         if i_label > self.n_clusters - 1:
             n_new = 1
             v_new = sample
-            CP_new = np.inner(sample)
+            CP_new = np.inner(sample, sample)
             G_new = sample
 
             # Compute S_new
             if self.n_clusters == 0:
                 S_new = np.zeros([1, 1])
             else:
-                S_new = np.zeros(self.n_clusters + 1, self.n_clusters + 1)
+                S_new = np.zeros((self.n_clusters + 1, self.n_clusters + 1))
                 S_new[0:self.n_clusters, 0:self.n_clusters] = self.S
                 S_row_new = np.zeros(self.n_clusters + 1)
                 S_col_new = np.zeros(self.n_clusters + 1)
@@ -88,13 +88,13 @@ class cSIL(_base.CVI):
                     # Column "bmu_temp - D_new"
                     C = (
                         CP_new
-                        + np.inner(self.v[cl, :])
+                        + np.inner(self.v[cl, :], self.v[cl, :])
                         - np.inner(G_new, self.v[cl, :])
                     )
                     S_col_new[cl] = C
                     C = (
                         self.CP[cl]
-                        + self.n[cl] * np.inner(v_new)
+                        + self.n[cl] * np.inner(v_new, v_new)
                         - 2 * np.inner(self.G[cl, :], v_new)
                     )
                     S_row_new[cl] = C / self.n[cl]
@@ -157,7 +157,7 @@ class cSIL(_base.CVI):
             C = (
                 self.CP[i_label]
                 + np.inner(diff_x_v, diff_x_v)
-                + self.n_[i_label] * np.inner(v_new, v_new)
+                + self.n[i_label] * np.inner(v_new, v_new)
             )
             S_col_new[i_label] = C / n_new
             S_row_new[i_label] = S_col_new[i_label]
@@ -176,7 +176,7 @@ class cSIL(_base.CVI):
 
         return
 
-    @_base.add_docs(_base.param_batch)
+    @_base.add_docs(_base.param_batch_doc)
     def param_batch(self, data: np.ndarray, labels: np.ndarray) -> None:
         """
         Batch parameter update for the Centroid-based Silhouette (cSIL) CVI.
@@ -189,8 +189,8 @@ class cSIL(_base.CVI):
         self.n = np.zeros(self.n_clusters, dtype=int)
         self.v = np.zeros((self.n_clusters, self.dim))
         self.CP = np.zeros(self.n_clusters)
-        self.S = np.zeros(self.n_clusters, self.n_clusters)
-        D = np.zeros(self.n_samples, self.n_samples)
+        self.S = np.zeros((self.n_clusters, self.n_clusters))
+        D = np.zeros((self.n_samples, self.n_samples))
         for ix in range(self.n_clusters):
             # subset_indices = lambda x: labels[x] == ix
             subset_indices = [x for x in range(len(labels)) if labels[x] == ix]
@@ -202,7 +202,7 @@ class cSIL(_base.CVI):
             diff_x_v = subset - self.v[ix, :] * np.ones((self.n[ix], 1))
             self.CP[ix] = np.sum(diff_x_v ** 2)
 
-            d_temp = (data - self.v[:, ix] * np.ones(self.n_samples, 1)) ** 2
+            d_temp = (data - self.v[:, ix] * np.ones((self.n_samples, 1))) ** 2
             D[ix, :] = np.transpose(sum(d_temp, dims=2))
 
         for ix in range(self.n_clusters):
@@ -220,27 +220,17 @@ class cSIL(_base.CVI):
         self.sil_coefs = np.zeros(self.n_clusters)
 
         if self.n_clusters > 1 and self.S.any():
-            for ix in range(self.n_cluster):
+            for ix in range(self.n_clusters):
                 # Sasme cluster
                 a = self.S[ix, ix]
                 # Other clusters
-                b = np.min(self.S[:ix, ix] + self.S[ix + 1:, ix])
+                local_S = np.delete(self.S, ix)
+                b = np.min(local_S)
                 self.sil_coefs[ix] = (b - a) / np.maximum(a, b)
             # cSIL index value
             self.criterion_value = np.sum(self.sil_coefs) / self.n_clusters
 
         else:
             self.criterion_value = 0.0
-
-        # if self.n_clusters > 2:
-        #     # Within group sum of scatters
-        #     self.WGSS = sum(self.CP)
-        #     # Between groups sum of scatters
-        #     self.BGSS = sum(self.SEP)
-        #     # CH index value
-        #     self.criterion_value = (self.BGSS / self.WGSS) * ((self.n_samples - self.n_clusters)/(self.n_clusters - 1))
-        # else:
-        #     self.BGSS = 0.0
-        #     self.criterion_value = 0.0
 
         return
