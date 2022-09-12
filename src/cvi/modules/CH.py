@@ -34,7 +34,7 @@ class CH(CVI):
         super().__init__()
 
         # CH-specific initialization
-        self.SEP = []       # dim
+        self.SEP = np.zeros([])     # dim
         self.BGSS = 0.0
         self.WGSS = 0.0
 
