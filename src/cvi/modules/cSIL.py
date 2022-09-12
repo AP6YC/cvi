@@ -9,11 +9,11 @@ The Centroid-based Silhouette (cSIL) Cluster Validity Index.
 import numpy as np
 
 # Local imports
-from .common import *
+from . import _base
 
 
 # CH object definition
-class cSIL(CVI):
+class cSIL(_base.CVI):
     """
     The stateful information of the Centroid-based Silhouette (cSIL) Cluster Validity Index.
 
@@ -38,7 +38,7 @@ class cSIL(CVI):
 
         return
 
-    @add_docs(setup_doc)
+    @_base.add_docs(_base.setup_doc)
     def setup(self, sample: np.ndarray) -> None:
         """
         CH setup routine.
@@ -52,7 +52,7 @@ class cSIL(CVI):
 
         return
 
-    @add_docs(param_inc_doc)
+    @_base.add_docs(_base.param_inc_doc)
     def param_inc(self, sample: np.ndarray, label: int) -> None:
         """
         Incremental parameter update for the Calinski-Harabasz (CH) CVI.
@@ -118,7 +118,7 @@ class cSIL(CVI):
 
         return
 
-    @add_docs(param_batch)
+    @_base.add_docs(_base.param_batch)
     def param_batch(self, data: np.ndarray, labels: np.ndarray) -> None:
         """
         Batch parameter update for the Calinski-Harabasz (CH) CVI.
