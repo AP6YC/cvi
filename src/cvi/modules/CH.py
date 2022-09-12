@@ -31,6 +31,20 @@ class CH(CVI):
 
         super().__init__()
 
+        self.SEP = []       # dim
+        self.BGSS = 0.0
+        self.WGSS = 0.0
+
+        return
+
+    def setup(self, sample: np.ndarray) -> None:
+
+        # Run the generic setup routine
+        super().setup(sample)
+
+        # CH-specific setup
+        self.SEP = np.empty([self.dim])
+
         return
 
     @add_docs(param_inc_doc)

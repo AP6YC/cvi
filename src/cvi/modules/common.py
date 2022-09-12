@@ -57,16 +57,13 @@ class CVI():
         self.n = []                 # dim
         self.v = np.empty([0, 0])   # n_clusters x dim
         self.CP = []                # dim
-        self.SEP = []               # dim
         self.G = np.empty([0, 0])   # n_clusters x dim
-        self.BGSS = 0.0
-        self.WGSS = 0.0
         self.n_clusters = 0
         self.criterion_value = 0.0
 
         return
 
-    def setup(self, sample:np.ndarray) -> None:
+    def setup(self, sample: np.ndarray) -> None:
         """
         Sets up the dimensions of the CVI based on the sample size.
 
@@ -75,16 +72,10 @@ class CVI():
         sample : numpy.ndarray
             A sample vector of features.
         """
-        self.dim = len(sample)
-        # self.v = np.empty([dim, 0])
-        # self.G = np.empty([dim, 0])
 
+        self.dim = len(sample)
         self.mu = np.empty([self.dim])
-        # self.n = []
         self.v = np.empty([0, self.dim])
-        # self.CP = np.empty([self.dim])
-        # self.CP = []
-        self.SEP = np.empty([self.dim])
         self.G = np.empty([0, self.dim])
 
         return
