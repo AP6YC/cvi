@@ -131,7 +131,7 @@ class cSIL(_base.CVI):
             # Compute S_new
             S_row_new = np.zeros(self.n_clusters)
             S_col_new = np.zeros(self.n_clusters)
-            for cl in range(0, self.n_clusters):
+            for cl in range(self.n_clusters):
                 # Skip the i_label iteration
                 if cl == i_label:
                     continue
@@ -184,23 +184,31 @@ class cSIL(_base.CVI):
 
         self.n_samples, self.dim = data.shape
         # Take the average across all samples, but cast to 1-D vector
-        self.mu = np.mean(data, axis=0)
         u = np.unique(labels)
         self.n_clusters = u.size
         self.n = np.zeros(self.n_clusters, dtype=int)
         self.v = np.zeros((self.n_clusters, self.dim))
         self.CP = np.zeros(self.n_clusters)
-        self.SEP = np.zeros(self.n_clusters)
-
+        self.S = np.zeros(self.n_clusters, self.n_clusters)
+        D = np.zeros(self.n_samples, self.n_samples)
         for ix in range(self.n_clusters):
             # subset_indices = lambda x: labels[x] == ix
             subset_indices = [x for x in range(len(labels)) if labels[x] == ix]
             subset = data[subset_indices, :]
             self.n[ix] = subset.shape[0]
             self.v[ix, :] = np.mean(subset, axis=0)
+
+            # Compute CP in case of switching back to incremental mode
             diff_x_v = subset - self.v[ix, :] * np.ones((self.n[ix], 1))
             self.CP[ix] = np.sum(diff_x_v ** 2)
-            self.SEP[ix] = self.n[ix] * np.sum((self.v[ix, :] - self.mu) ** 2)
+
+            d_temp = (data - self.v[:, ix] * np.ones(self.n_samples, 1)) ** 2
+            D[ix, :] = np.transpose(sum(d_temp, dims=2))
+
+        for ix in range(self.n_clusters):
+            for jx in range(self.n_clusters):
+                subset_ind = [x for x in range(len(labels)) if labels[x] == jx]
+                self.S[jx, ix] = sum(D[ix, subset_ind]) / self.n[jx]
 
         return
 
@@ -208,15 +216,31 @@ class cSIL(_base.CVI):
         """
         Criterion value evaluation method for the Centroid-based Silhouette (cSIL) CVI.
         """
-        if self.n_clusters > 2:
-            # Within group sum of scatters
-            self.WGSS = sum(self.CP)
-            # Between groups sum of scatters
-            self.BGSS = sum(self.SEP)
-            # CH index value
-            self.criterion_value = (self.BGSS / self.WGSS) * ((self.n_samples - self.n_clusters)/(self.n_clusters - 1))
+
+        self.sil_coefs = np.zeros(self.n_clusters)
+
+        if self.n_clusters > 1 and self.S.any():
+            for ix in range(self.n_cluster):
+                # Sasme cluster
+                a = self.S[ix, ix]
+                # Other clusters
+                b = np.min(self.S[:ix, ix] + self.S[ix + 1:, ix])
+                self.sil_coefs[ix] = (b - a) / np.maximum(a, b)
+            # cSIL index value
+            self.criterion_value = np.sum(self.sil_coefs) / self.n_clusters
+
         else:
-            self.BGSS = 0.0
             self.criterion_value = 0.0
+
+        # if self.n_clusters > 2:
+        #     # Within group sum of scatters
+        #     self.WGSS = sum(self.CP)
+        #     # Between groups sum of scatters
+        #     self.BGSS = sum(self.SEP)
+        #     # CH index value
+        #     self.criterion_value = (self.BGSS / self.WGSS) * ((self.n_samples - self.n_clusters)/(self.n_clusters - 1))
+        # else:
+        #     self.BGSS = 0.0
+        #     self.criterion_value = 0.0
 
         return
