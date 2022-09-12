@@ -40,7 +40,7 @@ class CH(_base.CVI):
 
         return
 
-    @add_docs(setup_doc)
+    @_base.add_docs(_base.setup_doc)
     def setup(self, sample: np.ndarray) -> None:
         """
         CH setup routine.
