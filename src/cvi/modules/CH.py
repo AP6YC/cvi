@@ -1,3 +1,7 @@
+"""
+The Calinski-Harabasz (CH) Cluster Validity Index.
+"""
+
 # Standard imports
 import logging as lg
 
