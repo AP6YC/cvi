@@ -2,7 +2,9 @@
 Incremental CVI variants.
 """
 
+# Custom imports
 import numpy as np
+
 
 class Cluster:
     def __init__(self,radial=True, box=False):
