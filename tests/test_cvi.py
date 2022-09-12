@@ -26,12 +26,14 @@ import pandas as pd
 # --------------------------------------------------------------------------- #
 
 import src.cvi as cvi
+import src.cvi.modules.common as cm
 
 print(f"\nTesting path is: {os.getcwd()}")
 
 # --------------------------------------------------------------------------- #
 # FIXTURES
 # --------------------------------------------------------------------------- #
+
 
 # Set the fixture scope to the testing session to load the data once
 @pytest.fixture(scope="session")
@@ -46,12 +48,10 @@ def data() -> dict:
     lg.info("LOADING DATA")
 
     data_path = Path("tests", "data")
+
     # Load the test datasets
-    # correct = pd.read_csv(data_path.joinpath("correct_partition.csv")).sample(frac=p).convert_dtypes()
-    # over = pd.read_csv(data_path.joinpath("over_partition.csv")).sample(frac=p).convert_dtypes()
-    # under = pd.read_csv(data_path.joinpath("under_partition.csv")).sample(frac=p).convert_dtypes()
     correct = (
-        pd.read_csv(data_path.joinpath("correct_partition.csv")) \
+        pd.read_csv(data_path.joinpath("correct_partition.csv"))
         .sample(frac=p)
         .sort_index()
     )
@@ -99,34 +99,42 @@ def data() -> dict:
 
     return data_dict
 
+
 # --------------------------------------------------------------------------- #
 # UTILITY FUNCTIONS
 # --------------------------------------------------------------------------- #
 
-def get_cvis() -> list[CVI]:
+
+def get_cvis() -> list[cm.CVI]:
     """
     Returns a list of constructed CVI modules.
     """
+
     cvis = [
         cvi.modules.CH(),
     ]
 
     return cvis
 
-def log_data(local_data:dict) -> None:
+
+def log_data(local_data: dict) -> None:
     """
     Info-logs aspects of the passed data dictionary for diagnosis.
     """
+
     # lg.info(local_data.describe())
     lg.info(
-        f"Samples: type {type(local_data['samples'])}, shape {local_data['samples'].shape}"
+        f"Samples: type {type(local_data['samples'])}, "
+        "shape {local_data['samples'].shape}"
     )
     lg.info(
-        f"Labels: type {type(local_data['labels'])}, shape {local_data['labels'].shape}"
+        f"Labels: type {type(local_data['labels'])}, "
+        "shape {local_data['labels'].shape}"
     )
     return
 
-def get_sample(local_data:dict, index:int) -> tuple:
+
+def get_sample(local_data: dict, index: int) -> tuple:
     """
     Grabs a sample and label from the data dictionary at the provided index.
     """
@@ -136,14 +144,17 @@ def get_sample(local_data:dict, index:int) -> tuple:
 
     return sample, label
 
+
 # --------------------------------------------------------------------------- #
 # TESTS
 # --------------------------------------------------------------------------- #
 
+
 class TestCVI:
 
-    def test_load_data(self, data:dict) -> None:
-        """Test loading the partitioning data.
+    def test_load_data(self, data: dict) -> None:
+        """
+        Test loading the partitioning data.
         """
 
         lg.info("--- TESTING DATA LOADING ---")
@@ -154,7 +165,7 @@ class TestCVI:
 
         return
 
-    def test_loading_again(self, data:dict) -> None:
+    def test_loading_again(self, data: dict) -> None:
         """
         Tests loading the data again to verify the identity of the data dictionary.
         """
@@ -165,7 +176,7 @@ class TestCVI:
 
         return
 
-    def test_icvis(self, data:dict) -> None:
+    def test_icvis(self, data: dict) -> None:
         """
         Test the functionality all of the icvis.
         """
@@ -188,23 +199,16 @@ class TestCVI:
             # Batch
             b_cvis = get_cvis()
             for local_cvi in b_cvis:
-                local_cvi.param_batch(local_data["samples"], local_data["labels"])
+                local_cvi.param_batch(
+                    local_data["samples"],
+                    local_data["labels"]
+                )
                 local_cvi.evaluate()
 
             # Test equivalence between batch and incremental results
             for i in range(len(i_cvis)):
                 assert (i_cvis[i].criterion_value - b_cvis[i].criterion_value) < tolerance
                 lg.info(f"I: {i_cvis[i].criterion_value}, B: {b_cvis[i].criterion_value}")
-
-        return
-
-    def test_opts(self) -> None:
-        """
-        Test the CVI options object.
-        """
-
-        my_opts = cvi.CVIOpts()
-        lg.info(my_opts)
 
         return
 
