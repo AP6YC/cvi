@@ -25,9 +25,9 @@ import pandas as pd
 # LOCAL IMPORTS
 # --------------------------------------------------------------------------- #
 
-print(f"\nTesting path is: {os.getcwd()}")
 import src.cvi as cvi
-# import ..
+
+print(f"\nTesting path is: {os.getcwd()}")
 
 # --------------------------------------------------------------------------- #
 # FIXTURES
@@ -50,9 +50,21 @@ def data() -> dict:
     # correct = pd.read_csv(data_path.joinpath("correct_partition.csv")).sample(frac=p).convert_dtypes()
     # over = pd.read_csv(data_path.joinpath("over_partition.csv")).sample(frac=p).convert_dtypes()
     # under = pd.read_csv(data_path.joinpath("under_partition.csv")).sample(frac=p).convert_dtypes()
-    correct = pd.read_csv(data_path.joinpath("correct_partition.csv")).sample(frac=p).sort_index()
-    over = pd.read_csv(data_path.joinpath("over_partition.csv")).sample(frac=p).sort_index()
-    under = pd.read_csv(data_path.joinpath("under_partition.csv")).sample(frac=p).sort_index()
+    correct = (
+        pd.read_csv(data_path.joinpath("correct_partition.csv")) \
+        .sample(frac=p)
+        .sort_index()
+    )
+    over = (
+        pd.read_csv(data_path.joinpath("over_partition.csv"))
+        .sample(frac=p)
+        .sort_index()
+    )
+    under = (
+        pd.read_csv(data_path.joinpath("under_partition.csv"))
+        .sample(frac=p)
+        .sort_index()
+    )
 
     # Coerce the dataframe as two numpy arrays each for ease
     correct_samples = correct.to_numpy(dtype=float)[:, 0:2]
@@ -91,7 +103,7 @@ def data() -> dict:
 # UTILITY FUNCTIONS
 # --------------------------------------------------------------------------- #
 
-def get_cvis() -> list:
+def get_cvis() -> list[CVI]:
     """
     Returns a list of constructed CVI modules.
     """
@@ -130,7 +142,7 @@ def get_sample(local_data:dict, index:int) -> tuple:
 
 class TestCVI:
 
-    def test_load_data(self, data) -> None:
+    def test_load_data(self, data:dict) -> None:
         """Test loading the partitioning data.
         """
 

@@ -50,7 +50,7 @@ class CH(CVI):
 
         # IF NEW CLUSTER LABEL
         # Correct for python 0-indexing
-        if i_label + 1 > self.n_clusters:
+        if i_label > self.n_clusters - 1:
             n_new = 1
             v_new = sample
             CP_new = 0.0
