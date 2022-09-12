@@ -55,11 +55,10 @@ class CVI():
         self.label_map = LabelMap()
         self.dim = 0
         self.n_samples = 0
-        self.mu = np.empty([0])     # dim
         self.n = []                 # dim
-        self.v = np.empty([0, 0])   # n_clusters x dim
+        self.v = np.zeros([0, 0])   # n_clusters x dim
         self.CP = []                # dim
-        self.G = np.empty([0, 0])   # n_clusters x dim
+        self.G = np.zeros([0, 0])   # n_clusters x dim
         self.n_clusters = 0
         self.criterion_value = 0.0
 
@@ -76,9 +75,8 @@ class CVI():
         """
 
         self.dim = len(sample)
-        self.mu = np.empty([self.dim])
-        self.v = np.empty([0, self.dim])
-        self.G = np.empty([0, self.dim])
+        self.v = np.zeros([0, self.dim])
+        self.G = np.zeros([0, self.dim])
 
         return
 

@@ -34,7 +34,8 @@ class CH(_base.CVI):
         super().__init__()
 
         # CH-specific initialization
-        self.SEP = np.zeros([])     # dim
+        self.mu = np.zeros([0])     # dim
+        self.SEP = np.zeros([0])     # dim
         self.BGSS = 0.0
         self.WGSS = 0.0
 
@@ -51,6 +52,8 @@ class CH(_base.CVI):
 
         # CH-specific setup
         self.SEP = np.zeros([self.dim])
+        self.mu = sample
+        # self.mu = np.zeros([self.dim])
 
         return
 
@@ -67,11 +70,10 @@ class CH(_base.CVI):
         n_samples_new = self.n_samples + 1
 
         # Check if the module has been setup, then set the mu accordingly
-        if not self.mu.any():
-            mu_new = sample
+        if self.n_samples == 0:
             self.setup(sample)
         else:
-            mu_new = (1 - 1/n_samples_new) * self.mu + (1/n_samples_new) * sample
+            self.mu = (1 - 1/n_samples_new) * self.mu + (1/n_samples_new) * sample
 
         # IF NEW CLUSTER LABEL
         # Correct for python 0-indexing
@@ -115,7 +117,7 @@ class CH(_base.CVI):
 
         # Update the parameters that do not depend on label novelty
         self.n_samples = n_samples_new
-        self.mu = mu_new
+        # self.mu = mu_new
         self.SEP = np.array([self.n[ix] * sum((self.v[ix, :] - self.mu)**2) for ix in range(self.n_clusters)])
 
         return
