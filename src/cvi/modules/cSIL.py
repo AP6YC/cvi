@@ -65,19 +65,44 @@ class cSIL(_base.CVI):
         n_samples_new = self.n_samples + 1
 
         # Check if the module has been setup, then set the mu accordingly
-        if not self.mu.any():
-            mu_new = sample
+        if self.n_samples == 0:
             self.setup(sample)
-        else:
-            mu_new = (1 - 1/n_samples_new) * self.mu + (1/n_samples_new) * sample
 
         # IF NEW CLUSTER LABEL
         # Correct for python 0-indexing
         if i_label > self.n_clusters - 1:
             n_new = 1
             v_new = sample
-            CP_new = 0.0
-            G_new = np.zeros(self.dim)
+            CP_new = np.inner(sample)
+            G_new = sample
+
+            # Compute S_new
+            if self.n_clusters == 0:
+                S_new = np.zeros([1, 1])
+            else:
+                S_new = np.zeros(self.n_clusters + 1, self.n_clusters + 1)
+                S_new[0:self.n_clusters, 0:self.n_clusters] = self.S
+                S_row_new = np.zeros(self.n_clusters + 1)
+                S_col_new = np.zeros(self.n_clusters + 1)
+                for cl in range(self.n_clusters):
+                    # Column "bmu_temp - D_new"
+                    C = (
+                        CP_new
+                        + np.inner(self.v[cl, :])
+                        - np.inner(G_new, self.v[cl, :])
+                    )
+                    S_col_new[cl] = C
+                    C = (
+                        self.CP[cl]
+                        + self.n[cl] * np.inner(v_new)
+                        - 2 * np.inner(self.G[cl, :], v_new)
+                    )
+                    S_row_new[cl] = C / self.n[cl]
+                # Column "ind_minus" - F
+                S_col_new[i_label] = 0
+                S_row_new[i_label] = S_col_new[i_label]
+                S_new[i_label, :] = S_col_new
+                S_new[:, i_label] = S_row_new
 
             # Update 1-D parameters with list appends
             self.n_clusters += 1
@@ -87,34 +112,67 @@ class cSIL(_base.CVI):
             # Update 2-D parameters with numpy vstacks
             self.v = np.vstack([self.v, v_new])
             self.G = np.vstack([self.G, G_new])
+            self.S = S_new
 
         # ELSE OLD CLUSTER LABEL
         else:
             n_new = self.n[i_label] + 1
             v_new = (1 - 1/n_new) * self.v[i_label, :] + (1/n_new) * sample
-            delta_v = self.v[i_label, :] - v_new
-            diff_x_v = sample - v_new
+            # delta_v = self.v[i_label, :] - v_new
+            # diff_x_v = sample - v_new
             CP_new = (
                 self.CP[i_label]
-                + np.inner(diff_x_v, diff_x_v)
-                + self.n[i_label] * np.inner(delta_v, delta_v)
-                + 2*np.inner(delta_v, self.G[i_label, :])
+                + np.inner(sample, sample)
             )
             G_new = (
                 self.G[i_label, :]
-                + diff_x_v
-                + self.n[i_label] * delta_v
+                + sample
             )
+            # Compute S_new
+            S_row_new = np.zeros(self.n_clusters)
+            S_col_new = np.zeros(self.n_clusters)
+            for cl in range(0, self.n_clusters):
+                # Skip the i_label iteration
+                if cl == i_label:
+                    continue
+                # Column "bmu_temp" - D_new
+                diff_x_v = sample - self.v[cl, :]
+                C = (
+                    self.CP[i_label]
+                    + np.inner(diff_x_v, diff_x_v)
+                    + self.n[i_label] * np.inner(self.v[cl, :], self.v[cl, :])
+                    - 2 * np.inner(G_new, self.v[cl, :])
+                )
+                S_col_new[cl] = C / n_new
+                # Row "bmu_temp" - E
+                C = (
+                    self.CP[cl]
+                    + self.n[cl] * np.inner(v_new, v_new)
+                    - 2 * np.inner(self.G[cl, :], v_new)
+                )
+                S_row_new[cl] = C / self.n[cl]
+
+            # Column "ind_minus" - F
+            diff_x_v = sample - v_new
+            C = (
+                self.CP[i_label]
+                + np.inner(diff_x_v, diff_x_v)
+                + self.n_[i_label] * np.inner(v_new, v_new)
+            )
+            S_col_new[i_label] = C / n_new
+            S_row_new[i_label] = S_col_new[i_label]
+
             # Update parameters
             self.n[i_label] = n_new
             self.v[i_label, :] = v_new
             self.CP[i_label] = CP_new
             self.G[i_label, :] = G_new
 
+            self.S[i_label, :] = S_col_new
+            self.S[:, i_label] = S_row_new
+
         # Update the parameters that do not depend on label novelty
         self.n_samples = n_samples_new
-        self.mu = mu_new
-        self.SEP = [self.n[ix] * sum((self.v[ix, :] - self.mu)**2) for ix in range(self.n_clusters)]
 
         return
 
