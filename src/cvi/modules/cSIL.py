@@ -3,13 +3,14 @@ The Centroid-based Silhouette (cSIL) Cluster Validity Index.
 """
 
 # Standard imports
-import logging as lg
+# import logging as lg
 
 # Custom imports
 import numpy as np
 
 # Local imports
 from .common import *
+
 
 # CH object definition
 class cSIL(CVI):
@@ -93,8 +94,17 @@ class cSIL(CVI):
             v_new = (1 - 1/n_new) * self.v[i_label, :] + (1/n_new) * sample
             delta_v = self.v[i_label, :] - v_new
             diff_x_v = sample - v_new
-            CP_new = self.CP[i_label] + np.inner(diff_x_v, diff_x_v) + self.n[i_label]*np.inner(delta_v, delta_v) + 2*np.inner(delta_v,self.G[i_label, :])
-            G_new = self.G[i_label, :] + diff_x_v + self.n[i_label] * delta_v
+            CP_new = (
+                self.CP[i_label]
+                + np.inner(diff_x_v, diff_x_v)
+                + self.n[i_label] * np.inner(delta_v, delta_v)
+                + 2*np.inner(delta_v, self.G[i_label, :])
+            )
+            G_new = (
+                self.G[i_label, :]
+                + diff_x_v
+                + self.n[i_label] * delta_v
+            )
             # Update parameters
             self.n[i_label] = n_new
             self.v[i_label, :] = v_new
@@ -132,7 +142,7 @@ class cSIL(CVI):
             self.v[ix, :] = np.mean(subset, axis=0)
             diff_x_v = subset - self.v[ix, :] * np.ones((self.n[ix], 1))
             self.CP[ix] = np.sum(diff_x_v ** 2)
-            self.SEP[ix] = self.n[ix] * np.sum((self.v[ix, :] - self.mu) **2)
+            self.SEP[ix] = self.n[ix] * np.sum((self.v[ix, :] - self.mu) ** 2)
 
         return
 

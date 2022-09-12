@@ -13,6 +13,7 @@ import numpy as np
 # CLASSES
 # --------------------------------------------------------------------------- #
 
+
 class LabelMap():
     """
     Internal map between labels and the incremental CVI categories.
