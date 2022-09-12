@@ -28,15 +28,20 @@ class cSIL(CVI):
         CH initialization routine.
         """
 
+        # Run the base initialization
         super().__init__()
 
-        self.SEP = []       # dim
-        self.BGSS = 0.0
-        self.WGSS = 0.0
+        # cSIL-specific initialization
+        self.S = np.empty([0, 0])   # n_clusters x dim
+        self.sil_coefs = []                # dim
 
         return
 
+    @add_docs(setup_doc)
     def setup(self, sample: np.ndarray) -> None:
+        """
+        CH setup routine.
+        """
 
         # Run the generic setup routine
         super().setup(sample)
@@ -104,7 +109,7 @@ class cSIL(CVI):
         return
 
     @add_docs(param_batch)
-    def param_batch(self, data:np.ndarray, labels:np.ndarray) -> None:
+    def param_batch(self, data: np.ndarray, labels: np.ndarray) -> None:
         """
         Batch parameter update for the Calinski-Harabasz (CH) CVI.
         """

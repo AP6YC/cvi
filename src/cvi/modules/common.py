@@ -21,7 +21,7 @@ class LabelMap():
         self.map = dict()
         return
 
-    def get_internal_label(self, label:int) -> int:
+    def get_internal_label(self, label: int) -> int:
         """
         Gets the internal label and updates the label map if the label is new.
         """
@@ -80,11 +80,13 @@ class CVI():
 
         return
 
+
 # --------------------------------------------------------------------------- #
 # DECORATORS
 # --------------------------------------------------------------------------- #
 
-def add_docs(other_func:Callable[[], None]) -> Callable[[], None]:
+
+def add_docs(other_func: Callable[[], None]) -> Callable[[], None]:
     """
     A decorator for appending the docstring of one function to another.
 
@@ -100,9 +102,24 @@ def add_docs(other_func:Callable[[], None]) -> Callable[[], None]:
 
     return dec
 
+
 # --------------------------------------------------------------------------- #
 # DOCSTRING FUNCTIONS
 # --------------------------------------------------------------------------- #
+
+
+def setup_doc() -> None:
+    """
+    Sets up the dimensions of the CVI based on the sample size.
+
+    Parameters
+    ----------
+    sample : numpy.ndarray
+        A sample vector of features.
+    """
+
+    pass
+
 
 # This function documents the shared API for incremental parameter updates
 def param_inc_doc() -> None:
@@ -116,6 +133,7 @@ def param_inc_doc() -> None:
     """
 
     pass
+
 
 # This function documents the shared API for batch parameter updates
 def param_batch() -> None:

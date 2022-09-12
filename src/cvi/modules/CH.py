@@ -29,26 +29,32 @@ class CH(CVI):
         CH initialization routine.
         """
 
+        # Run the base initialization
         super().__init__()
 
+        # CH-specific initialization
         self.SEP = []       # dim
         self.BGSS = 0.0
         self.WGSS = 0.0
 
         return
 
+    @add_docs(setup_doc)
     def setup(self, sample: np.ndarray) -> None:
+        """
+        CH setup routine.
+        """
 
         # Run the generic setup routine
         super().setup(sample)
 
         # CH-specific setup
-        self.SEP = np.empty([self.dim])
+        self.SEP = np.zeros([self.dim])
 
         return
 
     @add_docs(param_inc_doc)
-    def param_inc(self, sample:np.ndarray, label:int) -> None:
+    def param_inc(self, sample: np.ndarray, label: int) -> None:
         """
         Incremental parameter update for the Calinski-Harabasz (CH) CVI.
         """
@@ -100,12 +106,12 @@ class CH(CVI):
         # Update the parameters that do not depend on label novelty
         self.n_samples = n_samples_new
         self.mu = mu_new
-        self.SEP = [self.n[ix] * sum((self.v[ix, :] - self.mu)**2) for ix in range(self.n_clusters)]
+        self.SEP = np.array([self.n[ix] * sum((self.v[ix, :] - self.mu)**2) for ix in range(self.n_clusters)])
 
         return
 
     @add_docs(param_batch)
-    def param_batch(self, data:np.ndarray, labels:np.ndarray) -> None:
+    def param_batch(self, data: np.ndarray, labels: np.ndarray) -> None:
         """
         Batch parameter update for the Calinski-Harabasz (CH) CVI.
         """
