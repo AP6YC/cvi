@@ -150,7 +150,7 @@ def param_inc_doc() -> None:
 
 
 # This function documents the shared API for batch parameter updates
-def param_batch() -> None:
+def param_batch_doc() -> None:
     """
     Parameters
     ----------

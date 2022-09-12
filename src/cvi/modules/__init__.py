@@ -1,6 +1,22 @@
 """
-
+The :mod:`modules` gathers all CVI implementations.
 """
 
-from .common import *
-from .CH import *
+from ._base import (
+    LabelMap,
+    CVI,
+    add_docs,
+    param_inc_doc,
+    param_batch_doc,
+)
+
+from .CH import CH
+
+__all__ = [
+    "LabelMap",
+    "CVI",
+    "add_docs",
+    "param_inc_doc",
+    "param_batch_doc",
+    "CH",
+]
