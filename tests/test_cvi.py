@@ -14,23 +14,28 @@ import logging as lg
 from dataclasses import dataclass
 from typing import List, Dict
 
+
 # --------------------------------------------------------------------------- #
 # CUSTOM IMPORTS
 # --------------------------------------------------------------------------- #
+
 
 import pytest
 import numpy as np
 import pandas as pd
 
+
 # --------------------------------------------------------------------------- #
 # LOCAL IMPORTS
 # --------------------------------------------------------------------------- #
 
+
 import src.cvi as cvi
 # TODO: this is a hack; refactor modules so that this is at the top
-from src.cvi.modules.common import CVI
+# from src.cvi import CVI
 
 print(f"\nTesting path is: {os.getcwd()}")
+
 
 # --------------------------------------------------------------------------- #
 # DATACLASSES
@@ -123,13 +128,13 @@ def data() -> TestData:
 # --------------------------------------------------------------------------- #
 
 
-def get_cvis() -> List[CVI]:
+def get_cvis() -> List[cvi.CVI]:
     """
     Returns a list of constructed CVI modules.
     """
 
     cvis = [
-        cvi.modules.CH(),
+        cvi.CH(),
     ]
 
     return cvis

@@ -9,10 +9,11 @@ import logging as lg
 import numpy as np
 
 # Local imports
-from .common import *
+from . import _base
+
 
 # CH object definition
-class CH(CVI):
+class CH(_base.CVI):
     """
     The stateful information of the Calinski-Harabasz (CH) Cluster Validity Index.
 
@@ -33,7 +34,7 @@ class CH(CVI):
 
         return
 
-    @add_docs(param_inc_doc)
+    @_base.add_docs(_base.param_inc_doc)
     def param_inc(self, sample:np.ndarray, label:int) -> None:
         """
         Incremental parameter update for the Calinski-Harabasz (CH) CVI.
@@ -90,7 +91,7 @@ class CH(CVI):
 
         return
 
-    @add_docs(param_batch)
+    @_base.add_docs(_base.param_batch_doc)
     def param_batch(self, data:np.ndarray, labels:np.ndarray) -> None:
         """
         Batch parameter update for the Calinski-Harabasz (CH) CVI.
