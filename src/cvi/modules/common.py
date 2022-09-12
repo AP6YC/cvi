@@ -90,6 +90,10 @@ class CVI():
     def param_batch(self, data: np.ndarray, labels: np.ndarray) -> None:
         pass
 
+    @abstractmethod
+    def evaluate(self) -> None:
+        pass
+
 
 # --------------------------------------------------------------------------- #
 # DECORATORS
