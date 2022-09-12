@@ -4,6 +4,7 @@ Utilities that are common across all CVI objects.
 
 # Standard library imports
 from typing import Callable
+from abc import abstractmethod
 
 # Custom imports
 import numpy as np
@@ -79,6 +80,14 @@ class CVI():
         self.G = np.empty([0, self.dim])
 
         return
+
+    @abstractmethod
+    def param_inc(self, sample: np.ndarray, label: int) -> None:
+        pass
+
+    @abstractmethod
+    def param_batch(self, data: np.ndarray, labels: np.ndarray) -> None:
+        pass
 
 
 # --------------------------------------------------------------------------- #
