@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import logging as lg
 from dataclasses import dataclass
+from typing import List, Dict
 
 # --------------------------------------------------------------------------- #
 # CUSTOM IMPORTS
@@ -40,7 +41,7 @@ print(f"\nTesting path is: {os.getcwd()}")
 class TestData():
 
     # The test dataset dictionary
-    datasets: dict
+    datasets: Dict
 
     # Tells pytest that this is not a test class
     __test__ = False
@@ -122,7 +123,7 @@ def data() -> TestData:
 # --------------------------------------------------------------------------- #
 
 
-def get_cvis() -> list[CVI]:
+def get_cvis() -> List[CVI]:
     """
     Returns a list of constructed CVI modules.
     """
@@ -134,7 +135,7 @@ def get_cvis() -> list[CVI]:
     return cvis
 
 
-def log_data(local_data: dict) -> None:
+def log_data(local_data: Dict) -> None:
     """
     Info-logs aspects of the passed data dictionary for diagnosis.
     """
@@ -151,7 +152,7 @@ def log_data(local_data: dict) -> None:
     return
 
 
-def get_sample(local_data: dict, index: int) -> tuple:
+def get_sample(local_data: Dict, index: int) -> tuple:
     """
     Grabs a sample and label from the data dictionary at the provided index.
     """
