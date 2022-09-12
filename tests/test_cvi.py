@@ -148,11 +148,11 @@ def log_data(local_data: Dict) -> None:
     # lg.info(local_data.describe())
     lg.info(
         f"Samples: type {type(local_data['samples'])}, "
-        "shape {local_data['samples'].shape}"
+        f"shape {local_data['samples'].shape}"
     )
     lg.info(
         f"Labels: type {type(local_data['labels'])}, "
-        "shape {local_data['labels'].shape}"
+        f"shape {local_data['labels'].shape}"
     )
     return
 
@@ -236,7 +236,7 @@ class TestCVI:
                 )
                 lg.info(
                     f"I: {i_cvis[i].criterion_value},"
-                    "B: {b_cvis[i].criterion_value}"
+                    f"B: {b_cvis[i].criterion_value}"
                 )
 
         return
