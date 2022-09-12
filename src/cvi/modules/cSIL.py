@@ -55,7 +55,7 @@ class cSIL(_base.CVI):
     @_base.add_docs(_base.param_inc_doc)
     def param_inc(self, sample: np.ndarray, label: int) -> None:
         """
-        Incremental parameter update for the Calinski-Harabasz (CH) CVI.
+        Incremental parameter update for the Centroid-based Silhouette (cSIL) CVI.
         """
 
         # Get the internal label corresponding to the provided label
@@ -179,7 +179,7 @@ class cSIL(_base.CVI):
     @_base.add_docs(_base.param_batch)
     def param_batch(self, data: np.ndarray, labels: np.ndarray) -> None:
         """
-        Batch parameter update for the Calinski-Harabasz (CH) CVI.
+        Batch parameter update for the Centroid-based Silhouette (cSIL) CVI.
         """
 
         self.n_samples, self.dim = data.shape
@@ -206,7 +206,7 @@ class cSIL(_base.CVI):
 
     def evaluate(self) -> None:
         """
-        Criterion value evaluation method for the Calinski-Harabasz (CH) CVI.
+        Criterion value evaluation method for the Centroid-based Silhouette (cSIL) CVI.
         """
         if self.n_clusters > 2:
             # Within group sum of scatters
