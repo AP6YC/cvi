@@ -11,7 +11,7 @@ Tests the cvi package.
 import os
 from pathlib import Path
 import logging as lg
-# import inspect
+from dataclasses import dataclass
 
 # --------------------------------------------------------------------------- #
 # CUSTOM IMPORTS
@@ -26,9 +26,32 @@ import pandas as pd
 # --------------------------------------------------------------------------- #
 
 import src.cvi as cvi
-import src.cvi.modules.common as cm
+# TODO: this is a hack; refactor modules so that this is at the top
+from src.cvi.modules.common import CVI
 
 print(f"\nTesting path is: {os.getcwd()}")
+
+# --------------------------------------------------------------------------- #
+# DATACLASSES
+# --------------------------------------------------------------------------- #
+
+
+@dataclass
+class TestData():
+
+    # The test dataset dictionary
+    datasets: dict
+
+    # Tells pytest that this is not a test class
+    __test__ = False
+
+    def count(self, dataset: str) -> int:
+        """
+        Returns the number of samples in a dataset entry.
+        """
+
+        return len(self.datasets[dataset]["labels"])
+
 
 # --------------------------------------------------------------------------- #
 # FIXTURES
@@ -37,7 +60,7 @@ print(f"\nTesting path is: {os.getcwd()}")
 
 # Set the fixture scope to the testing session to load the data once
 @pytest.fixture(scope="session")
-def data() -> dict:
+def data() -> TestData:
     """
     Data loading test fixture.
 
@@ -76,28 +99,22 @@ def data() -> dict:
 
     # Construct the dataset dictionary
     data_dict = {
-        "datasets": {
-            "correct": {
-                "samples": correct_samples,
-                "labels": correct_labels,
-            },
-            "over": {
-                "samples": over_samples,
-                "labels": over_labels,
-            },
-            "under": {
-                "samples": under_samples,
-                "labels": under_labels,
-            },
+        "correct": {
+            "samples": correct_samples,
+            "labels": correct_labels,
         },
-        "counts": {
-            "correct": len(correct.index),
-            "over": len(over.index),
-            "under": len(under.index),
+        "over": {
+            "samples": over_samples,
+            "labels": over_labels,
+        },
+        "under": {
+            "samples": under_samples,
+            "labels": under_labels,
         },
     }
 
-    return data_dict
+    # Instantiate and return the TestData object
+    return TestData(data_dict)
 
 
 # --------------------------------------------------------------------------- #
@@ -105,7 +122,7 @@ def data() -> dict:
 # --------------------------------------------------------------------------- #
 
 
-def get_cvis() -> list[cm.CVI]:
+def get_cvis() -> list[CVI]:
     """
     Returns a list of constructed CVI modules.
     """
@@ -152,7 +169,7 @@ def get_sample(local_data: dict, index: int) -> tuple:
 
 class TestCVI:
 
-    def test_load_data(self, data: dict) -> None:
+    def test_load_data(self, data: TestData) -> None:
         """
         Test loading the partitioning data.
         """
@@ -160,23 +177,23 @@ class TestCVI:
         lg.info("--- TESTING DATA LOADING ---")
         lg.info(f"Data location: {id(data)}")
 
-        for value in data["datasets"].values():
+        for value in data.datasets.values():
             log_data(value)
 
         return
 
-    def test_loading_again(self, data: dict) -> None:
+    def test_loading_again(self, data: TestData) -> None:
         """
         Tests loading the data again to verify the identity of the data dictionary.
         """
 
         lg.info("--- TESTING LOADING AGAIN TO VERIFY DATA SINGLETON ---")
-        log_data(data["datasets"]["correct"])
+        log_data(data.datasets["correct"])
         lg.info(f"Data location: {id(data)}")
 
         return
 
-    def test_icvis(self, data: dict) -> None:
+    def test_icvis(self, data: TestData) -> None:
         """
         Test the functionality all of the icvis.
         """
@@ -185,13 +202,13 @@ class TestCVI:
 
         tolerance = 1e-1
 
-        for key, local_data in data["datasets"].items():
+        for key, local_data in data.datasets.items():
             lg.info(f"Testing data: {key}")
             # Incremental
             i_cvis = get_cvis()
             for local_cvi in i_cvis:
                 lg.info(local_cvi)
-                for ix in range(data["counts"][key]):
+                for ix in range(data.count(key)):
                     # Grab a sample and label
                     sample, label = get_sample(local_data, ix)
                     local_cvi.param_inc(sample, label)
@@ -207,8 +224,14 @@ class TestCVI:
 
             # Test equivalence between batch and incremental results
             for i in range(len(i_cvis)):
-                assert (i_cvis[i].criterion_value - b_cvis[i].criterion_value) < tolerance
-                lg.info(f"I: {i_cvis[i].criterion_value}, B: {b_cvis[i].criterion_value}")
+                assert (
+                    (i_cvis[i].criterion_value - b_cvis[i].criterion_value)
+                    < tolerance
+                )
+                lg.info(
+                    f"I: {i_cvis[i].criterion_value},"
+                    "B: {b_cvis[i].criterion_value}"
+                )
 
         return
 
