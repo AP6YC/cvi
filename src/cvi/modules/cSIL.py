@@ -202,8 +202,9 @@ class cSIL(_base.CVI):
             diff_x_v = subset - self.v[ix, :] * np.ones((self.n[ix], 1))
             self.CP[ix] = np.sum(diff_x_v ** 2)
 
-            d_temp = (data - self.v[:, ix] * np.ones((self.n_samples, 1))) ** 2
-            D[ix, :] = np.transpose(sum(d_temp, dims=2))
+            d_temp = (data - self.v[ix, :] * np.ones((self.n_samples, 1))) ** 2
+            D[ix, :] = np.transpose(np.sum(d_temp, axis=1))
+            # D[ix, :] = np.sum(d_temp, axis=1)
 
         for ix in range(self.n_clusters):
             for jx in range(self.n_clusters):
