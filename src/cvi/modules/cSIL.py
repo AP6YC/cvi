@@ -212,6 +212,7 @@ class cSIL(_base.CVI):
 
         return
 
+    @_base.add_docs(_base.evaluate_doc)
     def evaluate(self) -> None:
         """
         Criterion value evaluation method for the Centroid-based Silhouette (cSIL) CVI.

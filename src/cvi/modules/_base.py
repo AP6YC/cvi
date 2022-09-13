@@ -159,3 +159,12 @@ def param_batch_doc() -> None:
     """
 
     pass
+
+
+# This function documents the shared API for criterion value evaluation
+def evaluate_doc() -> None:
+    """
+    Updates the internal `criterion_value` parameter.
+    """
+
+    pass
