@@ -2,9 +2,6 @@
 The Centroid-based Silhouette (cSIL) Cluster Validity Index.
 """
 
-# Standard imports
-# import logging as lg
-
 # Custom imports
 import numpy as np
 
@@ -34,21 +31,18 @@ class cSIL(_base.CVI):
 
         # cSIL-specific initialization
         self.S = np.empty([0, 0])   # n_clusters x dim
-        self.sil_coefs = []                # dim
+        self.sil_coefs = []         # dim
 
         return
 
     @_base.add_docs(_base.setup_doc)
     def setup(self, sample: np.ndarray) -> None:
         """
-        CH setup routine.
+        cSIL setup routine.
         """
 
         # Run the generic setup routine
         super().setup(sample)
-
-        # CH-specific setup
-        self.SEP = np.empty([self.dim])
 
         return
 
@@ -117,7 +111,10 @@ class cSIL(_base.CVI):
         # ELSE OLD CLUSTER LABEL
         else:
             n_new = self.n[i_label] + 1
-            v_new = (1 - 1/n_new) * self.v[i_label, :] + (1/n_new) * sample
+            v_new = (
+                (1 - 1 / n_new) * self.v[i_label, :]
+                + (1 / n_new) * sample
+            )
             # delta_v = self.v[i_label, :] - v_new
             # diff_x_v = sample - v_new
             CP_new = (
@@ -158,6 +155,7 @@ class cSIL(_base.CVI):
                 self.CP[i_label]
                 + np.inner(diff_x_v, diff_x_v)
                 + self.n[i_label] * np.inner(v_new, v_new)
+                - 2 * np.inner(self.G[i_label, :], v_new)
             )
             S_col_new[i_label] = C / n_new
             S_row_new[i_label] = S_col_new[i_label]
@@ -168,6 +166,8 @@ class cSIL(_base.CVI):
             self.CP[i_label] = CP_new
             self.G[i_label, :] = G_new
 
+            # self.S[:, i_label] = S_col_new
+            # self.S[i_label, :] = S_row_new
             self.S[i_label, :] = S_col_new
             self.S[:, i_label] = S_row_new
 
@@ -223,10 +223,10 @@ class cSIL(_base.CVI):
 
         if self.n_clusters > 1 and self.S.any():
             for ix in range(self.n_clusters):
-                # Sasme cluster
+                # Same cluster
                 a = self.S[ix, ix]
                 # Other clusters
-                local_S = np.delete(self.S, ix)
+                local_S = np.delete(self.S[:, ix], ix)
                 b = np.min(local_S)
                 self.sil_coefs[ix] = (b - a) / np.maximum(a, b)
             # cSIL index value

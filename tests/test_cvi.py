@@ -44,6 +44,9 @@ print(f"\nTesting path is: {os.getcwd()}")
 
 @dataclass
 class TestData():
+    """
+    A container dataclass for test data.
+    """
 
     # The test dataset dictionary
     datasets: Dict
@@ -73,7 +76,8 @@ def data() -> TestData:
     This fixture is run once for the entire pytest session.
     """
 
-    p = 0.1
+    # p = 0.1
+    p = 1
     lg.info("LOADING DATA")
 
     data_path = Path("tests", "data")
@@ -214,7 +218,6 @@ class TestCVI:
             # Incremental
             i_cvis = get_cvis()
             for local_cvi in i_cvis:
-                lg.info(local_cvi)
                 for ix in range(data.count(key)):
                     # Grab a sample and label
                     sample, label = get_sample(local_data, ix)

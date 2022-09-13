@@ -2,9 +2,6 @@
 The Calinski-Harabasz (CH) Cluster Validity Index.
 """
 
-# Standard imports
-# import logging as lg
-
 # Custom imports
 import numpy as np
 
@@ -162,7 +159,10 @@ class CH(_base.CVI):
             # Between groups sum of scatters
             self.BGSS = sum(self.SEP)
             # CH index value
-            self.criterion_value = (self.BGSS / self.WGSS) * ((self.n_samples - self.n_clusters)/(self.n_clusters - 1))
+            self.criterion_value = (
+                (self.BGSS / self.WGSS)
+                * ((self.n_samples - self.n_clusters) / (self.n_clusters - 1))
+            )
         else:
             self.BGSS = 0.0
             self.criterion_value = 0.0
