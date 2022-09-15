@@ -12,7 +12,11 @@ import os
 from pathlib import Path
 import logging as lg
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import (
+    List,
+    Dict,
+    Tuple,
+)
 
 # --------------------------------------------------------------------------- #
 # CUSTOM IMPORTS
@@ -92,6 +96,17 @@ def load_pd_csv(data_path: Path, frac: float) -> pd.DataFrame:
     return local_data
 
 
+def split_data_columns(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Splits a pandas DataFrame into numpy arrays of samples and labels, assuming the last column is labels.
+    """
+
+    # Index to before the last index, correct for python 0-indexing.
+    samples = df.to_numpy(dtype=float)[:, :-1]
+    labels = df.to_numpy(dtype=int)[:, -1] - 1
+
+    return samples, labels
+
 # --------------------------------------------------------------------------- #
 # DATACLASSES
 # --------------------------------------------------------------------------- #
@@ -142,12 +157,9 @@ def data() -> TestData:
     under = load_pd_csv(data_path.joinpath("under_partition.csv"), p)
 
     # Coerce the dataframe as two numpy arrays each for ease
-    correct_samples = correct.to_numpy(dtype=float)[:, 0:2]
-    correct_labels = correct.to_numpy(dtype=int)[:, 2] - 1
-    over_samples = over.to_numpy(dtype=float)[:, 0:2]
-    over_labels = over.to_numpy(dtype=int)[:, 2] - 1
-    under_samples = under.to_numpy(dtype=float)[:, 0:2]
-    under_labels = under.to_numpy(dtype=int)[:, 2] - 1
+    correct_samples, correct_labels = split_data_columns(correct)
+    over_samples, over_labels = split_data_columns(over)
+    under_samples, under_labels = split_data_columns(under)
 
     # Construct the dataset dictionary
     data_dict = {
