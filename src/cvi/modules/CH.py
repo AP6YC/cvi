@@ -139,8 +139,9 @@ class CH(_base.CVI):
         self.SEP = np.zeros(self.n_clusters)
 
         for ix in range(self.n_clusters):
-            # subset_indices = lambda x: labels[x] == ix
-            subset_indices = [x for x in range(len(labels)) if labels[x] == ix]
+            subset_indices = (
+                [x for x in range(len(labels)) if labels[x] == ix]
+            )
             subset = data[subset_indices, :]
             self.n[ix] = subset.shape[0]
             self.v[ix, :] = np.mean(subset, axis=0)

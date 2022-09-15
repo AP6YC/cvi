@@ -192,8 +192,9 @@ class cSIL(_base.CVI):
         self.S = np.zeros((self.n_clusters, self.n_clusters))
         D = np.zeros((self.n_samples, self.n_samples))
         for ix in range(self.n_clusters):
-            # subset_indices = lambda x: labels[x] == ix
-            subset_indices = [x for x in range(len(labels)) if labels[x] == ix]
+            subset_indices = (
+                [x for x in range(len(labels)) if labels[x] == ix]
+            )
             subset = data[subset_indices, :]
             self.n[ix] = subset.shape[0]
             self.v[ix, :] = np.mean(subset, axis=0)

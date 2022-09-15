@@ -33,7 +33,7 @@ class DB(_base.CVI):
         self.mu = np.zeros([0])     # dim
         self.R = np.zeros([0, 0])   # n_clusters x dim
         self.D = np.zeros([0, 0])   # n_clusters x n_clusters
-        self.S = np.zeros([0])      # dim
+        self.S = []                 # dim
 
         return
 
@@ -153,6 +153,7 @@ class DB(_base.CVI):
         Batch parameter update for the Davies-Bouldin (DB) CVI.
         """
 
+        # Infer the number of samples and feature dimension
         self.n_samples, self.dim = data.shape
         # Take the average across all samples, but cast to 1-D vector
         self.mu = np.mean(data, axis=0)
@@ -161,17 +162,28 @@ class DB(_base.CVI):
         self.n = np.zeros(self.n_clusters, dtype=int)
         self.v = np.zeros((self.n_clusters, self.dim))
         self.CP = np.zeros(self.n_clusters)
-        self.SEP = np.zeros(self.n_clusters)
+        self.D = np.zeros((self.n_clusters, self.n_clusters))
+        self.S = np.zeros(self.n_clusters)
 
         for ix in range(self.n_clusters):
             # subset_indices = lambda x: labels[x] == ix
-            subset_indices = [x for x in range(len(labels)) if labels[x] == ix]
+            subset_indices = (
+                [x for x in range(len(labels)) if labels[x] == ix]
+            )
             subset = data[subset_indices, :]
             self.n[ix] = subset.shape[0]
             self.v[ix, :] = np.mean(subset, axis=0)
             diff_x_v = subset - self.v[ix, :] * np.ones((self.n[ix], 1))
             self.CP[ix] = np.sum(diff_x_v ** 2)
-            self.SEP[ix] = self.n[ix] * np.sum((self.v[ix, :] - self.mu) ** 2)
+            self.S[ix] = self.CP[ix] / self.n[ix]
+
+        for ix in range(self.n_clusters - 1):
+            for jx in range(ix + 1, self.n_clusters):
+                self.D[ix, jx] = (
+                    np.sum((self.v[ix, :] - self.v[jx, :]) ** 2)
+                )
+
+        self.D = self.D + np.transpose(self.D)
 
         return
 
@@ -180,19 +192,19 @@ class DB(_base.CVI):
         """
         Criterion value evaluation method for the Davies-Bouldin (DB) CVI.
         """
+        self.R = np.zeros((self.n_clusters, self.n_clusters))
 
         if self.n_clusters > 2:
-            # Within group sum of scatters
-            self.WGSS = sum(self.CP)
-            # Between groups sum of scatters
-            self.BGSS = sum(self.SEP)
-            # CH index value
+            for ix in range(self.n_clusters - 1):
+                for jx in range(ix + 1, self.n_clusters):
+                    self.R[jx, ix] = (
+                        (self.S[ix] + self.S[jx]) / self.D[jx, ix]
+                    )
+            self.R = self.R + np.transpose(self.R)
             self.criterion_value = (
-                (self.BGSS / self.WGSS)
-                * ((self.n_samples - self.n_clusters) / (self.n_clusters - 1))
+                np.sum(np.max(self.R, axis=0)) / self.n_clusters
             )
         else:
-            self.BGSS = 0.0
             self.criterion_value = 0.0
 
         return

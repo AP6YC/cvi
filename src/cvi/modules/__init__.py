@@ -12,6 +12,7 @@ from ._base import (
 
 from .CH import CH
 from .cSIL import cSIL
+from .DB import DB
 
 __all__ = [
     "LabelMap",
@@ -20,4 +21,6 @@ __all__ = [
     "param_inc_doc",
     "param_batch_doc",
     "CH",
+    "cSIL",
+    "DB",
 ]

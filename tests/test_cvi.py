@@ -76,8 +76,7 @@ def data() -> TestData:
     This fixture is run once for the entire pytest session.
     """
 
-    # p = 0.1
-    p = 1
+    p = 0.1
     lg.info("LOADING DATA")
 
     data_path = Path("tests", "data")
@@ -138,6 +137,7 @@ def get_cvis() -> List[cvi.CVI]:
     """
 
     cvis = [
+        cvi.DB(),
         cvi.cSIL(),
         cvi.CH(),
     ]
