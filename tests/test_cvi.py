@@ -14,116 +14,21 @@ import logging as lg
 from dataclasses import dataclass
 from typing import List, Dict
 
-
 # --------------------------------------------------------------------------- #
 # CUSTOM IMPORTS
 # --------------------------------------------------------------------------- #
-
 
 import pytest
 import numpy as np
 import pandas as pd
 
-
 # --------------------------------------------------------------------------- #
 # LOCAL IMPORTS
 # --------------------------------------------------------------------------- #
 
-
 import src.cvi as cvi
-# TODO: this is a hack; refactor modules so that this is at the top
-# from src.cvi import CVI
 
 print(f"\nTesting path is: {os.getcwd()}")
-
-
-# --------------------------------------------------------------------------- #
-# DATACLASSES
-# --------------------------------------------------------------------------- #
-
-
-@dataclass
-class TestData():
-    """
-    A container dataclass for test data.
-    """
-
-    # The test dataset dictionary
-    datasets: Dict
-
-    # Tells pytest that this is not a test class
-    __test__ = False
-
-    def count(self, dataset: str) -> int:
-        """
-        Returns the number of samples in a dataset entry.
-        """
-
-        return len(self.datasets[dataset]["labels"])
-
-
-# --------------------------------------------------------------------------- #
-# FIXTURES
-# --------------------------------------------------------------------------- #
-
-
-# Set the fixture scope to the testing session to load the data once
-@pytest.fixture(scope="session")
-def data() -> TestData:
-    """
-    Data loading test fixture.
-
-    This fixture is run once for the entire pytest session.
-    """
-
-    p = 0.1
-    lg.info("LOADING DATA")
-
-    data_path = Path("tests", "data")
-
-    # Load the test datasets
-    correct = (
-        pd.read_csv(data_path.joinpath("correct_partition.csv"))
-        .sample(frac=p)
-        .sort_index()
-    )
-    over = (
-        pd.read_csv(data_path.joinpath("over_partition.csv"))
-        .sample(frac=p)
-        .sort_index()
-    )
-    under = (
-        pd.read_csv(data_path.joinpath("under_partition.csv"))
-        .sample(frac=p)
-        .sort_index()
-    )
-
-    # Coerce the dataframe as two numpy arrays each for ease
-    correct_samples = correct.to_numpy(dtype=float)[:, 0:2]
-    correct_labels = correct.to_numpy(dtype=int)[:, 2] - 1
-    over_samples = over.to_numpy(dtype=float)[:, 0:2]
-    over_labels = over.to_numpy(dtype=int)[:, 2] - 1
-    under_samples = under.to_numpy(dtype=float)[:, 0:2]
-    under_labels = under.to_numpy(dtype=int)[:, 2] - 1
-
-    # Construct the dataset dictionary
-    data_dict = {
-        "correct": {
-            "samples": correct_samples,
-            "labels": correct_labels,
-        },
-        "over": {
-            "samples": over_samples,
-            "labels": over_labels,
-        },
-        "under": {
-            "samples": under_samples,
-            "labels": under_labels,
-        },
-    }
-
-    # Instantiate and return the TestData object
-    return TestData(data_dict)
 
 
 # --------------------------------------------------------------------------- #
@@ -171,6 +76,97 @@ def get_sample(local_data: Dict, index: int) -> tuple:
     label = local_data["labels"][index]
 
     return sample, label
+
+
+def load_pd_csv(data_path: Path, frac: float) -> pd.DataFrame:
+    """
+    Loads a csv file using pandas, subsampling the data at the given fraction while preservign order.
+    """
+
+    local_data = (
+        pd.read_csv(data_path)
+        .sample(frac=frac)
+        .sort_index()
+    )
+
+    return local_data
+
+
+# --------------------------------------------------------------------------- #
+# DATACLASSES
+# --------------------------------------------------------------------------- #
+
+
+@dataclass
+class TestData():
+    """
+    A container dataclass for test data.
+    """
+
+    # The test dataset dictionary
+    datasets: Dict
+
+    # Tells pytest that this is not a test class
+    __test__ = False
+
+    def count(self, dataset: str) -> int:
+        """
+        Returns the number of samples in a dataset entry.
+        """
+
+        return len(self.datasets[dataset]["labels"])
+
+
+# --------------------------------------------------------------------------- #
+# FIXTURES
+# --------------------------------------------------------------------------- #
+
+
+# Set the fixture scope to the testing session to load the data once
+@pytest.fixture(scope="session")
+def data() -> TestData:
+    """
+    Data loading test fixture.
+
+    This fixture is run once for the entire pytest session.
+    """
+
+    p = 0.1
+    lg.info("LOADING DATA")
+
+    data_path = Path("tests", "data")
+
+    # Load the test datasets
+    correct = load_pd_csv(data_path.joinpath("correct_partition.csv"), p)
+    over = load_pd_csv(data_path.joinpath("over_partition.csv"), p)
+    under = load_pd_csv(data_path.joinpath("under_partition.csv"), p)
+
+    # Coerce the dataframe as two numpy arrays each for ease
+    correct_samples = correct.to_numpy(dtype=float)[:, 0:2]
+    correct_labels = correct.to_numpy(dtype=int)[:, 2] - 1
+    over_samples = over.to_numpy(dtype=float)[:, 0:2]
+    over_labels = over.to_numpy(dtype=int)[:, 2] - 1
+    under_samples = under.to_numpy(dtype=float)[:, 0:2]
+    under_labels = under.to_numpy(dtype=int)[:, 2] - 1
+
+    # Construct the dataset dictionary
+    data_dict = {
+        "correct": {
+            "samples": correct_samples,
+            "labels": correct_labels,
+        },
+        "over": {
+            "samples": over_samples,
+            "labels": over_labels,
+        },
+        "under": {
+            "samples": under_samples,
+            "labels": under_labels,
+        },
+    }
+
+    # Instantiate and return the TestData object
+    return TestData(data_dict)
 
 
 # --------------------------------------------------------------------------- #
