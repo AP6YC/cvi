@@ -92,14 +92,17 @@ class CH(_base.CVI):
         # ELSE OLD CLUSTER LABEL
         else:
             n_new = self.n[i_label] + 1
-            v_new = (1 - 1/n_new) * self.v[i_label, :] + (1/n_new) * sample
+            v_new = (
+                (1 - 1 / n_new) * self.v[i_label, :]
+                + (1 / n_new) * sample
+            )
             delta_v = self.v[i_label, :] - v_new
             diff_x_v = sample - v_new
             CP_new = (
                 self.CP[i_label]
                 + np.inner(diff_x_v, diff_x_v)
                 + self.n[i_label] * np.inner(delta_v, delta_v)
-                + 2*np.inner(delta_v, self.G[i_label, :])
+                + 2 * np.inner(delta_v, self.G[i_label, :])
             )
             G_new = (
                 self.G[i_label, :]

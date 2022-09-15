@@ -76,43 +76,74 @@ class DB(_base.CVI):
             v_new = sample
             CP_new = 0.0
             G_new = np.zeros(self.dim)
+            S_new = 0.0
+            if self.n_clusters == 0:
+                D_new = np.zeros((1, 1))
+            else:
+                D_new = np.zeros((self.n_clusters + 1, self.n_clusters + 1))
+                D_new[0:self.n_clusters, 0:self.n_clusters] = self.D
+                d_column_new = np.zeros(self.n_clusters + 1)
+                for jx in range(self.n_clusters):
+                    d_column_new[jx] = (
+                        np.sum((v_new - self.v[jx, :]) ** 2)
+                    )
+                D_new[i_label, :] = d_column_new
+                # D_new[:, i_label] = np.transpose(d_column_new)
+                D_new[:, i_label] = d_column_new
 
             # Update 1-D parameters with list appends
             self.n_clusters += 1
             self.n.append(n_new)
             self.CP.append(CP_new)
+            self.S.append(S_new)
 
             # Update 2-D parameters with numpy vstacks
             self.v = np.vstack([self.v, v_new])
             self.G = np.vstack([self.G, G_new])
+            self.D = D_new
 
         # ELSE OLD CLUSTER LABEL
         else:
             n_new = self.n[i_label] + 1
-            v_new = (1 - 1/n_new) * self.v[i_label, :] + (1/n_new) * sample
+            v_new = (
+                (1 - 1 / n_new) * self.v[i_label, :]
+                + (1 / n_new) * sample
+            )
             delta_v = self.v[i_label, :] - v_new
             diff_x_v = sample - v_new
             CP_new = (
                 self.CP[i_label]
                 + np.inner(diff_x_v, diff_x_v)
                 + self.n[i_label] * np.inner(delta_v, delta_v)
-                + 2*np.inner(delta_v, self.G[i_label, :])
+                + 2 * np.inner(delta_v, self.G[i_label, :])
             )
             G_new = (
                 self.G[i_label, :]
                 + diff_x_v
                 + self.n[i_label] * delta_v
             )
+            S_new = CP_new / n_new
+            d_column_new = np.zeros(self.n_clusters)
+            for jx in range(self.n_clusters):
+                # Skip the current i_label index
+                if jx == i_label:
+                    continue
+                d_column_new[jx] = (
+                    np.sum((v_new - self.v[jx, :]) ** 2)
+                )
+
             # Update parameters
             self.n[i_label] = n_new
             self.v[i_label, :] = v_new
             self.CP[i_label] = CP_new
             self.G[i_label, :] = G_new
+            self.S[i_label] = S_new
+            self.D[i_label, :] = d_column_new
+            # self.D[:, i_label] = np.tranpose(d_column_new)
+            self.D[:, i_label] = d_column_new
 
         # Update the parameters that do not depend on label novelty
         self.n_samples = n_samples_new
-        # self.mu = mu_new
-        self.SEP = np.array([self.n[ix] * sum((self.v[ix, :] - self.mu)**2) for ix in range(self.n_clusters)])
 
         return
 
