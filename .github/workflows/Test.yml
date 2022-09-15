@@ -30,4 +30,14 @@ jobs:
       - name: Test with pytest
         run: |
           # pytest
-          python -m pytest
+          # python -m pytest
+          # coverage run -m pytest
+          python -m pytest --cov
+      - name: Generate coverage
+        run: |
+          coverage xml
+      - name: Upload coverage
+        run: |
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          ./codecov
