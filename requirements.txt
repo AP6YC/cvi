@@ -1,3 +1,4 @@
 tqdm
 scikit-learn
 pandas
+coverage

@@ -2,8 +2,27 @@
 
 A Python package implementing both batch and incremental cluster validity indices (CVIs).
 
-[![Documentation Status](https://readthedocs.org/projects/cluster-validity-indices/badge/?version=latest)](https://cluster-validity-indices.readthedocs.io/en/latest/?badge=latest)
-[![Documentation Status](https://readthedocs.org/projects/cluster-validity-indices/badge/?version=develop)](https://cluster-validity-indices.readthedocs.io/en/develop/?badge=develop)
+| **Stable Docs**  | **Dev Docs** | **Build Status** | **Coverage** |
+|:----------------:|:------------:|:----------------:|:------------:|
+| [![Stable][docs-stable-img]][docs-stable-url] | [![Dev][docs-dev-img]][docs-dev-url]| [![Build Status][ci-img]][ci-url] | [![Codecov][codecov-img]][codecov-url] |
+| **Issues** | **Stars** | **Commits** |
+| [![deps][deps-img]][deps-url] | [![version][version-img]][version-url] | [![pkgeval][pkgeval-img]][pkgeval-url] |
+
+| **Zenodo DOI** |
+| :------------: |
+| [![DOI][zenodo-img]][zenodo-url] |
+
+![PyPI - Status](https://img.shields.io/pypi/status/cvi)
+
+[docs-stable-img]: https://readthedocs.org/projects/cluster-validity-indices/badge/?version=latest
+[docs-stable-url]: https://cluster-validity-indices.readthedocs.io/en/latest/?badge=latest
+
+[docs-dev-img]: https://readthedocs.org/projects/cluster-validity-indices/badge/?version=develop
+[docs-dev-url]: https://cluster-validity-indices.readthedocs.io/en/develop/?badge=develop
+
+[ci-img]: https://github.com/AP6YC/cvi/actions/workflows/Test.yml/badge.svg
+[ci-url]: https://github.com/AP6YC/cvi/actions/workflows/Test.yml
+
 [![GitHub issues](https://img.shields.io/github/issues/AP6YC/cvi?style=flat-square)](https://github.com/AP6YC/cvi/issues)
 [![GitHub stars](https://img.shields.io/github/stars/AP6YC/cvi?style=flat-square)](https://github.com/AP6YC/cvi/stargazers)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/AP6YC/cvi?style=flat-square)
