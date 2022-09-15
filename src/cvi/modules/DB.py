@@ -9,22 +9,21 @@ import numpy as np
 from . import _base
 
 
-# CH object definition
-class CH(_base.CVI):
+# DB object definition
+class DB(_base.CVI):
     """
     The stateful information of the Calinski-Harabasz (CH) Cluster Validity Index.
 
     References
     ----------
-    1. L. E. Brito da Silva, N. M. Melton, and D. C. Wunsch II, "Incremental Cluster Validity Indices for Hard Partitions: Extensions  and  Comparative Study," ArXiv  e-prints, Feb 2019, arXiv:1902.06711v1 [cs.LG].
-    2. T. Calinski and J. Harabasz, "A dendrite method for cluster analysis," Communications in Statistics, vol. 3, no. 1, pp. 1-27, 1974.
-    3. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML]. [Online].
-    4. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
+    1. D. L. Davies and D. W. Bouldin, "A cluster separation measure," IEEE Transaction on Pattern Analysis and Machine Intelligence, vol. 1, no. 2, pp. 224-227, Feb. 1979.
+    2. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML]. [Online].
+    3. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
     """
 
     def __init__(self):
         """
-        CH initialization routine.
+        Davies-Bouldin (DB) initialization routine.
         """
 
         # Run the base initialization
@@ -41,7 +40,7 @@ class CH(_base.CVI):
     @_base.add_docs(_base.setup_doc)
     def setup(self, sample: np.ndarray) -> None:
         """
-        CH setup routine.
+        Davies-Bouldin (DB) setup routine.
         """
 
         # Run the generic setup routine
@@ -57,7 +56,7 @@ class CH(_base.CVI):
     @_base.add_docs(_base.param_inc_doc)
     def param_inc(self, sample: np.ndarray, label: int) -> None:
         """
-        Incremental parameter update for the Calinski-Harabasz (CH) CVI.
+        Incremental parameter update for the Davies-Bouldin (DB) CVI.
         """
 
         # Get the internal label corresponding to the provided label
@@ -122,7 +121,7 @@ class CH(_base.CVI):
     @_base.add_docs(_base.param_batch_doc)
     def param_batch(self, data: np.ndarray, labels: np.ndarray) -> None:
         """
-        Batch parameter update for the Calinski-Harabasz (CH) CVI.
+        Batch parameter update for the Davies-Bouldin (DB) CVI.
         """
 
         self.n_samples, self.dim = data.shape
@@ -150,7 +149,7 @@ class CH(_base.CVI):
     @_base.add_docs(_base.evaluate_doc)
     def evaluate(self) -> None:
         """
-        Criterion value evaluation method for the Calinski-Harabasz (CH) CVI.
+        Criterion value evaluation method for the Davies-Bouldin (DB) CVI.
         """
 
         if self.n_clusters > 2:
