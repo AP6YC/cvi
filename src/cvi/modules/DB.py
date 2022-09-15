@@ -12,7 +12,7 @@ from . import _base
 # DB object definition
 class DB(_base.CVI):
     """
-    The stateful information of the Calinski-Harabasz (CH) Cluster Validity Index.
+    The stateful information of the Davies-Bouldin (DB) Cluster Validity Index.
 
     References
     ----------
@@ -31,9 +31,9 @@ class DB(_base.CVI):
 
         # CH-specific initialization
         self.mu = np.zeros([0])     # dim
-        self.SEP = np.zeros([0])     # dim
-        self.BGSS = 0.0
-        self.WGSS = 0.0
+        self.R = np.zeros([0, 0])   # n_clusters x dim
+        self.D = np.zeros([0, 0])   # n_clusters x n_clusters
+        self.S = np.zeros([0])      # dim
 
         return
 
@@ -47,9 +47,7 @@ class DB(_base.CVI):
         super().setup(sample)
 
         # CH-specific setup
-        self.SEP = np.zeros([self.dim])
         self.mu = sample
-        # self.mu = np.zeros([self.dim])
 
         return
 
