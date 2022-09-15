@@ -7,9 +7,11 @@ __version__ = "0.1.0-alpha.1"
 from .modules import (
     CVI,
     CH,
+    cSIL,
 )
 
 __all__ = [
     "CVI",
     "CH",
+    "cSIL",
 ]

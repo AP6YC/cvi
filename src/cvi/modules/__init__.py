@@ -11,6 +11,7 @@ from ._base import (
 )
 
 from .CH import CH
+from .cSIL import cSIL
 
 __all__ = [
     "LabelMap",

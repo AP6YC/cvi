@@ -1,3 +1,6 @@
+# IDE ignores
+.vscode/
+
 # Project ignores
 _dev/
 **/_autosummary/
