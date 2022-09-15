@@ -5,14 +5,18 @@ A Python package implementing both batch and incremental cluster validity indice
 | **Stable Docs**  | **Dev Docs** | **Build Status** | **Coverage** |
 |:----------------:|:------------:|:----------------:|:------------:|
 | [![Stable][docs-stable-img]][docs-stable-url] | [![Dev][docs-dev-img]][docs-dev-url]| [![Build Status][ci-img]][ci-url] | [![Codecov][codecov-img]][codecov-url] |
-| **Issues** | **Stars** | **Commits** |
-| [![deps][deps-img]][deps-url] | [![version][version-img]][version-url] | [![pkgeval][pkgeval-img]][pkgeval-url] |
+| **Version** | **Issues** | **Commits** | **Commits Since Release**
+| [![version][version-img]][version-url] | [![issues][issues-img]][issues-url] | [![commits][commits-img]][commits-url] | [![compare][compare-img]][compare-url] |
 
-| **Zenodo DOI** |
+<!-- | **Zenodo DOI** |
 | :------------: |
-| [![DOI][zenodo-img]][zenodo-url] |
+| [![DOI][zenodo-img]][zenodo-url] | -->
 
-![PyPI - Status](https://img.shields.io/pypi/status/cvi)
+[compare-img]: https://img.shields.io/github/commits-since/AP6YC/cvi/latest/develop
+[compare-url]: https://github.com/AP6YC/cvi/compare/latest...develop
+
+[version-img]: https://img.shields.io/pypi/v/cvi.svg
+[version-url]: https://pypi.org/project/cvi
 
 [docs-stable-img]: https://readthedocs.org/projects/cluster-validity-indices/badge/?version=latest
 [docs-stable-url]: https://cluster-validity-indices.readthedocs.io/en/latest/?badge=latest
@@ -23,12 +27,16 @@ A Python package implementing both batch and incremental cluster validity indice
 [ci-img]: https://github.com/AP6YC/cvi/actions/workflows/Test.yml/badge.svg
 [ci-url]: https://github.com/AP6YC/cvi/actions/workflows/Test.yml
 
-[![GitHub issues](https://img.shields.io/github/issues/AP6YC/cvi?style=flat-square)](https://github.com/AP6YC/cvi/issues)
-[![GitHub stars](https://img.shields.io/github/stars/AP6YC/cvi?style=flat-square)](https://github.com/AP6YC/cvi/stargazers)
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/AP6YC/cvi?style=flat-square)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/AP6YC/cvi/Test?style=flat-square)
+[issues-img]: https://img.shields.io/github/issues/AP6YC/cvi?style=flat-square
+[issues-url]: https://github.com/AP6YC/cvi/issues
+
+[commits-img]: https://img.shields.io/github/commit-activity/m/AP6YC/cvi?style=flat-square
+[commits-url]: https://github.com/AP6YC/cvi/commits/main
+
+## Table of Contents
 
 - [cvi](#cvi)
+  - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [History](#history)
   - [Usage](#usage)
