@@ -245,6 +245,9 @@ def data() -> TestData:
 
 
 class TestCVI:
+    """
+    Pytest class containing all cvi unit tests.
+    """
 
     def test_load_data(self, data: TestData) -> None:
         """
@@ -292,14 +295,17 @@ class TestCVI:
 
         lg.info("--- TESTING ALL ICVIS ---")
 
+        # Set the tolerance for incremental/batch CVI equivalence
         tolerance = 1e-1
 
         for key, local_data in data.datasets.items():
             lg.info(f"Testing data: {key}")
+            n_samples = data.count(key)
+
             # Incremental
             i_cvis = get_cvis()
             for local_cvi in i_cvis:
-                for ix in range(data.count(key)):
+                for ix in range(n_samples):
                     # Grab a sample and label
                     sample, label = get_sample(local_data, ix)
                     _ = local_cvi.get_cvi(sample, label)
@@ -308,15 +314,38 @@ class TestCVI:
             for local_cvi in b_cvis:
                 _ = local_cvi.get_cvi(local_data["samples"], local_data["labels"])
 
+            # Switch batch to incremental
+            bi_cvis = get_cvis()
+            for local_cvi in bi_cvis:
+                # Index to half of the data
+                split_index = n_samples // 2
+                # Compute half of the data in batch
+                _ = local_cvi.get_cvi(
+                    local_data["samples"][:split_index, :],
+                    local_data["labels"][:split_index]
+                )
+                # Compute the other half incrementally
+                for ix in range(split_index, n_samples):
+                    # Grab a sample and label
+                    sample, label = get_sample(local_data, ix)
+                    _ = local_cvi.get_cvi(sample, label)
+
             # Test equivalence between batch and incremental results
             for i in range(len(i_cvis)):
+                # I -> B
                 assert (
                     (i_cvis[i].criterion_value - b_cvis[i].criterion_value)
                     < tolerance
                 )
+                # I -> BI
+                assert (
+                    (i_cvis[i].criterion_value - bi_cvis[i].criterion_value)
+                    < tolerance
+                )
+                # B -> BI
                 lg.info(
-                    f"I: {i_cvis[i].criterion_value},"
-                    f"B: {b_cvis[i].criterion_value}"
+                    f"I: {b_cvis[i].criterion_value},"
+                    f"B: {bi_cvis[i].criterion_value}"
                 )
 
         return
