@@ -27,14 +27,14 @@ A Python package implementing both batch and incremental cluster validity indice
 [version-img]: https://img.shields.io/pypi/v/cvi.svg
 [version-url]: https://pypi.org/project/cvi
 
-[issues-img]: https://img.shields.io/github/issues/AP6YC/cvi?style=flat-square
+[issues-img]: https://img.shields.io/github/issues/AP6YC/cvi?style=flat
 [issues-url]: https://github.com/AP6YC/cvi/issues
 
-[commits-img]: https://img.shields.io/github/commit-activity/m/AP6YC/cvi?style=flat-square
+[commits-img]: https://img.shields.io/github/commit-activity/m/AP6YC/cvi?style=flat
 [commits-url]: https://github.com/AP6YC/cvi/commits/main
 
 [compare-img]: https://img.shields.io/github/commits-since/AP6YC/cvi/latest/develop
-[compare-url]: https://github.com/AP6YC/cvi/compare/v0.1.0-alpha.2...develop
+[compare-url]: https://github.com/AP6YC/cvi/compare/v0.1.0-alpha.4...develop
 
 ## Table of Contents
 
