@@ -147,8 +147,8 @@ class CVI():
             # Otherwise, we are already setup
             else:
                 # Do many incremental updates
-                for ix, sample in np.ndenumerate(data):
-                    self.param_inc(sample, label[ix])
+                for ix in range(len(label)):
+                    self.param_inc(data[ix, :], label[ix])
         else:
             raise ValueError(
                 f"Please provide 1D or 2D numpy array, recieved ndim={data.ndim}"

@@ -302,16 +302,11 @@ class TestCVI:
                 for ix in range(data.count(key)):
                     # Grab a sample and label
                     sample, label = get_sample(local_data, ix)
-                    local_cvi.param_inc(sample, label)
-                    local_cvi.evaluate()
+                    _ = local_cvi.get_cvi(sample, label)
             # Batch
             b_cvis = get_cvis()
             for local_cvi in b_cvis:
-                local_cvi.param_batch(
-                    local_data["samples"],
-                    local_data["labels"]
-                )
-                local_cvi.evaluate()
+                _ = local_cvi.get_cvi(local_data["samples"], local_data["labels"])
 
             # Test equivalence between batch and incremental results
             for i in range(len(i_cvis)):
