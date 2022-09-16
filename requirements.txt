@@ -2,3 +2,4 @@ tqdm
 scikit-learn
 pandas
 coverage
+pytest-cov
