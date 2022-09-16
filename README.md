@@ -43,9 +43,14 @@ A Python package implementing both batch and incremental cluster validity indice
   - [Cluster Validity Indices](#cluster-validity-indices)
   - [Installation](#installation)
   - [Usage](#usage)
+    - [Quickstart](#quickstart)
+    - [Detailed Usage](#detailed-usage)
+  - [Implemented CVIs](#implemented-cvis)
   - [History](#history)
   - [Acknowledgements](#acknowledgements)
-  - [Related Projects](#related-projects)
+    - [Derivation](#derivation)
+    - [Authors](#authors)
+    - [Related Projects](#related-projects)
 
 ## Cluster Validity Indices
 
@@ -83,6 +88,36 @@ Alternatively, you can manually install a release from the [releases page](https
 
 ## Usage
 
+### Quickstart
+
+Create a CVI object and compute the criterion value in batch with `get_cvi`:
+
+```python
+# Import the library
+import cvi
+# Create a Calinski-Harabasz (CH) CVI object
+my_cvi = cvi.CH()
+# Load some data from some clustering algorithm
+samples, labels = load_some_clustering_data()
+# Compute the final criterion value in batch
+criterion_value = my_cvi.get_cvi(samples, labels)
+```
+
+or do it incrementally, also with `get_cvi`:
+
+```python
+# Datasets are numpy arrays
+import numpy as np
+# Create a container for criterion values
+n_samples = len(labels)
+criterion_values = np.zeros(n_samples)
+# Iterate over the data
+for ix in range(n_samples):
+    criterion_values = my_cvi.get_cvi(samples[ix, :], labels[ix])
+```
+
+### Detailed Usage
+
 The `cvi` package contains a set of implemented CVIs with batch and incremental update methods.
 Each CVI is a standalone stateful object inheriting from a base class `CVI`, and all `CVI` functions are object methods, such as those that update parameters and return the criterion value.
 
@@ -92,11 +127,13 @@ Instantiate a CVI of you choice with the default constructor:
 # Import the package
 import cvi
 # Import numpy for some data handling
-import numpy
+import numpy as np
 
 # Instantiate a Calinski-Harabasz (CH) CVI object
 my_cvi = cvi.CH()
 ```
+
+CVIs are instantiated with their acronyms, with a list of all implemented CVIS being found in the [Implemented CVIs](#implemented-cvis) section.
 
 A batch of data is assumed to be a numpy array of samples and a numpy vector of integer labels.
 
@@ -133,6 +170,14 @@ for ix in range(n_samples):
 **__NOTE__**: The batch method can only be run the first time a CVI is used.
 Subsequent updates are done incrementally even if a new batch of data is provided to the same CVI, which the `get_cvi` method automatically detects.
 
+## Implemented CVIs
+
+The following CVIs have been implemented as of the latest version of `cvi`:
+
+- **CH**: Calinski-Harabasz
+- **cSIL**: Centroid-based Silhouette
+- **DB**: Davies-Bouldin
+
 ## History
 
 - 8/18/2022: Initialize project.
@@ -140,16 +185,20 @@ Subsequent updates are done incrementally even if a new batch of data is provide
 
 ## Acknowledgements
 
+### Derivation
+
 The incremental and batch CVI implementations in this package are largely derived from the following Julia language implementations:
 
-- https://github.com/AP6YC/ClusterValidityIndices.jl
+- [ClusterValidityIndices.jl](https://github.com/AP6YC/ClusterValidityIndices.jl)
+
+### Authors
 
 The principal authors of the `cvi` pacakge are:
 
 - Sasha Petrenko <sap625@mst.edu>
 - Nik Melton <nmmz76@mst.edu>
 
-## Related Projects
+### Related Projects
 
 If this package is missing something that you need, feel free to check out some related Python cluster validity packages:
 
