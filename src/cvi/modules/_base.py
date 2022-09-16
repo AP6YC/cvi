@@ -134,14 +134,32 @@ class CVI():
             The CVI's criterion value.
         """
 
+        # If we got 1D data, do a quick update
+        if (data.ndim == 1):
+            self.param_inc(data, label)
+            pass
+        # Otherwise, we got 2D data and do the correct update
+        elif (data.ndim == 2):
+            # If we haven't done a batch update yet
+            if not self.setup:
+                # Do a batch update
+                self.param_batch(data, label)
+            # Otherwise, we are already setup
+            else:
+                # Do many incremental updates
+                for ix, sample in np.ndenumerate(data):
+                    self.param_inc(sample, label[ix])
+        else:
+            raise ValueError(
+                f"Please provide 1D or 2D numpy array, recieved ndim={data.ndim}"
+            )
 
-        # if
-        # if not self.setup:
+        # Regardless of path, evaluate and extract the criterion value
+        self.evaluate()
+        criterion_value = self.criterion_value
 
-
-
-        # return criterion_value
-        pass
+        # Return the criterion value
+        return criterion_value
 
 
 # --------------------------------------------------------------------------- #
