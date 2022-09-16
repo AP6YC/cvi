@@ -160,11 +160,15 @@ class DB(_base.CVI):
         self.mu = np.mean(data, axis=0)
         u = np.unique(labels)
         self.n_clusters = u.size
-        self.n = np.zeros(self.n_clusters, dtype=int)
+        # self.n = np.zeros(self.n_clusters, dtype=int)
+        self.n = [0 for _ in range(self.n_clusters)]
         self.v = np.zeros((self.n_clusters, self.dim))
-        self.CP = np.zeros(self.n_clusters)
+        # self.CP = np.zeros(self.n_clusters)
+        self.CP = [0 for _ in range(self.n_clusters)]
+        self.G = np.zeros((self.n_clusters, self.dim))
         self.D = np.zeros((self.n_clusters, self.n_clusters))
-        self.S = np.zeros(self.n_clusters)
+        # self.S = np.zeros(self.n_clusters)
+        self.S = [0 for _ in range(self.n_clusters)]
 
         for ix in range(self.n_clusters):
             # subset_indices = lambda x: labels[x] == ix

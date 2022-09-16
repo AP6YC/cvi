@@ -64,6 +64,7 @@ class CVI():
         self.G = np.zeros([0, 0])   # n_clusters x dim
         self.n_clusters = 0
         self.criterion_value = 0.0
+        self.is_setup = False
 
         return
 
@@ -85,7 +86,7 @@ class CVI():
         self.G = np.zeros([0, self.dim])
 
         # Declare that the CVI is internally setup
-        self.setup = True
+        self.is_setup = True
 
         return
 
@@ -101,7 +102,7 @@ class CVI():
 
         # Infer the data dimension and number of samples
         self.n_samples, self.dim = data.shape
-        self.setup = True
+        self.is_setup = True
 
         return
 
@@ -141,14 +142,17 @@ class CVI():
         # Otherwise, we got 2D data and do the correct update
         elif (data.ndim == 2):
             # If we haven't done a batch update yet
-            if not self.setup:
+            if not self.is_setup:
                 # Do a batch update
                 self.param_batch(data, label)
             # Otherwise, we are already setup
             else:
+                raise ValueError(
+                    "Switching from batch to incremental not supported"
+                )
                 # Do many incremental updates
-                for ix in range(len(label)):
-                    self.param_inc(data[ix, :], label[ix])
+                # for ix in range(len(label)):
+                #     self.param_inc(data[ix, :], label[ix])
         else:
             raise ValueError(
                 f"Please provide 1D or 2D numpy array, recieved ndim={data.ndim}"

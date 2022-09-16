@@ -167,8 +167,7 @@ for ix in range(n_samples):
     criterion_values[ix] = my_cvi.get_cvi(sample, label)
 ```
 
-**__NOTE__**: The batch method can only be run the first time a CVI is used.
-Subsequent updates are done incrementally even if a new batch of data is provided to the same CVI, which the `get_cvi` method automatically detects.
+**__NOTE__**: Currently only using _either_ batch _or_ incremental methods is supported; switching from batch to incremental updates with the same is not yet implemented.
 
 ## Implemented CVIs
 
