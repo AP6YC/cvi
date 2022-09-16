@@ -9,7 +9,7 @@ import numpy as np
 from . import _base
 
 
-# CH object definition
+# cSIL object definition
 class cSIL(_base.CVI):
     """
     The stateful information of the Centroid-based Silhouette (cSIL) Cluster Validity Index.
@@ -23,7 +23,7 @@ class cSIL(_base.CVI):
 
     def __init__(self):
         """
-        CH initialization routine.
+        Centroid-based Silhouette (cSIL) initialization routine.
         """
 
         # Run the base initialization
@@ -38,7 +38,7 @@ class cSIL(_base.CVI):
     @_base.add_docs(_base.setup_doc)
     def setup(self, sample: np.ndarray) -> None:
         """
-        cSIL setup routine.
+        Centroid-based Silhouette (cSIL) setup routine.
         """
 
         # Run the generic setup routine
@@ -192,8 +192,9 @@ class cSIL(_base.CVI):
         self.S = np.zeros((self.n_clusters, self.n_clusters))
         D = np.zeros((self.n_samples, self.n_samples))
         for ix in range(self.n_clusters):
-            # subset_indices = lambda x: labels[x] == ix
-            subset_indices = [x for x in range(len(labels)) if labels[x] == ix]
+            subset_indices = (
+                [x for x in range(len(labels)) if labels[x] == ix]
+            )
             subset = data[subset_indices, :]
             self.n[ix] = subset.shape[0]
             self.v[ix, :] = np.mean(subset, axis=0)

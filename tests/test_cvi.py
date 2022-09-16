@@ -12,30 +12,148 @@ import os
 from pathlib import Path
 import logging as lg
 from dataclasses import dataclass
-from typing import List, Dict
-
+from typing import (
+    List,
+    Dict,
+    Tuple,
+)
 
 # --------------------------------------------------------------------------- #
 # CUSTOM IMPORTS
 # --------------------------------------------------------------------------- #
 
-
 import pytest
 import numpy as np
 import pandas as pd
-
 
 # --------------------------------------------------------------------------- #
 # LOCAL IMPORTS
 # --------------------------------------------------------------------------- #
 
-
 import src.cvi as cvi
-# TODO: this is a hack; refactor modules so that this is at the top
-# from src.cvi import CVI
 
 print(f"\nTesting path is: {os.getcwd()}")
 
+
+# --------------------------------------------------------------------------- #
+# UTILITY FUNCTIONS
+# --------------------------------------------------------------------------- #
+
+
+def get_cvis() -> List[cvi.CVI]:
+    """
+    Returns a list of constructed CVI modules.
+
+    Returns
+    -------
+    List[cvi.CVI]
+        A list of constructed CVI objects for fresh use.
+    """
+
+    # Construct a list of CVI objects
+    cvis = [
+        cvi.DB(),
+        cvi.cSIL(),
+        cvi.CH(),
+    ]
+
+    return cvis
+
+
+def log_data(local_data: Dict) -> None:
+    """
+    Info-logs aspects of the passed data dictionary for diagnosis.
+
+    Parameters
+    ----------
+    local_data : Dict
+        A dictionary containing arrays of samples and labels.
+    """
+
+    # Log the type, shape, and number of samples and labels
+    lg.info(
+        f"Samples: type {type(local_data['samples'])}, "
+        f"shape {local_data['samples'].shape}"
+    )
+    lg.info(
+        f"Labels: type {type(local_data['labels'])}, "
+        f"shape {local_data['labels'].shape}"
+    )
+    return
+
+
+def get_sample(local_data: Dict, index: int) -> Tuple[np.ndarray, int]:
+    """
+    Grabs a sample and label from the data dictionary at the provided index.
+
+    Parameters
+    ----------
+    local_data : Dict
+        Dictionary containing an array of samples and vector of labels.
+    index : int
+        The index to load the sample at.
+
+    Returns
+    -------
+    Tuple[np.ndarray, int]
+        A tuple of sample features and the integer label prescribed to the sample.
+
+    """
+
+    # Grab a sample and label at the index
+    sample = local_data["samples"][index, :]
+    label = local_data["labels"][index]
+
+    return sample, label
+
+
+def load_pd_csv(data_path: Path, frac: float) -> pd.DataFrame:
+    """
+    Loads a csv file using pandas, subsampling the data at the given fraction while preservign order.
+
+    Parameters
+    ----------
+    data_path : Path
+        The pathlib.Path where the data .csv file is.
+    frac : float
+        The data subsampling fraction within (0, 1].
+
+    Returns
+    -------
+    pd.DataFrame
+        A pandas DataFrame containing the subsampled data.
+    """
+
+    # Load the data as a pandas array, subsample, and preserve order by the index
+    local_data = (
+        pd.read_csv(data_path)
+        .sample(frac=frac)
+        .sort_index()
+    )
+
+    return local_data
+
+
+def split_data_columns(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Splits a pandas DataFrame into numpy arrays of samples and labels, assuming the last column is labels.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        A pandas DataFrame containing the samples and their corresponding labels.
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        A tuple of numpy arrays containing the separate samples and their corresponding labels.
+    """
+
+    # Index to before the last index, correct for python 0-indexing.
+    samples = df.to_numpy(dtype=float)[:, :-1]
+    labels = df.to_numpy(dtype=int)[:, -1] - 1
+
+    return samples, labels
 
 # --------------------------------------------------------------------------- #
 # DATACLASSES
@@ -57,6 +175,16 @@ class TestData():
     def count(self, dataset: str) -> int:
         """
         Returns the number of samples in a dataset entry.
+
+        Parameters
+        ----------
+        dataset : str
+            The key corresponding to which dataset you wish to get a count of.
+
+        Returns
+        -------
+        int
+            The number of samples in self.datasets[dataset].
         """
 
         return len(self.datasets[dataset]["labels"])
@@ -76,36 +204,20 @@ def data() -> TestData:
     This fixture is run once for the entire pytest session.
     """
 
-    # p = 0.1
-    p = 1
+    p = 0.1
     lg.info("LOADING DATA")
 
     data_path = Path("tests", "data")
 
     # Load the test datasets
-    correct = (
-        pd.read_csv(data_path.joinpath("correct_partition.csv"))
-        .sample(frac=p)
-        .sort_index()
-    )
-    over = (
-        pd.read_csv(data_path.joinpath("over_partition.csv"))
-        .sample(frac=p)
-        .sort_index()
-    )
-    under = (
-        pd.read_csv(data_path.joinpath("under_partition.csv"))
-        .sample(frac=p)
-        .sort_index()
-    )
+    correct = load_pd_csv(data_path.joinpath("correct_partition.csv"), p)
+    over = load_pd_csv(data_path.joinpath("over_partition.csv"), p)
+    under = load_pd_csv(data_path.joinpath("under_partition.csv"), p)
 
     # Coerce the dataframe as two numpy arrays each for ease
-    correct_samples = correct.to_numpy(dtype=float)[:, 0:2]
-    correct_labels = correct.to_numpy(dtype=int)[:, 2] - 1
-    over_samples = over.to_numpy(dtype=float)[:, 0:2]
-    over_labels = over.to_numpy(dtype=int)[:, 2] - 1
-    under_samples = under.to_numpy(dtype=float)[:, 0:2]
-    under_labels = under.to_numpy(dtype=int)[:, 2] - 1
+    correct_samples, correct_labels = split_data_columns(correct)
+    over_samples, over_labels = split_data_columns(over)
+    under_samples, under_labels = split_data_columns(under)
 
     # Construct the dataset dictionary
     data_dict = {
@@ -128,52 +240,6 @@ def data() -> TestData:
 
 
 # --------------------------------------------------------------------------- #
-# UTILITY FUNCTIONS
-# --------------------------------------------------------------------------- #
-
-
-def get_cvis() -> List[cvi.CVI]:
-    """
-    Returns a list of constructed CVI modules.
-    """
-
-    cvis = [
-        cvi.cSIL(),
-        cvi.CH(),
-    ]
-
-    return cvis
-
-
-def log_data(local_data: Dict) -> None:
-    """
-    Info-logs aspects of the passed data dictionary for diagnosis.
-    """
-
-    # lg.info(local_data.describe())
-    lg.info(
-        f"Samples: type {type(local_data['samples'])}, "
-        f"shape {local_data['samples'].shape}"
-    )
-    lg.info(
-        f"Labels: type {type(local_data['labels'])}, "
-        f"shape {local_data['labels'].shape}"
-    )
-    return
-
-
-def get_sample(local_data: Dict, index: int) -> tuple:
-    """
-    Grabs a sample and label from the data dictionary at the provided index.
-    """
-
-    sample = local_data["samples"][index, :]
-    label = local_data["labels"][index]
-
-    return sample, label
-
-
-# --------------------------------------------------------------------------- #
 # TESTS
 # --------------------------------------------------------------------------- #
 
@@ -183,6 +249,11 @@ class TestCVI:
     def test_load_data(self, data: TestData) -> None:
         """
         Test loading the partitioning data.
+
+        Parameters
+        ----------
+        data : TestData
+            The data loaded as a pytest fixture.
         """
 
         lg.info("--- TESTING DATA LOADING ---")
@@ -196,6 +267,11 @@ class TestCVI:
     def test_loading_again(self, data: TestData) -> None:
         """
         Tests loading the data again to verify the identity of the data dictionary.
+
+        Parameters
+        ----------
+        data : TestData
+            The data loaded as a pytest fixture.
         """
 
         lg.info("--- TESTING LOADING AGAIN TO VERIFY DATA SINGLETON ---")
@@ -207,6 +283,11 @@ class TestCVI:
     def test_icvis(self, data: TestData) -> None:
         """
         Test the functionality all of the icvis.
+
+        Parameters
+        ----------
+        data : TestData
+            The data loaded as a pytest fixture.
         """
 
         lg.info("--- TESTING ALL ICVIS ---")

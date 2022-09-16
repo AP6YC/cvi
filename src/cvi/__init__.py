@@ -8,10 +8,12 @@ from .modules import (
     CVI,
     CH,
     cSIL,
+    DB,
 )
 
 __all__ = [
     "CVI",
     "CH",
     "cSIL",
+    "DB",
 ]
