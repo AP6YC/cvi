@@ -12,12 +12,6 @@ A Python package implementing both batch and incremental cluster validity indice
 | :------------: |
 | [![DOI][zenodo-img]][zenodo-url] | -->
 
-[compare-img]: https://img.shields.io/github/commits-since/AP6YC/cvi/latest/develop
-[compare-url]: https://github.com/AP6YC/cvi/compare/latest...develop
-
-[version-img]: https://img.shields.io/pypi/v/cvi.svg
-[version-url]: https://pypi.org/project/cvi
-
 [docs-stable-img]: https://readthedocs.org/projects/cluster-validity-indices/badge/?version=latest
 [docs-stable-url]: https://cluster-validity-indices.readthedocs.io/en/latest/?badge=latest
 
@@ -27,11 +21,21 @@ A Python package implementing both batch and incremental cluster validity indice
 [ci-img]: https://github.com/AP6YC/cvi/actions/workflows/Test.yml/badge.svg
 [ci-url]: https://github.com/AP6YC/cvi/actions/workflows/Test.yml
 
+[codecov-img]: https://codecov.io/gh/AP6YC/cvi/branch/main/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/AP6YC/cvi
+
+[version-img]: https://img.shields.io/pypi/v/cvi.svg
+[version-url]: https://pypi.org/project/cvi
+
 [issues-img]: https://img.shields.io/github/issues/AP6YC/cvi?style=flat-square
 [issues-url]: https://github.com/AP6YC/cvi/issues
 
 [commits-img]: https://img.shields.io/github/commit-activity/m/AP6YC/cvi?style=flat-square
 [commits-url]: https://github.com/AP6YC/cvi/commits/main
+
+[compare-img]: https://img.shields.io/github/commits-since/AP6YC/cvi/latest/develop
+[compare-url]: https://github.com/AP6YC/cvi/compare/v0.1.0-alpha.2...develop
+
 
 ## Table of Contents
 
