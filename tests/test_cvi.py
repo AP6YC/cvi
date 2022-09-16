@@ -321,6 +321,23 @@ class TestCVI:
 
         return
 
+    def test_get_cvi_errors(self) -> None:
+        """
+        Tests the error handling of CVI.get_cvi
+        """
+
+        # Create a new CVI for error testing
+        local_cvi = cvi.CH()
+
+        # Test that a 3D array is invalud
+        dim = 2
+        data = np.zeros((dim, dim, dim))
+        label = 0
+        with pytest.raises(ValueError):
+            local_cvi.get_cvi(data, label)
+
+        return
+
     def test_setup_icvi(self) -> None:
         """
         Test running the setup method on ICVIs.
