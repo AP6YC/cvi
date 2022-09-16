@@ -76,14 +76,62 @@ pip install cvi
 You can also specify a version to install in the usual way with
 
 ```python
-pip install cvi==v0.1.0-alpha.2
+pip install cvi==v0.1.0-alpha.4
 ```
 
 Alternatively, you can manually install a release from the [releases page](https://github.com/AP6YC/cvi/releases) on GitHub.
 
 ## Usage
 
-TODO
+The `cvi` package contains a set of implemented CVIs with batch and incremental update methods.
+Each CVI is a standalone stateful object inheriting from a base class `CVI`, and all `CVI` functions are object methods, such as those that update parameters and return the criterion value.
+
+Instantiate a CVI of you choice with the default constructor:
+
+```python
+# Import the package
+import cvi
+# Import numpy for some data handling
+import numpy
+
+# Instantiate a Calinski-Harabasz (CH) CVI object
+my_cvi = cvi.CH()
+```
+
+A batch of data is assumed to be a numpy array of samples and a numpy vector of integer labels.
+
+```python
+# Load some data
+samples, labels = my_clustering_alg(some_data)
+```
+
+**__NOTE__**: the `cvi` package assumes the Numpy **row-major** convention where rows are individual samples and columns are features.
+A batch dataset is then `[n_samples, n_features]` large, and their corresponding labels are '[n_samples]` large.
+
+You may compute the final criterion value with a batch update all at once with `CVI.get_cvi`
+
+```python
+# Get the final criterion value in batch mode
+criterion_value = my_cvi.get_cvi(samples, labels)
+```
+
+or you may get them incrementally with the same method, where you pass instead just a single numpy vector of features and a single integer label.
+The incremental methods are used automatically based upon the dimensions of the data that is passed.
+
+```python
+# Create a container for the criterion value after each sample
+n_samples = len(labels)
+criterion_values = np.zeros(n_samples)
+
+# Iterate across the data and store the criterion value over time
+for ix in range(n_samples):
+    sample = samples[ix, :]
+    label = labels[ix]
+    criterion_values[ix] = my_cvi.get_cvi(sample, label)
+```
+
+**__NOTE__**: The batch method can only be run the first time a CVI is used.
+Subsequent updates are done incrementally even if a new batch of data is provided to the same CVI, which the `get_cvi` method automatically detects.
 
 ## History
 
