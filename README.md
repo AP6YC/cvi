@@ -8,9 +8,12 @@ A Python package implementing both batch and incremental cluster validity indice
 | **Version** | **Issues** | **Commits** | **Commits Since Release**
 | [![version][version-img]][version-url] | [![issues][issues-img]][issues-url] | [![commits][commits-img]][commits-url] | [![compare][compare-img]][compare-url] |
 
-<!-- | **Zenodo DOI** |
+| **Zenodo DOI** |
 | :------------: |
-| [![DOI][zenodo-img]][zenodo-url] | -->
+| [![DOI][zenodo-img]][zenodo-url] |
+
+[zenodo-img]: https://zenodo.org/badge/526280198.svg
+[zenodo-url]: https://zenodo.org/badge/latestdoi/526280198
 
 [docs-stable-img]: https://readthedocs.org/projects/cluster-validity-indices/badge/?version=latest
 [docs-stable-url]: https://cluster-validity-indices.readthedocs.io/en/latest/?badge=latest
