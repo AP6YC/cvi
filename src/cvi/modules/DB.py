@@ -1,5 +1,5 @@
 """
-The Calinski-Harabasz (CH) Cluster Validity Index.
+The Davies-Bouldin (DB) Cluster Validity Index.
 """
 
 # Custom imports
@@ -9,22 +9,21 @@ import numpy as np
 from . import _base
 
 
-# CH object definition
-class CH(_base.CVI):
+# DB object definition
+class DB(_base.CVI):
     """
-    The stateful information of the Calinski-Harabasz (CH) Cluster Validity Index.
+    The stateful information of the Davies-Bouldin (DB) Cluster Validity Index.
 
     References
     ----------
-    1. L. E. Brito da Silva, N. M. Melton, and D. C. Wunsch II, "Incremental Cluster Validity Indices for Hard Partitions: Extensions  and  Comparative Study," ArXiv  e-prints, Feb 2019, arXiv:1902.06711v1 [cs.LG].
-    2. T. Calinski and J. Harabasz, "A dendrite method for cluster analysis," Communications in Statistics, vol. 3, no. 1, pp. 1-27, 1974.
-    3. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML]. [Online].
-    4. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
+    1. D. L. Davies and D. W. Bouldin, "A cluster separation measure," IEEE Transaction on Pattern Analysis and Machine Intelligence, vol. 1, no. 2, pp. 224-227, Feb. 1979.
+    2. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML]. [Online].
+    3. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
     """
 
     def __init__(self):
         """
-        CH initialization routine.
+        Davies-Bouldin (DB) initialization routine.
         """
 
         # Run the base initialization
@@ -32,32 +31,30 @@ class CH(_base.CVI):
 
         # CH-specific initialization
         self.mu = np.zeros([0])     # dim
-        self.SEP = np.zeros([0])     # dim
-        self.BGSS = 0.0
-        self.WGSS = 0.0
+        self.R = np.zeros([0, 0])   # n_clusters x dim
+        self.D = np.zeros([0, 0])   # n_clusters x n_clusters
+        self.S = []                 # dim
 
         return
 
     @_base.add_docs(_base.setup_doc)
     def setup(self, sample: np.ndarray) -> None:
         """
-        CH setup routine.
+        Davies-Bouldin (DB) setup routine.
         """
 
         # Run the generic setup routine
         super().setup(sample)
 
         # CH-specific setup
-        self.SEP = np.zeros([self.dim])
         self.mu = sample
-        # self.mu = np.zeros([self.dim])
 
         return
 
     @_base.add_docs(_base.param_inc_doc)
     def param_inc(self, sample: np.ndarray, label: int) -> None:
         """
-        Incremental parameter update for the Calinski-Harabasz (CH) CVI.
+        Incremental parameter update for the Davies-Bouldin (DB) CVI.
         """
 
         # Get the internal label corresponding to the provided label
@@ -79,15 +76,31 @@ class CH(_base.CVI):
             v_new = sample
             CP_new = 0.0
             G_new = np.zeros(self.dim)
+            S_new = 0.0
+            if self.n_clusters == 0:
+                D_new = np.zeros((1, 1))
+            else:
+                D_new = np.zeros((self.n_clusters + 1, self.n_clusters + 1))
+                D_new[0:self.n_clusters, 0:self.n_clusters] = self.D
+                d_column_new = np.zeros(self.n_clusters + 1)
+                for jx in range(self.n_clusters):
+                    d_column_new[jx] = (
+                        np.sum((v_new - self.v[jx, :]) ** 2)
+                    )
+                D_new[i_label, :] = d_column_new
+                # D_new[:, i_label] = np.transpose(d_column_new)
+                D_new[:, i_label] = d_column_new
 
             # Update 1-D parameters with list appends
             self.n_clusters += 1
             self.n.append(n_new)
             self.CP.append(CP_new)
+            self.S.append(S_new)
 
             # Update 2-D parameters with numpy vstacks
             self.v = np.vstack([self.v, v_new])
             self.G = np.vstack([self.G, G_new])
+            self.D = D_new
 
         # ELSE OLD CLUSTER LABEL
         else:
@@ -109,25 +122,38 @@ class CH(_base.CVI):
                 + diff_x_v
                 + self.n[i_label] * delta_v
             )
+            S_new = CP_new / n_new
+            d_column_new = np.zeros(self.n_clusters)
+            for jx in range(self.n_clusters):
+                # Skip the current i_label index
+                if jx == i_label:
+                    continue
+                d_column_new[jx] = (
+                    np.sum((v_new - self.v[jx, :]) ** 2)
+                )
+
             # Update parameters
             self.n[i_label] = n_new
             self.v[i_label, :] = v_new
             self.CP[i_label] = CP_new
             self.G[i_label, :] = G_new
+            self.S[i_label] = S_new
+            self.D[i_label, :] = d_column_new
+            # self.D[:, i_label] = np.tranpose(d_column_new)
+            self.D[:, i_label] = d_column_new
 
         # Update the parameters that do not depend on label novelty
         self.n_samples = n_samples_new
-        # self.mu = mu_new
-        self.SEP = np.array([self.n[ix] * sum((self.v[ix, :] - self.mu)**2) for ix in range(self.n_clusters)])
 
         return
 
     @_base.add_docs(_base.param_batch_doc)
     def param_batch(self, data: np.ndarray, labels: np.ndarray) -> None:
         """
-        Batch parameter update for the Calinski-Harabasz (CH) CVI.
+        Batch parameter update for the Davies-Bouldin (DB) CVI.
         """
 
+        # Infer the number of samples and feature dimension
         self.n_samples, self.dim = data.shape
         # Take the average across all samples, but cast to 1-D vector
         self.mu = np.mean(data, axis=0)
@@ -136,9 +162,11 @@ class CH(_base.CVI):
         self.n = np.zeros(self.n_clusters, dtype=int)
         self.v = np.zeros((self.n_clusters, self.dim))
         self.CP = np.zeros(self.n_clusters)
-        self.SEP = np.zeros(self.n_clusters)
+        self.D = np.zeros((self.n_clusters, self.n_clusters))
+        self.S = np.zeros(self.n_clusters)
 
         for ix in range(self.n_clusters):
+            # subset_indices = lambda x: labels[x] == ix
             subset_indices = (
                 [x for x in range(len(labels)) if labels[x] == ix]
             )
@@ -147,28 +175,36 @@ class CH(_base.CVI):
             self.v[ix, :] = np.mean(subset, axis=0)
             diff_x_v = subset - self.v[ix, :] * np.ones((self.n[ix], 1))
             self.CP[ix] = np.sum(diff_x_v ** 2)
-            self.SEP[ix] = self.n[ix] * np.sum((self.v[ix, :] - self.mu) ** 2)
+            self.S[ix] = self.CP[ix] / self.n[ix]
+
+        for ix in range(self.n_clusters - 1):
+            for jx in range(ix + 1, self.n_clusters):
+                self.D[ix, jx] = (
+                    np.sum((self.v[ix, :] - self.v[jx, :]) ** 2)
+                )
+
+        self.D = self.D + np.transpose(self.D)
 
         return
 
     @_base.add_docs(_base.evaluate_doc)
     def evaluate(self) -> None:
         """
-        Criterion value evaluation method for the Calinski-Harabasz (CH) CVI.
+        Criterion value evaluation method for the Davies-Bouldin (DB) CVI.
         """
+        self.R = np.zeros((self.n_clusters, self.n_clusters))
 
         if self.n_clusters > 2:
-            # Within group sum of scatters
-            self.WGSS = sum(self.CP)
-            # Between groups sum of scatters
-            self.BGSS = sum(self.SEP)
-            # CH index value
+            for ix in range(self.n_clusters - 1):
+                for jx in range(ix + 1, self.n_clusters):
+                    self.R[jx, ix] = (
+                        (self.S[ix] + self.S[jx]) / self.D[jx, ix]
+                    )
+            self.R = self.R + np.transpose(self.R)
             self.criterion_value = (
-                (self.BGSS / self.WGSS)
-                * ((self.n_samples - self.n_clusters) / (self.n_clusters - 1))
+                np.sum(np.max(self.R, axis=0)) / self.n_clusters
             )
         else:
-            self.BGSS = 0.0
             self.criterion_value = 0.0
 
         return
