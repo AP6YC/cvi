@@ -337,22 +337,3 @@ class TestCVI:
             local_cvi.get_cvi(data, label)
 
         return
-
-    def test_setup_icvi(self) -> None:
-        """
-        Test running the setup method on ICVIs.
-        """
-
-        # Create the cvi/icvi module
-        my_cvi = cvi.modules.CH()
-
-        lg.info("Before setup")
-        lg.info(my_cvi)
-
-        sample = np.ones(3)
-        my_cvi.setup(sample)
-
-        lg.info("After setup")
-        lg.info(my_cvi)
-
-        return
