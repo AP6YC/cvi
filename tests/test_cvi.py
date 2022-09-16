@@ -14,23 +14,28 @@ import logging as lg
 from dataclasses import dataclass
 from typing import List, Dict
 
+
 # --------------------------------------------------------------------------- #
 # CUSTOM IMPORTS
 # --------------------------------------------------------------------------- #
+
 
 import pytest
 import numpy as np
 import pandas as pd
 
+
 # --------------------------------------------------------------------------- #
 # LOCAL IMPORTS
 # --------------------------------------------------------------------------- #
 
+
 import src.cvi as cvi
 # TODO: this is a hack; refactor modules so that this is at the top
-from src.cvi.modules.common import CVI
+# from src.cvi import CVI
 
 print(f"\nTesting path is: {os.getcwd()}")
+
 
 # --------------------------------------------------------------------------- #
 # DATACLASSES
@@ -39,6 +44,9 @@ print(f"\nTesting path is: {os.getcwd()}")
 
 @dataclass
 class TestData():
+    """
+    A container dataclass for test data.
+    """
 
     # The test dataset dictionary
     datasets: Dict
@@ -68,7 +76,8 @@ def data() -> TestData:
     This fixture is run once for the entire pytest session.
     """
 
-    p = 0.1
+    # p = 0.1
+    p = 1
     lg.info("LOADING DATA")
 
     data_path = Path("tests", "data")
@@ -123,13 +132,14 @@ def data() -> TestData:
 # --------------------------------------------------------------------------- #
 
 
-def get_cvis() -> List[CVI]:
+def get_cvis() -> List[cvi.CVI]:
     """
     Returns a list of constructed CVI modules.
     """
 
     cvis = [
-        cvi.modules.CH(),
+        cvi.cSIL(),
+        cvi.CH(),
     ]
 
     return cvis
@@ -143,11 +153,11 @@ def log_data(local_data: Dict) -> None:
     # lg.info(local_data.describe())
     lg.info(
         f"Samples: type {type(local_data['samples'])}, "
-        "shape {local_data['samples'].shape}"
+        f"shape {local_data['samples'].shape}"
     )
     lg.info(
         f"Labels: type {type(local_data['labels'])}, "
-        "shape {local_data['labels'].shape}"
+        f"shape {local_data['labels'].shape}"
     )
     return
 
@@ -208,7 +218,6 @@ class TestCVI:
             # Incremental
             i_cvis = get_cvis()
             for local_cvi in i_cvis:
-                lg.info(local_cvi)
                 for ix in range(data.count(key)):
                     # Grab a sample and label
                     sample, label = get_sample(local_data, ix)
@@ -231,7 +240,7 @@ class TestCVI:
                 )
                 lg.info(
                     f"I: {i_cvis[i].criterion_value},"
-                    "B: {b_cvis[i].criterion_value}"
+                    f"B: {b_cvis[i].criterion_value}"
                 )
 
         return

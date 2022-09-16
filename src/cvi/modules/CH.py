@@ -2,17 +2,15 @@
 The Calinski-Harabasz (CH) Cluster Validity Index.
 """
 
-# Standard imports
-import logging as lg
-
 # Custom imports
 import numpy as np
 
 # Local imports
-from .common import *
+from . import _base
+
 
 # CH object definition
-class CH(CVI):
+class CH(_base.CVI):
     """
     The stateful information of the Calinski-Harabasz (CH) Cluster Validity Index.
 
@@ -29,12 +27,35 @@ class CH(CVI):
         CH initialization routine.
         """
 
+        # Run the base initialization
         super().__init__()
+
+        # CH-specific initialization
+        self.mu = np.zeros([0])     # dim
+        self.SEP = np.zeros([0])     # dim
+        self.BGSS = 0.0
+        self.WGSS = 0.0
 
         return
 
-    @add_docs(param_inc_doc)
-    def param_inc(self, sample:np.ndarray, label:int) -> None:
+    @_base.add_docs(_base.setup_doc)
+    def setup(self, sample: np.ndarray) -> None:
+        """
+        CH setup routine.
+        """
+
+        # Run the generic setup routine
+        super().setup(sample)
+
+        # CH-specific setup
+        self.SEP = np.zeros([self.dim])
+        self.mu = sample
+        # self.mu = np.zeros([self.dim])
+
+        return
+
+    @_base.add_docs(_base.param_inc_doc)
+    def param_inc(self, sample: np.ndarray, label: int) -> None:
         """
         Incremental parameter update for the Calinski-Harabasz (CH) CVI.
         """
@@ -46,11 +67,10 @@ class CH(CVI):
         n_samples_new = self.n_samples + 1
 
         # Check if the module has been setup, then set the mu accordingly
-        if not self.mu.any():
-            mu_new = sample
+        if self.n_samples == 0:
             self.setup(sample)
         else:
-            mu_new = (1 - 1/n_samples_new) * self.mu + (1/n_samples_new) * sample
+            self.mu = (1 - 1/n_samples_new) * self.mu + (1/n_samples_new) * sample
 
         # IF NEW CLUSTER LABEL
         # Correct for python 0-indexing
@@ -75,8 +95,17 @@ class CH(CVI):
             v_new = (1 - 1/n_new) * self.v[i_label, :] + (1/n_new) * sample
             delta_v = self.v[i_label, :] - v_new
             diff_x_v = sample - v_new
-            CP_new = self.CP[i_label] + np.inner(diff_x_v, diff_x_v) + self.n[i_label]*np.inner(delta_v, delta_v) + 2*np.inner(delta_v,self.G[i_label, :])
-            G_new = self.G[i_label, :] + diff_x_v + self.n[i_label] * delta_v
+            CP_new = (
+                self.CP[i_label]
+                + np.inner(diff_x_v, diff_x_v)
+                + self.n[i_label] * np.inner(delta_v, delta_v)
+                + 2*np.inner(delta_v, self.G[i_label, :])
+            )
+            G_new = (
+                self.G[i_label, :]
+                + diff_x_v
+                + self.n[i_label] * delta_v
+            )
             # Update parameters
             self.n[i_label] = n_new
             self.v[i_label, :] = v_new
@@ -85,13 +114,13 @@ class CH(CVI):
 
         # Update the parameters that do not depend on label novelty
         self.n_samples = n_samples_new
-        self.mu = mu_new
-        self.SEP = [self.n[ix] * sum((self.v[ix, :] - self.mu)**2) for ix in range(self.n_clusters)]
+        # self.mu = mu_new
+        self.SEP = np.array([self.n[ix] * sum((self.v[ix, :] - self.mu)**2) for ix in range(self.n_clusters)])
 
         return
 
-    @add_docs(param_batch)
-    def param_batch(self, data:np.ndarray, labels:np.ndarray) -> None:
+    @_base.add_docs(_base.param_batch_doc)
+    def param_batch(self, data: np.ndarray, labels: np.ndarray) -> None:
         """
         Batch parameter update for the Calinski-Harabasz (CH) CVI.
         """
@@ -114,21 +143,26 @@ class CH(CVI):
             self.v[ix, :] = np.mean(subset, axis=0)
             diff_x_v = subset - self.v[ix, :] * np.ones((self.n[ix], 1))
             self.CP[ix] = np.sum(diff_x_v ** 2)
-            self.SEP[ix] = self.n[ix] * np.sum((self.v[ix, :] - self.mu) **2)
+            self.SEP[ix] = self.n[ix] * np.sum((self.v[ix, :] - self.mu) ** 2)
 
         return
 
+    @_base.add_docs(_base.evaluate_doc)
     def evaluate(self) -> None:
         """
         Criterion value evaluation method for the Calinski-Harabasz (CH) CVI.
         """
+
         if self.n_clusters > 2:
             # Within group sum of scatters
             self.WGSS = sum(self.CP)
             # Between groups sum of scatters
             self.BGSS = sum(self.SEP)
             # CH index value
-            self.criterion_value = (self.BGSS / self.WGSS) * ((self.n_samples - self.n_clusters)/(self.n_clusters - 1))
+            self.criterion_value = (
+                (self.BGSS / self.WGSS)
+                * ((self.n_samples - self.n_clusters) / (self.n_clusters - 1))
+            )
         else:
             self.BGSS = 0.0
             self.criterion_value = 0.0
