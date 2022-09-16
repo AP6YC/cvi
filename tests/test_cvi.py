@@ -365,9 +365,15 @@ class TestCVI:
 
         # Test that a 3D array is invalud
         dim = 2
-        data = np.zeros((dim, dim, dim))
         label = 0
+        data = np.zeros((dim, dim, dim))
+
         with pytest.raises(ValueError):
+            local_cvi.get_cvi(data, label)
+
+        data = np.zeros((dim, dim))
+        with pytest.raises(ValueError):
+            local_cvi.is_setup = True
             local_cvi.get_cvi(data, label)
 
         return
