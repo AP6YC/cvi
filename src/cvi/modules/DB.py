@@ -153,8 +153,9 @@ class DB(_base.CVI):
         Batch parameter update for the Davies-Bouldin (DB) CVI.
         """
 
-        # Infer the number of samples and feature dimension
-        self.n_samples, self.dim = data.shape
+        # Setup the CVI for batch mode
+        super().setup_batch(data)
+
         # Take the average across all samples, but cast to 1-D vector
         self.mu = np.mean(data, axis=0)
         u = np.unique(labels)

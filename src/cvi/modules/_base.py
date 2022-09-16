@@ -3,7 +3,10 @@ Utilities that are common across all CVI objects.
 """
 
 # Standard library imports
-from typing import Callable
+from typing import (
+    Callable,
+    Union
+)
 from abc import abstractmethod
 
 # Custom imports
@@ -66,17 +69,39 @@ class CVI():
 
     def setup(self, sample: np.ndarray) -> None:
         """
-        Sets up the dimensions of the CVI based on the sample size.
+        Common CVI procedure for incremental setup.
 
         Parameters
         ----------
-        sample : numpy.ndarray
-            A sample vector of features.
+        data : numpy.ndarray
+            Sample vector of features.
         """
 
+        # Infer the dimension as the length of the provided sample
         self.dim = len(sample)
+
+        # Set the sizes of common arrays for consistent appending
         self.v = np.zeros([0, self.dim])
         self.G = np.zeros([0, self.dim])
+
+        # Declare that the CVI is internally setup
+        self.setup = True
+
+        return
+
+    def setup_batch(self, data: np.ndarray) -> None:
+        """
+        Common CVI procedure for batch setup.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            A batch of samples with some feature dimension.
+        """
+
+        # Infer the data dimension and number of samples
+        self.n_samples, self.dim = data.shape
+        self.setup = True
 
         return
 
@@ -90,6 +115,32 @@ class CVI():
 
     @abstractmethod
     def evaluate(self) -> None:
+        pass
+
+    def get_cvi(self, data: np.ndarray, label: Union[int, np.ndarray]) -> float:
+        """
+        Updates the CVI parameters and then evaluates and returns the criterion value.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            The sample(s) of features used for clustering.
+        label : Union[int, np.ndarray]
+            The label(s) prescribed to the sample(s) by the clustering algorithm.
+
+        Returns
+        -------
+        float
+            The CVI's criterion value.
+        """
+
+
+        # if
+        # if not self.setup:
+
+
+
+        # return criterion_value
         pass
 
 
