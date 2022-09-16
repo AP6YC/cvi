@@ -41,7 +41,7 @@ class CH(_base.CVI):
     @_base.add_docs(_base.setup_doc)
     def setup(self, sample: np.ndarray) -> None:
         """
-        CH setup routine.
+        Calinski-Harabasz (CH) setup routine.
         """
 
         # Run the generic setup routine
@@ -50,7 +50,6 @@ class CH(_base.CVI):
         # CH-specific setup
         self.SEP = np.zeros([self.dim])
         self.mu = sample
-        # self.mu = np.zeros([self.dim])
 
         return
 
@@ -128,7 +127,9 @@ class CH(_base.CVI):
         Batch parameter update for the Calinski-Harabasz (CH) CVI.
         """
 
-        self.n_samples, self.dim = data.shape
+        # Setup the CVI for batch mode
+        super().setup_batch(data)
+
         # Take the average across all samples, but cast to 1-D vector
         self.mu = np.mean(data, axis=0)
         u = np.unique(labels)
