@@ -182,7 +182,9 @@ class cSIL(_base.CVI):
         Batch parameter update for the Centroid-based Silhouette (cSIL) CVI.
         """
 
-        self.n_samples, self.dim = data.shape
+        # Setup the CVI for batch mode
+        super().setup_batch(data)
+
         # Take the average across all samples, but cast to 1-D vector
         u = np.unique(labels)
         self.n_clusters = u.size
