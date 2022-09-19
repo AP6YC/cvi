@@ -24,7 +24,6 @@ class LabelMap():
 
     def __init__(self):
         self.map = dict()
-        return
 
     def get_internal_label(self, label: int) -> int:
         """
@@ -66,8 +65,6 @@ class CVI():
         self.criterion_value = 0.0
         self.is_setup = False
 
-        return
-
     def setup(self, sample: np.ndarray):
         """
         Common CVI procedure for incremental setup.
@@ -88,8 +85,6 @@ class CVI():
         # Declare that the CVI is internally setup
         self.is_setup = True
 
-        return
-
     def setup_batch(self, data: np.ndarray):
         """
         Common CVI procedure for batch setup.
@@ -103,8 +98,6 @@ class CVI():
         # Infer the data dimension and number of samples
         self.n_samples, self.dim = data.shape
         self.is_setup = True
-
-        return
 
     @abstractmethod
     def param_inc(self, sample: np.ndarray, label: int):

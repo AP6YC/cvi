@@ -33,8 +33,6 @@ class cSIL(_base.CVI):
         self.S = np.empty([0, 0])   # n_clusters x dim
         self.sil_coefs = []         # dim
 
-        return
-
     @_base.add_docs(_base.setup_doc)
     def setup(self, sample: np.ndarray):
         """
@@ -43,8 +41,6 @@ class cSIL(_base.CVI):
 
         # Run the generic setup routine
         super().setup(sample)
-
-        return
 
     @_base.add_docs(_base.param_inc_doc)
     def param_inc(self, sample: np.ndarray, label: int):
@@ -174,8 +170,6 @@ class cSIL(_base.CVI):
         # Update the parameters that do not depend on label novelty
         self.n_samples = n_samples_new
 
-        return
-
     @_base.add_docs(_base.param_batch_doc)
     def param_batch(self, data: np.ndarray, labels: np.ndarray):
         """
@@ -214,8 +208,6 @@ class cSIL(_base.CVI):
                 subset_ind = [x for x in range(len(labels)) if labels[x] == jx]
                 self.S[jx, ix] = sum(D[ix, subset_ind]) / self.n[jx]
 
-        return
-
     @_base.add_docs(_base.evaluate_doc)
     def evaluate(self):
         """
@@ -237,5 +229,3 @@ class cSIL(_base.CVI):
 
         else:
             self.criterion_value = 0.0
-
-        return

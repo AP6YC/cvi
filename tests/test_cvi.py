@@ -79,7 +79,6 @@ def log_data(local_data: Dict):
         f"Labels: type {type(local_data['labels'])}, "
         f"shape {local_data['labels'].shape}"
     )
-    return
 
 
 def get_sample(local_data: Dict, index: int) -> Tuple[np.ndarray, int]:
@@ -265,8 +264,6 @@ class TestCVI:
         for value in data.datasets.values():
             log_data(value)
 
-        return
-
     def test_loading_again(self, data: TestData):
         """
         Tests loading the data again to verify the identity of the data dictionary.
@@ -280,8 +277,6 @@ class TestCVI:
         lg.info("--- TESTING LOADING AGAIN TO VERIFY DATA SINGLETON ---")
         log_data(data.datasets["correct"])
         lg.info(f"Data location: {id(data)}")
-
-        return
 
     def test_icvis(self, data: TestData):
         """
@@ -353,8 +348,6 @@ class TestCVI:
                     # f"BI: {bi_cvis[i].criterion_value},"
                 )
 
-        return
-
     def test_get_cvi_errors(self):
         """
         Tests the error handling of CVI.get_cvi
@@ -375,5 +368,3 @@ class TestCVI:
         with pytest.raises(ValueError):
             local_cvi.is_setup = True
             local_cvi.get_cvi(data, label)
-
-        return

@@ -36,8 +36,6 @@ class CH(_base.CVI):
         self.BGSS = 0.0
         self.WGSS = 0.0
 
-        return
-
     @_base.add_docs(_base.setup_doc)
     def setup(self, sample: np.ndarray):
         """
@@ -50,8 +48,6 @@ class CH(_base.CVI):
         # CH-specific setup
         self.SEP = np.zeros([self.dim])
         self.mu = sample
-
-        return
 
     @_base.add_docs(_base.param_inc_doc)
     def param_inc(self, sample: np.ndarray, label: int):
@@ -117,9 +113,10 @@ class CH(_base.CVI):
         # Update the parameters that do not depend on label novelty
         self.n_samples = n_samples_new
         # self.mu = mu_new
-        self.SEP = np.array([self.n[ix] * sum((self.v[ix, :] - self.mu)**2) for ix in range(self.n_clusters)])
-
-        return
+        self.SEP = np.array([
+            self.n[ix] * sum((self.v[ix, :] - self.mu)**2)
+            for ix in range(self.n_clusters)
+        ])
 
     @_base.add_docs(_base.param_batch_doc)
     def param_batch(self, data: np.ndarray, labels: np.ndarray):
@@ -150,8 +147,6 @@ class CH(_base.CVI):
             self.CP[ix] = np.sum(diff_x_v ** 2)
             self.SEP[ix] = self.n[ix] * np.sum((self.v[ix, :] - self.mu) ** 2)
 
-        return
-
     @_base.add_docs(_base.evaluate_doc)
     def evaluate(self):
         """
@@ -171,5 +166,3 @@ class CH(_base.CVI):
         else:
             self.BGSS = 0.0
             self.criterion_value = 0.0
-
-        return

@@ -35,8 +35,6 @@ class DB(_base.CVI):
         self.D = np.zeros([0, 0])   # n_clusters x n_clusters
         self.S = []                 # dim
 
-        return
-
     @_base.add_docs(_base.setup_doc)
     def setup(self, sample: np.ndarray):
         """
@@ -48,8 +46,6 @@ class DB(_base.CVI):
 
         # CH-specific setup
         self.mu = sample
-
-        return
 
     @_base.add_docs(_base.param_inc_doc)
     def param_inc(self, sample: np.ndarray, label: int):
@@ -145,8 +141,6 @@ class DB(_base.CVI):
         # Update the parameters that do not depend on label novelty
         self.n_samples = n_samples_new
 
-        return
-
     @_base.add_docs(_base.param_batch_doc)
     def param_batch(self, data: np.ndarray, labels: np.ndarray):
         """
@@ -190,8 +184,6 @@ class DB(_base.CVI):
 
         self.D = self.D + np.transpose(self.D)
 
-        return
-
     @_base.add_docs(_base.evaluate_doc)
     def evaluate(self):
         """
@@ -211,5 +203,3 @@ class DB(_base.CVI):
             )
         else:
             self.criterion_value = 0.0
-
-        return
