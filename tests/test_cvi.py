@@ -52,9 +52,7 @@ def get_cvis() -> List[cvi.CVI]:
 
     # Construct a list of CVI objects
     cvis = [
-        cvi.DB(),
-        cvi.cSIL(),
-        cvi.CH(),
+        local_cvi() for local_cvi in cvi.MODULES
     ]
 
     return cvis
