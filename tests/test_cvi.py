@@ -60,7 +60,7 @@ def get_cvis() -> List[cvi.CVI]:
     return cvis
 
 
-def log_data(local_data: Dict) -> None:
+def log_data(local_data: Dict):
     """
     Info-logs aspects of the passed data dictionary for diagnosis.
 
@@ -249,7 +249,7 @@ class TestCVI:
     Pytest class containing all cvi unit tests.
     """
 
-    def test_load_data(self, data: TestData) -> None:
+    def test_load_data(self, data: TestData):
         """
         Test loading the partitioning data.
 
@@ -267,7 +267,7 @@ class TestCVI:
 
         return
 
-    def test_loading_again(self, data: TestData) -> None:
+    def test_loading_again(self, data: TestData):
         """
         Tests loading the data again to verify the identity of the data dictionary.
 
@@ -283,7 +283,7 @@ class TestCVI:
 
         return
 
-    def test_icvis(self, data: TestData) -> None:
+    def test_icvis(self, data: TestData):
         """
         Test the functionality all of the icvis.
 
@@ -355,7 +355,7 @@ class TestCVI:
 
         return
 
-    def test_get_cvi_errors(self) -> None:
+    def test_get_cvi_errors(self):
         """
         Tests the error handling of CVI.get_cvi
         """

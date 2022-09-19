@@ -36,7 +36,7 @@ class cSIL(_base.CVI):
         return
 
     @_base.add_docs(_base.setup_doc)
-    def setup(self, sample: np.ndarray) -> None:
+    def setup(self, sample: np.ndarray):
         """
         Centroid-based Silhouette (cSIL) setup routine.
         """
@@ -47,7 +47,7 @@ class cSIL(_base.CVI):
         return
 
     @_base.add_docs(_base.param_inc_doc)
-    def param_inc(self, sample: np.ndarray, label: int) -> None:
+    def param_inc(self, sample: np.ndarray, label: int):
         """
         Incremental parameter update for the Centroid-based Silhouette (cSIL) CVI.
         """
@@ -177,7 +177,7 @@ class cSIL(_base.CVI):
         return
 
     @_base.add_docs(_base.param_batch_doc)
-    def param_batch(self, data: np.ndarray, labels: np.ndarray) -> None:
+    def param_batch(self, data: np.ndarray, labels: np.ndarray):
         """
         Batch parameter update for the Centroid-based Silhouette (cSIL) CVI.
         """
@@ -217,7 +217,7 @@ class cSIL(_base.CVI):
         return
 
     @_base.add_docs(_base.evaluate_doc)
-    def evaluate(self) -> None:
+    def evaluate(self):
         """
         Criterion value evaluation method for the Centroid-based Silhouette (cSIL) CVI.
         """
