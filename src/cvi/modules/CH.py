@@ -125,7 +125,7 @@ class CH(_base.CVI):
         """
 
         # Setup the CVI for batch mode
-        super().setup_batch(data)
+        super()._setup_batch(data)
 
         # Take the average across all samples, but cast to 1-D vector
         self.mu = np.mean(data, axis=0)

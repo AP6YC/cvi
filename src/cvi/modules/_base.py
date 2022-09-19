@@ -85,7 +85,7 @@ class CVI():
         # Declare that the CVI is internally setup
         self.is_setup = True
 
-    def setup_batch(self, data: np.ndarray):
+    def _setup_batch(self, data: np.ndarray):
         """
         Common CVI procedure for batch setup.
 

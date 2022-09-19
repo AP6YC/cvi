@@ -177,7 +177,7 @@ class cSIL(_base.CVI):
         """
 
         # Setup the CVI for batch mode
-        super().setup_batch(data)
+        super()._setup_batch(data)
 
         # Take the average across all samples, but cast to 1-D vector
         u = np.unique(labels)
