@@ -22,9 +22,8 @@ class LabelMap():
     Internal map between labels and the incremental CVI categories.
     """
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.map = dict()
-        return
 
     def get_internal_label(self, label: int) -> int:
         """
@@ -51,7 +50,7 @@ class CVI():
     Superclass containing elements shared between all CVIs.
     """
 
-    def __init__(self) -> None:
+    def __init__(self):
         """
         CVI base class initialization method.
         """
@@ -66,9 +65,7 @@ class CVI():
         self.criterion_value = 0.0
         self.is_setup = False
 
-        return
-
-    def setup(self, sample: np.ndarray) -> None:
+    def setup(self, sample: np.ndarray):
         """
         Common CVI procedure for incremental setup.
 
@@ -88,9 +85,7 @@ class CVI():
         # Declare that the CVI is internally setup
         self.is_setup = True
 
-        return
-
-    def setup_batch(self, data: np.ndarray) -> None:
+    def setup_batch(self, data: np.ndarray):
         """
         Common CVI procedure for batch setup.
 
@@ -104,18 +99,16 @@ class CVI():
         self.n_samples, self.dim = data.shape
         self.is_setup = True
 
-        return
-
     @abstractmethod
-    def param_inc(self, sample: np.ndarray, label: int) -> None:
+    def param_inc(self, sample: np.ndarray, label: int):
         pass
 
     @abstractmethod
-    def param_batch(self, data: np.ndarray, labels: np.ndarray) -> None:
+    def param_batch(self, data: np.ndarray, labels: np.ndarray):
         pass
 
     @abstractmethod
-    def evaluate(self) -> None:
+    def evaluate(self):
         pass
 
     def get_cvi(self, data: np.ndarray, label: Union[int, np.ndarray]) -> float:
@@ -210,7 +203,7 @@ def add_docs(other_func: Callable[[], None]) -> Callable[[], None]:
 # --------------------------------------------------------------------------- #
 
 
-def setup_doc() -> None:
+def setup_doc():
     """
     Sets up the dimensions of the CVI based on the sample size.
 
@@ -224,7 +217,7 @@ def setup_doc() -> None:
 
 
 # This function documents the shared API for incremental parameter updates
-def param_inc_doc() -> None:
+def param_inc_doc():
     """
     Parameters
     ----------
@@ -238,7 +231,7 @@ def param_inc_doc() -> None:
 
 
 # This function documents the shared API for batch parameter updates
-def param_batch_doc() -> None:
+def param_batch_doc():
     """
     Parameters
     ----------
@@ -252,7 +245,7 @@ def param_batch_doc() -> None:
 
 
 # This function documents the shared API for criterion value evaluation
-def evaluate_doc() -> None:
+def evaluate_doc():
     """
     Updates the internal `criterion_value` parameter.
     """

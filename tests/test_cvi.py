@@ -60,7 +60,7 @@ def get_cvis() -> List[cvi.CVI]:
     return cvis
 
 
-def log_data(local_data: Dict) -> None:
+def log_data(local_data: Dict):
     """
     Info-logs aspects of the passed data dictionary for diagnosis.
 
@@ -79,7 +79,6 @@ def log_data(local_data: Dict) -> None:
         f"Labels: type {type(local_data['labels'])}, "
         f"shape {local_data['labels'].shape}"
     )
-    return
 
 
 def get_sample(local_data: Dict, index: int) -> Tuple[np.ndarray, int]:
@@ -249,7 +248,7 @@ class TestCVI:
     Pytest class containing all cvi unit tests.
     """
 
-    def test_load_data(self, data: TestData) -> None:
+    def test_load_data(self, data: TestData):
         """
         Test loading the partitioning data.
 
@@ -265,9 +264,7 @@ class TestCVI:
         for value in data.datasets.values():
             log_data(value)
 
-        return
-
-    def test_loading_again(self, data: TestData) -> None:
+    def test_loading_again(self, data: TestData):
         """
         Tests loading the data again to verify the identity of the data dictionary.
 
@@ -281,9 +278,7 @@ class TestCVI:
         log_data(data.datasets["correct"])
         lg.info(f"Data location: {id(data)}")
 
-        return
-
-    def test_icvis(self, data: TestData) -> None:
+    def test_icvis(self, data: TestData):
         """
         Test the functionality all of the icvis.
 
@@ -353,9 +348,7 @@ class TestCVI:
                     # f"BI: {bi_cvis[i].criterion_value},"
                 )
 
-        return
-
-    def test_get_cvi_errors(self) -> None:
+    def test_get_cvi_errors(self):
         """
         Tests the error handling of CVI.get_cvi
         """
@@ -387,5 +380,3 @@ class TestCVI:
             labels = np.zeros(dim)
             local_cvi = my_cvi()
             local_cvi.get_cvi(data, labels)
-
-        return
