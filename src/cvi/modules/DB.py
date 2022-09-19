@@ -185,7 +185,7 @@ class DB(_base.CVI):
         self.D = self.D + np.transpose(self.D)
 
     @_base.add_docs(_base.evaluate_doc)
-    def evaluate(self):
+    def _evaluate(self):
         """
         Criterion value evaluation method for the Davies-Bouldin (DB) CVI.
         """

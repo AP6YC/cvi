@@ -148,7 +148,7 @@ class CH(_base.CVI):
             self.SEP[ix] = self.n[ix] * np.sum((self.v[ix, :] - self.mu) ** 2)
 
     @_base.add_docs(_base.evaluate_doc)
-    def evaluate(self):
+    def _evaluate(self):
         """
         Criterion value evaluation method for the Calinski-Harabasz (CH) CVI.
         """

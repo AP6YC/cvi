@@ -209,7 +209,7 @@ class cSIL(_base.CVI):
                 self.S[jx, ix] = sum(D[ix, subset_ind]) / self.n[jx]
 
     @_base.add_docs(_base.evaluate_doc)
-    def evaluate(self):
+    def _evaluate(self):
         """
         Criterion value evaluation method for the Centroid-based Silhouette (cSIL) CVI.
         """

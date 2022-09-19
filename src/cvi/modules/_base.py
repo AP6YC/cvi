@@ -109,7 +109,7 @@ class CVI():
         raise NotImplementedError
 
     @abstractmethod
-    def evaluate(self):
+    def _evaluate(self):
         raise NotImplementedError
 
     def get_cvi(self, data: np.ndarray, label: Union[int, np.ndarray]) -> float:
@@ -170,7 +170,7 @@ class CVI():
             )
 
         # Regardless of path, evaluate and extract the criterion value
-        self.evaluate()
+        self._evaluate()
         criterion_value = self.criterion_value
 
         # Return the criterion value
