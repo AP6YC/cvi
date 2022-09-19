@@ -11,6 +11,7 @@ from .modules import (
     CH,
     cSIL,
     DB,
+    GD43,
 )
 
 # Set these names to be imported
@@ -19,6 +20,7 @@ __all__ = [
     "CH",
     "cSIL",
     "DB",
+    "GD43",
 ]
 
 # Convenience variable containing all implemented modules
@@ -26,4 +28,5 @@ MODULES = [
     CH,
     cSIL,
     DB,
+    GD43,
 ]
