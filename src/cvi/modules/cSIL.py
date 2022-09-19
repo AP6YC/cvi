@@ -34,13 +34,13 @@ class cSIL(_base.CVI):
         self.sil_coefs = []         # dim
 
     @_base.add_docs(_base.setup_doc)
-    def setup(self, sample: np.ndarray):
+    def _setup(self, sample: np.ndarray):
         """
         Centroid-based Silhouette (cSIL) setup routine.
         """
 
         # Run the generic setup routine
-        super().setup(sample)
+        super()._setup(sample)
 
     @_base.add_docs(_base.param_inc_doc)
     def param_inc(self, sample: np.ndarray, label: int):
@@ -56,7 +56,7 @@ class cSIL(_base.CVI):
 
         # Check if the module has been setup, then set the mu accordingly
         if self.n_samples == 0:
-            self.setup(sample)
+            self._setup(sample)
 
         # IF NEW CLUSTER LABEL
         # Correct for python 0-indexing

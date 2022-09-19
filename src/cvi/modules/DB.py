@@ -36,13 +36,13 @@ class DB(_base.CVI):
         self.S = []                 # dim
 
     @_base.add_docs(_base.setup_doc)
-    def setup(self, sample: np.ndarray):
+    def _setup(self, sample: np.ndarray):
         """
         Davies-Bouldin (DB) setup routine.
         """
 
         # Run the generic setup routine
-        super().setup(sample)
+        super()._setup(sample)
 
         # CH-specific setup
         self.mu = sample
@@ -61,7 +61,7 @@ class DB(_base.CVI):
 
         # Check if the module has been setup, then set the mu accordingly
         if self.n_samples == 0:
-            self.setup(sample)
+            self._setup(sample)
         else:
             self.mu = (1 - 1/n_samples_new) * self.mu + (1/n_samples_new) * sample
 

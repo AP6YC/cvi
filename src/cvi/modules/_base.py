@@ -65,7 +65,7 @@ class CVI():
         self.criterion_value = 0.0
         self.is_setup = False
 
-    def setup(self, sample: np.ndarray):
+    def _setup(self, sample: np.ndarray):
         """
         Common CVI procedure for incremental setup.
 
