@@ -54,6 +54,7 @@ class CVI():
         """
         CVI base class initialization method.
         """
+
         self.label_map = LabelMap()
         self.dim = 0
         self.n_samples = 0
@@ -63,9 +64,9 @@ class CVI():
         self.G = np.zeros([0, 0])   # n_clusters x dim
         self.n_clusters = 0
         self.criterion_value = 0.0
-        self.is_setup = False
+        self._is_setup = False
 
-    def setup(self, sample: np.ndarray):
+    def _setup(self, sample: np.ndarray):
         """
         Common CVI procedure for incremental setup.
 
@@ -83,9 +84,9 @@ class CVI():
         self.G = np.zeros([0, self.dim])
 
         # Declare that the CVI is internally setup
-        self.is_setup = True
+        self._is_setup = True
 
-    def setup_batch(self, data: np.ndarray):
+    def _setup_batch(self, data: np.ndarray):
         """
         Common CVI procedure for batch setup.
 
@@ -97,23 +98,25 @@ class CVI():
 
         # Infer the data dimension and number of samples
         self.n_samples, self.dim = data.shape
-        self.is_setup = True
+        self._is_setup = True
 
     @abstractmethod
-    def param_inc(self, sample: np.ndarray, label: int):
+    def _param_inc(self, sample: np.ndarray, label: int):
         raise NotImplementedError
 
     @abstractmethod
-    def param_batch(self, data: np.ndarray, labels: np.ndarray):
+    def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         raise NotImplementedError
 
     @abstractmethod
-    def evaluate(self):
+    def _evaluate(self):
         raise NotImplementedError
 
     def get_cvi(self, data: np.ndarray, label: Union[int, np.ndarray]) -> float:
         """
         Updates the CVI parameters and then evaluates and returns the criterion value.
+
+        This method accepts _either_ a single vector of data with an integer label (incremental mode) _or_ a batch of samples with a vector of integer labels (batch mode).
 
         Parameters
         ----------
@@ -130,14 +133,14 @@ class CVI():
 
         # If we got 1D data, do a quick update
         if (data.ndim == 1):
-            self.param_inc(data, label)
+            self._param_inc(data, label)
             pass
 
         # Otherwise, we got 2D data and do the correct update
         elif (data.ndim == 2):
 
             # If we haven't done a batch update yet
-            if not self.is_setup:
+            if not self._is_setup:
 
                 # Check that there are at least two unique labels
                 if not len(np.unique(label)) > 1:
@@ -146,7 +149,7 @@ class CVI():
                     )
 
                 # Do a batch update
-                self.param_batch(data, label)
+                self._param_batch(data, label)
 
             # Otherwise, we are already setup
             else:
@@ -158,7 +161,7 @@ class CVI():
 
                 # Do many incremental updates
                 # for ix in range(len(label)):
-                #     self.param_inc(data[ix, :], label[ix])
+                #     self._param_inc(data[ix, :], label[ix])
 
         # Otherwise, we got incorrectly dimensioned data
         else:
@@ -169,7 +172,7 @@ class CVI():
             )
 
         # Regardless of path, evaluate and extract the criterion value
-        self.evaluate()
+        self._evaluate()
         criterion_value = self.criterion_value
 
         # Return the criterion value
@@ -181,7 +184,7 @@ class CVI():
 # --------------------------------------------------------------------------- #
 
 
-def add_docs(other_func: Callable[[], None]) -> Callable[[], None]:
+def _add_docs(other_func: Callable[[], None]) -> Callable[[], None]:
     """
     A decorator for appending the docstring of one function to another.
 
@@ -203,7 +206,7 @@ def add_docs(other_func: Callable[[], None]) -> Callable[[], None]:
 # --------------------------------------------------------------------------- #
 
 
-def setup_doc():
+def _setup_doc():
     """
     Sets up the dimensions of the CVI based on the sample size.
 
@@ -217,7 +220,7 @@ def setup_doc():
 
 
 # This function documents the shared API for incremental parameter updates
-def param_inc_doc():
+def _param_inc_doc():
     """
     Parameters
     ----------
@@ -231,7 +234,7 @@ def param_inc_doc():
 
 
 # This function documents the shared API for batch parameter updates
-def param_batch_doc():
+def _param_batch_doc():
     """
     Parameters
     ----------
@@ -245,7 +248,7 @@ def param_batch_doc():
 
 
 # This function documents the shared API for criterion value evaluation
-def evaluate_doc():
+def _evaluate_doc():
     """
     Updates the internal `criterion_value` parameter.
     """

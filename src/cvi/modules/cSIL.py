@@ -33,17 +33,17 @@ class cSIL(_base.CVI):
         self.S = np.empty([0, 0])   # n_clusters x dim
         self.sil_coefs = []         # dim
 
-    @_base.add_docs(_base.setup_doc)
-    def setup(self, sample: np.ndarray):
+    @_base._add_docs(_base._setup_doc)
+    def _setup(self, sample: np.ndarray):
         """
         Centroid-based Silhouette (cSIL) setup routine.
         """
 
         # Run the generic setup routine
-        super().setup(sample)
+        super()._setup(sample)
 
-    @_base.add_docs(_base.param_inc_doc)
-    def param_inc(self, sample: np.ndarray, label: int):
+    @_base._add_docs(_base._param_inc_doc)
+    def _param_inc(self, sample: np.ndarray, label: int):
         """
         Incremental parameter update for the Centroid-based Silhouette (cSIL) CVI.
         """
@@ -56,7 +56,7 @@ class cSIL(_base.CVI):
 
         # Check if the module has been setup, then set the mu accordingly
         if self.n_samples == 0:
-            self.setup(sample)
+            self._setup(sample)
 
         # IF NEW CLUSTER LABEL
         # Correct for python 0-indexing
@@ -170,14 +170,14 @@ class cSIL(_base.CVI):
         # Update the parameters that do not depend on label novelty
         self.n_samples = n_samples_new
 
-    @_base.add_docs(_base.param_batch_doc)
-    def param_batch(self, data: np.ndarray, labels: np.ndarray):
+    @_base._add_docs(_base._param_batch_doc)
+    def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         """
         Batch parameter update for the Centroid-based Silhouette (cSIL) CVI.
         """
 
         # Setup the CVI for batch mode
-        super().setup_batch(data)
+        super()._setup_batch(data)
 
         # Take the average across all samples, but cast to 1-D vector
         u = np.unique(labels)
@@ -208,8 +208,8 @@ class cSIL(_base.CVI):
                 subset_ind = [x for x in range(len(labels)) if labels[x] == jx]
                 self.S[jx, ix] = sum(D[ix, subset_ind]) / self.n[jx]
 
-    @_base.add_docs(_base.evaluate_doc)
-    def evaluate(self):
+    @_base._add_docs(_base._evaluate_doc)
+    def _evaluate(self):
         """
         Criterion value evaluation method for the Centroid-based Silhouette (cSIL) CVI.
         """
