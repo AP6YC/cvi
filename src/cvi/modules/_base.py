@@ -101,15 +101,15 @@ class CVI():
 
     @abstractmethod
     def param_inc(self, sample: np.ndarray, label: int):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def param_batch(self, data: np.ndarray, labels: np.ndarray):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def evaluate(self):
-        pass
+        raise NotImplementedError
 
     def get_cvi(self, data: np.ndarray, label: Union[int, np.ndarray]) -> float:
         """
