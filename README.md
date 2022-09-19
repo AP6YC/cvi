@@ -37,7 +37,7 @@ A Python package implementing both batch and incremental cluster validity indice
 [commits-url]: https://github.com/AP6YC/cvi/commits/main
 
 [compare-img]: https://img.shields.io/github/commits-since/AP6YC/cvi/latest/develop
-[compare-url]: https://github.com/AP6YC/cvi/compare/v0.1.0-alpha.4...develop
+[compare-url]: https://github.com/AP6YC/cvi/compare/v0.1.0...develop
 
 ## Table of Contents
 
