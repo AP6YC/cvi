@@ -101,7 +101,7 @@ class CVI():
         self._is_setup = True
 
     @abstractmethod
-    def param_inc(self, sample: np.ndarray, label: int):
+    def _param_inc(self, sample: np.ndarray, label: int):
         raise NotImplementedError
 
     @abstractmethod
@@ -131,7 +131,7 @@ class CVI():
 
         # If we got 1D data, do a quick update
         if (data.ndim == 1):
-            self.param_inc(data, label)
+            self._param_inc(data, label)
             pass
 
         # Otherwise, we got 2D data and do the correct update
@@ -159,7 +159,7 @@ class CVI():
 
                 # Do many incremental updates
                 # for ix in range(len(label)):
-                #     self.param_inc(data[ix, :], label[ix])
+                #     self._param_inc(data[ix, :], label[ix])
 
         # Otherwise, we got incorrectly dimensioned data
         else:

@@ -50,7 +50,7 @@ class CH(_base.CVI):
         self.mu = sample
 
     @_base.add_docs(_base.param_inc_doc)
-    def param_inc(self, sample: np.ndarray, label: int):
+    def _param_inc(self, sample: np.ndarray, label: int):
         """
         Incremental parameter update for the Calinski-Harabasz (CH) CVI.
         """
