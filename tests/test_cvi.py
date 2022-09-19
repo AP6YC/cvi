@@ -60,7 +60,24 @@ def get_cvis() -> List[cvi.CVI]:
     return cvis
 
 
-def log_data(local_data: Dict) -> None:
+def get_one_cvi() -> cvi.CVI:
+    """
+    Returns a single CVI for tests that test for common usage.
+
+    Returns
+    -------
+    cvi.CVI
+        A single constructed CVI object.
+    """
+
+    # Construct a CVI object
+    local_cvi = cvi.CH()
+
+    # Return the constructed object
+    return local_cvi
+
+
+def log_data(local_data: Dict):
     """
     Info-logs aspects of the passed data dictionary for diagnosis.
 
@@ -79,7 +96,6 @@ def log_data(local_data: Dict) -> None:
         f"Labels: type {type(local_data['labels'])}, "
         f"shape {local_data['labels'].shape}"
     )
-    return
 
 
 def get_sample(local_data: Dict, index: int) -> Tuple[np.ndarray, int]:
@@ -246,10 +262,10 @@ def data() -> TestData:
 
 class TestCVI:
     """
-    Pytest class containing all cvi unit tests.
+    Pytest class containing CVI/ICVI unit tests.
     """
 
-    def test_load_data(self, data: TestData) -> None:
+    def test_load_data(self, data: TestData):
         """
         Test loading the partitioning data.
 
@@ -265,9 +281,7 @@ class TestCVI:
         for value in data.datasets.values():
             log_data(value)
 
-        return
-
-    def test_loading_again(self, data: TestData) -> None:
+    def test_loading_again(self, data: TestData):
         """
         Tests loading the data again to verify the identity of the data dictionary.
 
@@ -281,9 +295,7 @@ class TestCVI:
         log_data(data.datasets["correct"])
         lg.info(f"Data location: {id(data)}")
 
-        return
-
-    def test_icvis(self, data: TestData) -> None:
+    def test_icvis(self, data: TestData):
         """
         Test the functionality all of the icvis.
 
@@ -353,27 +365,61 @@ class TestCVI:
                     # f"BI: {bi_cvis[i].criterion_value},"
                 )
 
-        return
 
-    def test_get_cvi_errors(self) -> None:
+class Test_get_cvi:
+    """
+    Pytest class containing all unit tests for get_cvi.
+    """
+
+    def test_error_3d_invalid(self):
         """
-        Tests the error handling of CVI.get_cvi
+        Tests that 3D data is rejected.
         """
 
-        # Create a new CVI for error testing
-        local_cvi = cvi.CH()
+        # Create some dummy 3D data
+        dim = 2
+        data = np.zeros((dim, dim, dim))
+        label = 0
+
+        # Create a CVI
+        local_cvi = get_one_cvi()
 
         # Test that a 3D array is invalud
+        with pytest.raises(ValueError):
+            # Try passing a 3D array
+            local_cvi.get_cvi(data, label)
+
+    def test_error_batch_to_inc(self):
+        """
+        Tests that batch to incremental mode is not supported yet.
+        """
+
+        # Create some dummy 2D data
         dim = 2
-        label = 0
-        data = np.zeros((dim, dim, dim))
-
-        with pytest.raises(ValueError):
-            local_cvi.get_cvi(data, label)
-
         data = np.zeros((dim, dim))
+        label = 0
+
+        # Create a CVI and tell it that it is setup
+        local_cvi = get_one_cvi()
+        local_cvi.is_setup = True
+
+        # Test that switching from batch to incremental is not supported
         with pytest.raises(ValueError):
-            local_cvi.is_setup = True
             local_cvi.get_cvi(data, label)
 
-        return
+    def test_error_batch_two(self):
+        """
+        Tests that batch mode requires more than two labels.
+        """
+
+        # Create some dummy data with only one unique label
+        dim = 2
+        data = np.zeros((dim, dim))
+        labels = np.zeros(dim)
+
+        # Create a CVI object
+        local_cvi = get_one_cvi()
+
+        # Test that batch mode requires more than two labels
+        with pytest.raises(ValueError):
+            local_cvi.get_cvi(data, labels)
