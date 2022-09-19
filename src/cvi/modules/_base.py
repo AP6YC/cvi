@@ -132,21 +132,38 @@ class CVI():
         if (data.ndim == 1):
             self.param_inc(data, label)
             pass
+
         # Otherwise, we got 2D data and do the correct update
         elif (data.ndim == 2):
+
             # If we haven't done a batch update yet
             if not self.is_setup:
+
+                # Check that there are at least two unique labels
+                if not len(np.unique(label)) > 1:
+                    raise ValueError(
+                        "Batch CVI mode requires at least two unique labels"
+                    )
+
                 # Do a batch update
                 self.param_batch(data, label)
+
             # Otherwise, we are already setup
             else:
+
+                # Error until batch to incremental is supported
                 raise ValueError(
                     "Switching from batch to incremental not supported"
                 )
+
                 # Do many incremental updates
                 # for ix in range(len(label)):
                 #     self.param_inc(data[ix, :], label[ix])
+
+        # Otherwise, we got incorrectly dimensioned data
         else:
+
+            # Error until some intelligent data sanitization is implemented
             raise ValueError(
                 f"Please provide 1D or 2D numpy array, recieved ndim={data.ndim}"
             )

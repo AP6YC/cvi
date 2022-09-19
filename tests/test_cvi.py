@@ -354,17 +354,29 @@ class TestCVI:
         """
 
         # Create a new CVI for error testing
-        local_cvi = cvi.CH()
+        my_cvi = cvi.CH
 
         # Test that a 3D array is invalud
-        dim = 2
-        label = 0
-        data = np.zeros((dim, dim, dim))
-
         with pytest.raises(ValueError):
+            dim = 2
+            data = np.zeros((dim, dim, dim))
+            label = 0
+            local_cvi = my_cvi()
             local_cvi.get_cvi(data, label)
 
-        data = np.zeros((dim, dim))
+        # Test that switching from batch to incremental is not supported
         with pytest.raises(ValueError):
+            dim = 2
+            data = np.zeros((dim, dim))
+            label = 0
+            local_cvi = my_cvi()
             local_cvi.is_setup = True
             local_cvi.get_cvi(data, label)
+
+        # Test that batch mode requires more than two labels
+        with pytest.raises(ValueError):
+            dim = 2
+            data = np.zeros((dim, dim))
+            labels = np.zeros(dim)
+            local_cvi = my_cvi()
+            local_cvi.get_cvi(data, labels)
