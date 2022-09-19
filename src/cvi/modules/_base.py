@@ -54,6 +54,7 @@ class CVI():
         """
         CVI base class initialization method.
         """
+
         self.label_map = LabelMap()
         self.dim = 0
         self.n_samples = 0
@@ -63,7 +64,7 @@ class CVI():
         self.G = np.zeros([0, 0])   # n_clusters x dim
         self.n_clusters = 0
         self.criterion_value = 0.0
-        self.is_setup = False
+        self._is_setup = False
 
     def _setup(self, sample: np.ndarray):
         """
@@ -83,7 +84,7 @@ class CVI():
         self.G = np.zeros([0, self.dim])
 
         # Declare that the CVI is internally setup
-        self.is_setup = True
+        self._is_setup = True
 
     def _setup_batch(self, data: np.ndarray):
         """
@@ -97,7 +98,7 @@ class CVI():
 
         # Infer the data dimension and number of samples
         self.n_samples, self.dim = data.shape
-        self.is_setup = True
+        self._is_setup = True
 
     @abstractmethod
     def param_inc(self, sample: np.ndarray, label: int):
@@ -137,7 +138,7 @@ class CVI():
         elif (data.ndim == 2):
 
             # If we haven't done a batch update yet
-            if not self.is_setup:
+            if not self._is_setup:
 
                 # Check that there are at least two unique labels
                 if not len(np.unique(label)) > 1:
