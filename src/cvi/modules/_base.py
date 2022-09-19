@@ -116,6 +116,8 @@ class CVI():
         """
         Updates the CVI parameters and then evaluates and returns the criterion value.
 
+        This method accepts _either_ a single vector of data with an integer label (incremental mode) _or_ a batch of samples with a vector of integer labels (batch mode).
+
         Parameters
         ----------
         data : np.ndarray
@@ -182,7 +184,7 @@ class CVI():
 # --------------------------------------------------------------------------- #
 
 
-def add_docs(other_func: Callable[[], None]) -> Callable[[], None]:
+def _add_docs(other_func: Callable[[], None]) -> Callable[[], None]:
     """
     A decorator for appending the docstring of one function to another.
 
@@ -204,7 +206,7 @@ def add_docs(other_func: Callable[[], None]) -> Callable[[], None]:
 # --------------------------------------------------------------------------- #
 
 
-def setup_doc():
+def _setup_doc():
     """
     Sets up the dimensions of the CVI based on the sample size.
 
@@ -218,7 +220,7 @@ def setup_doc():
 
 
 # This function documents the shared API for incremental parameter updates
-def param_inc_doc():
+def _param_inc_doc():
     """
     Parameters
     ----------
@@ -232,7 +234,7 @@ def param_inc_doc():
 
 
 # This function documents the shared API for batch parameter updates
-def param_batch_doc():
+def _param_batch_doc():
     """
     Parameters
     ----------
@@ -246,7 +248,7 @@ def param_batch_doc():
 
 
 # This function documents the shared API for criterion value evaluation
-def evaluate_doc():
+def _evaluate_doc():
     """
     Updates the internal `criterion_value` parameter.
     """

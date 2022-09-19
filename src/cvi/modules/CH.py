@@ -36,7 +36,7 @@ class CH(_base.CVI):
         self.BGSS = 0.0
         self.WGSS = 0.0
 
-    @_base.add_docs(_base.setup_doc)
+    @_base._add_docs(_base._setup_doc)
     def _setup(self, sample: np.ndarray):
         """
         Calinski-Harabasz (CH) setup routine.
@@ -49,7 +49,7 @@ class CH(_base.CVI):
         self.SEP = np.zeros([self.dim])
         self.mu = sample
 
-    @_base.add_docs(_base.param_inc_doc)
+    @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
         """
         Incremental parameter update for the Calinski-Harabasz (CH) CVI.
@@ -118,7 +118,7 @@ class CH(_base.CVI):
             for ix in range(self.n_clusters)
         ])
 
-    @_base.add_docs(_base.param_batch_doc)
+    @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         """
         Batch parameter update for the Calinski-Harabasz (CH) CVI.
@@ -147,7 +147,7 @@ class CH(_base.CVI):
             self.CP[ix] = np.sum(diff_x_v ** 2)
             self.SEP[ix] = self.n[ix] * np.sum((self.v[ix, :] - self.mu) ** 2)
 
-    @_base.add_docs(_base.evaluate_doc)
+    @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):
         """
         Criterion value evaluation method for the Calinski-Harabasz (CH) CVI.
