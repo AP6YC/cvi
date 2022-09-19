@@ -1,0 +1,5 @@
+[report]
+exclude_lines =
+    pragma: no cover
+    # Exclude abstract methods raising the not implemented error
+    raise NotImplementedError
