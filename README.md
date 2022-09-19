@@ -37,7 +37,7 @@ A Python package implementing both batch and incremental cluster validity indice
 [commits-url]: https://github.com/AP6YC/cvi/commits/main
 
 [compare-img]: https://img.shields.io/github/commits-since/AP6YC/cvi/latest/develop
-[compare-url]: https://github.com/AP6YC/cvi/compare/v0.1.0...develop
+[compare-url]: https://github.com/AP6YC/cvi/compare/v0.1.1...develop
 
 ## Table of Contents
 
@@ -84,7 +84,7 @@ pip install cvi
 You can also specify a version to install in the usual way with
 
 ```python
-pip install cvi==v0.1.0-alpha.4
+pip install cvi==v0.1.1
 ```
 
 Alternatively, you can manually install a release from the [releases page](https://github.com/AP6YC/cvi/releases) on GitHub.
