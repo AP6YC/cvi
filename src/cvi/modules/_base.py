@@ -105,7 +105,7 @@ class CVI():
         raise NotImplementedError
 
     @abstractmethod
-    def param_batch(self, data: np.ndarray, labels: np.ndarray):
+    def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         raise NotImplementedError
 
     @abstractmethod
@@ -147,7 +147,7 @@ class CVI():
                     )
 
                 # Do a batch update
-                self.param_batch(data, label)
+                self._param_batch(data, label)
 
             # Otherwise, we are already setup
             else:

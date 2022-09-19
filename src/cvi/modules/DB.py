@@ -142,7 +142,7 @@ class DB(_base.CVI):
         self.n_samples = n_samples_new
 
     @_base.add_docs(_base.param_batch_doc)
-    def param_batch(self, data: np.ndarray, labels: np.ndarray):
+    def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         """
         Batch parameter update for the Davies-Bouldin (DB) CVI.
         """

@@ -119,7 +119,7 @@ class CH(_base.CVI):
         ])
 
     @_base.add_docs(_base.param_batch_doc)
-    def param_batch(self, data: np.ndarray, labels: np.ndarray):
+    def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         """
         Batch parameter update for the Calinski-Harabasz (CH) CVI.
         """
