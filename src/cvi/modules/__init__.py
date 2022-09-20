@@ -16,6 +16,7 @@ from .DB import DB
 from .GD43 import GD43
 from .GD53 import GD53
 from .WB import WB
+from .XB import XB
 
 __all__ = [
     "LabelMap",
@@ -29,4 +30,5 @@ __all__ = [
     "GD43",
     "GD53",
     "WB",
+    "XB",
 ]
