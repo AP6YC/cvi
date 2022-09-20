@@ -13,6 +13,7 @@ from .modules import (
     DB,
     GD43,
     GD53,
+    WB,
 )
 
 # Set these names to be imported
@@ -23,6 +24,7 @@ __all__ = [
     "DB",
     "GD43",
     "GD53",
+    "WB",
 ]
 
 # Convenience variable containing all implemented modules
@@ -32,4 +34,5 @@ MODULES = [
     DB,
     GD43,
     GD53,
+    WB,
 ]
