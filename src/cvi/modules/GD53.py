@@ -1,5 +1,5 @@
 """
-The Generalized Dunn's Index 43 (GD43) Cluster Validity Index.
+The Generalized Dunn's Index 53 (GD53) Cluster Validity Index.
 """
 
 # Custom imports
@@ -9,10 +9,10 @@ import numpy as np
 from . import _base
 
 
-# GD43 object definition
-class GD43(_base.CVI):
+# GD53 object definition
+class GD53(_base.CVI):
     """
-    The stateful information of the Generalized Dunn's Index 43 (GD43) Cluster Validity Index.
+    The stateful information of the Generalized Dunn's Index 53 (GD53) Cluster Validity Index.
 
     References
     ----------
@@ -25,7 +25,7 @@ class GD43(_base.CVI):
 
     def __init__(self):
         """
-        Generalized Dunn's Index 43 (GD43) initialization routine.
+        Generalized Dunn's Index 53 (GD53) initialization routine.
         """
 
         # Run the base initialization
@@ -40,19 +40,19 @@ class GD43(_base.CVI):
     @_base._add_docs(_base._setup_doc)
     def _setup(self, sample: np.ndarray):
         """
-        Generalized Dunn's Index 43 (GD43) setup routine.
+        Generalized Dunn's Index 53 (GD53) setup routine.
         """
 
         # Run the generic setup routine
         super()._setup(sample)
 
-        # GD43-specific setup
+        # GD53-specific setup
         self.mu = sample
 
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
         """
-        Incremental parameter update for the Generalized Dunn's Index 43 (GD43) CVI.
+        Incremental parameter update for the Generalized Dunn's Index 53 (GD53) CVI.
         """
 
         # Get the internal label corresponding to the provided label
@@ -126,7 +126,8 @@ class GD43(_base.CVI):
                 if jx == i_label:
                     continue
                 d_column_new[jx] = (
-                    np.sqrt(np.sum((v_new - self.v[jx, :]) ** 2))
+                    # np.sqrt(np.sum((v_new - self.v[jx, :]) ** 2))
+                    (CP_new + self.CP[jx]) / (n_new + self.n[jx])
                 )
 
             # Update parameters
@@ -143,7 +144,7 @@ class GD43(_base.CVI):
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         """
-        Batch parameter update for the Generalized Dunn's Index 43 (GD43) CVI.
+        Batch parameter update for the Generalized Dunn's Index 53 (GD53) CVI.
         """
 
         # Setup the CVI for batch mode
@@ -173,7 +174,8 @@ class GD43(_base.CVI):
         for ix in range(self.n_clusters - 1):
             for jx in range(ix + 1, self.n_clusters):
                 self.D[ix, jx] = (
-                    np.sqrt(np.sum((self.v[ix, :] - self.v[jx, :]) ** 2))
+                    # np.sqrt(np.sum((self.v[ix, :] - self.v[jx, :]) ** 2))
+                    (self.CP[ix] + self.CP[jx]) / (self.n[ix] + self.n[jx])
                 )
 
         self.D = self.D + np.transpose(self.D)
@@ -181,7 +183,7 @@ class GD43(_base.CVI):
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):
         """
-        Criterion value evaluation method for the Generalized Dunn's Index 43 (GD43) CVI.
+        Criterion value evaluation method for the Generalized Dunn's Index 53 (GD53) CVI.
         """
 
         if self.n_clusters > 1:
@@ -194,7 +196,7 @@ class GD43(_base.CVI):
                     ),
                 ])
             )
-            # GD43 index value
+            # GD53 index value
             self.criterion_value = self.inter / self.intra
         else:
             self.criterion_value = 0.0

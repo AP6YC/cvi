@@ -14,6 +14,7 @@ from .CH import CH
 from .cSIL import cSIL
 from .DB import DB
 from .GD43 import GD43
+from .GD53 import GD53
 
 __all__ = [
     "LabelMap",
@@ -25,4 +26,5 @@ __all__ = [
     "cSIL",
     "DB",
     "GD43",
+    "GD53",
 ]
