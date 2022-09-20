@@ -360,8 +360,8 @@ class TestCVI:
                 # )
                 lg.info(
                     f"CVI: {type(i_cvis[i]).__name__}, "
-                    f"I: {b_cvis[i].criterion_value}, "
-                    f"B: {i_cvis[i].criterion_value},"
+                    f"I: {b_cvis[i].criterion_value:.5f}, "
+                    f"B: {i_cvis[i].criterion_value:.5f},"
                     # f"BI: {bi_cvis[i].criterion_value},"
                 )
 

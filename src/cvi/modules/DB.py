@@ -191,9 +191,9 @@ class DB(_base.CVI):
         """
         Criterion value evaluation method for the Davies-Bouldin (DB) CVI.
         """
-        self.R = np.zeros((self.n_clusters, self.n_clusters))
 
         if self.n_clusters > 1:
+            self.R = np.zeros((self.n_clusters, self.n_clusters))
             for ix in range(self.n_clusters - 1):
                 for jx in range(ix + 1, self.n_clusters):
                     self.R[jx, ix] = (
