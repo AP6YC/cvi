@@ -186,9 +186,8 @@ class GD53(_base.CVI):
         Criterion value evaluation method for the Generalized Dunn's Index 53 (GD53) CVI.
         """
 
-        self.intra = 2 * np.max(np.divide(self.CP, self.n))
-
         if self.n_clusters > 1:
+            self.intra = 2 * np.max(np.divide(self.CP, self.n))
             # Between-group measure of separation/isolation
             self.inter = (
                 np.min(self.D[
