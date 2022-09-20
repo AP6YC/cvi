@@ -160,7 +160,6 @@ class GD43(_base.CVI):
         self.D = np.zeros((self.n_clusters, self.n_clusters))
 
         for ix in range(self.n_clusters):
-            # subset_indices = lambda x: labels[x] == ix
             subset_indices = (
                 [x for x in range(len(labels)) if labels[x] == ix]
             )

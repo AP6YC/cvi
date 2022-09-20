@@ -161,8 +161,7 @@ class WB(_base.CVI):
             self.BGSS = sum(self.SEP)
             # WB index value
             self.criterion_value = (
-                (self.BGSS / self.WGSS)
-                * ((self.n_samples - self.n_clusters) / (self.n_clusters - 1))
+                (self.WGSS / self.BGSS) * self.n_clusters
             )
         else:
             self.BGSS = 0.0
