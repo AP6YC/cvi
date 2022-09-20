@@ -126,7 +126,8 @@ class GD53(_base.CVI):
                 if jx == i_label:
                     continue
                 d_column_new[jx] = (
-                    np.sqrt(np.sum((v_new - self.v[jx, :]) ** 2))
+                    # np.sqrt(np.sum((v_new - self.v[jx, :]) ** 2))
+                    (CP_new + self.CP[jx]) / (n_new + self.n[jx])
                 )
 
             # Update parameters
@@ -173,7 +174,8 @@ class GD53(_base.CVI):
         for ix in range(self.n_clusters - 1):
             for jx in range(ix + 1, self.n_clusters):
                 self.D[ix, jx] = (
-                    np.sqrt(np.sum((self.v[ix, :] - self.v[jx, :]) ** 2))
+                    # np.sqrt(np.sum((self.v[ix, :] - self.v[jx, :]) ** 2))
+                    (self.CP[ix] + self.CP[jx]) / (self.n[ix] + self.n[jx])
                 )
 
         self.D = self.D + np.transpose(self.D)
