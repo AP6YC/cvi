@@ -44,7 +44,7 @@ class DB(_base.CVI):
         # Run the generic setup routine
         super()._setup(sample)
 
-        # CH-specific setup
+        # DB-specific setup
         self.mu = sample
 
     @_base._add_docs(_base._param_inc_doc)
@@ -63,7 +63,10 @@ class DB(_base.CVI):
         if self.n_samples == 0:
             self._setup(sample)
         else:
-            self.mu = (1 - 1/n_samples_new) * self.mu + (1/n_samples_new) * sample
+            self.mu = (
+                (1 - 1/n_samples_new) * self.mu
+                + (1/n_samples_new) * sample
+            )
 
         # IF NEW CLUSTER LABEL
         # Correct for python 0-indexing
@@ -84,7 +87,6 @@ class DB(_base.CVI):
                         np.sum((v_new - self.v[jx, :]) ** 2)
                     )
                 D_new[i_label, :] = d_column_new
-                # D_new[:, i_label] = np.transpose(d_column_new)
                 D_new[:, i_label] = d_column_new
 
             # Update 1-D parameters with list appends
@@ -191,7 +193,7 @@ class DB(_base.CVI):
         """
         self.R = np.zeros((self.n_clusters, self.n_clusters))
 
-        if self.n_clusters > 2:
+        if self.n_clusters > 1:
             for ix in range(self.n_clusters - 1):
                 for jx in range(ix + 1, self.n_clusters):
                     self.R[jx, ix] = (
