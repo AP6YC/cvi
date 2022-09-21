@@ -30,8 +30,8 @@ class cSIL(_base.CVI):
         super().__init__()
 
         # cSIL-specific initialization
-        self.S = np.empty([0, 0])   # n_clusters x dim
-        self.sil_coefs = []         # dim
+        self._S = np.empty([0, 0])   # n_clusters x dim
+        self._sil_coefs = []         # dim
 
     @_base._add_docs(_base._setup_doc)
     def _setup(self, sample: np.ndarray):
@@ -71,7 +71,7 @@ class cSIL(_base.CVI):
                 S_new = np.zeros([1, 1])
             else:
                 S_new = np.zeros((self._n_clusters + 1, self._n_clusters + 1))
-                S_new[0:self._n_clusters, 0:self._n_clusters] = self.S
+                S_new[0:self._n_clusters, 0:self._n_clusters] = self._S
                 S_row_new = np.zeros(self._n_clusters + 1)
                 S_col_new = np.zeros(self._n_clusters + 1)
                 for cl in range(self._n_clusters):
@@ -102,7 +102,7 @@ class cSIL(_base.CVI):
             # Update 2-D parameters with numpy vstacks
             self._v = np.vstack([self._v, v_new])
             self._G = np.vstack([self._G, G_new])
-            self.S = S_new
+            self._S = S_new
 
         # ELSE OLD CLUSTER LABEL
         else:
@@ -162,10 +162,10 @@ class cSIL(_base.CVI):
             self._CP[i_label] = CP_new
             self._G[i_label, :] = G_new
 
-            # self.S[:, i_label] = S_col_new
-            # self.S[i_label, :] = S_row_new
-            self.S[i_label, :] = S_col_new
-            self.S[:, i_label] = S_row_new
+            # self._S[:, i_label] = S_col_new
+            # self._S[i_label, :] = S_row_new
+            self._S[i_label, :] = S_col_new
+            self._S[:, i_label] = S_row_new
 
         # Update the parameters that do not depend on label novelty
         self._n_samples = n_samples_new
@@ -185,7 +185,7 @@ class cSIL(_base.CVI):
         self._n = np.zeros(self._n_clusters, dtype=int)
         self._v = np.zeros((self._n_clusters, self._dim))
         self._CP = np.zeros(self._n_clusters)
-        self.S = np.zeros((self._n_clusters, self._n_clusters))
+        self._S = np.zeros((self._n_clusters, self._n_clusters))
         D = np.zeros((self._n_samples, self._n_samples))
         for ix in range(self._n_clusters):
             subset_indices = (
@@ -206,7 +206,7 @@ class cSIL(_base.CVI):
         for ix in range(self._n_clusters):
             for jx in range(self._n_clusters):
                 subset_ind = [x for x in range(len(labels)) if labels[x] == jx]
-                self.S[jx, ix] = sum(D[ix, subset_ind]) / self._n[jx]
+                self._S[jx, ix] = sum(D[ix, subset_ind]) / self._n[jx]
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):
@@ -214,18 +214,18 @@ class cSIL(_base.CVI):
         Criterion value evaluation method for the Centroid-based Silhouette (cSIL) CVI.
         """
 
-        self.sil_coefs = np.zeros(self._n_clusters)
+        self._sil_coefs = np.zeros(self._n_clusters)
 
-        if self._n_clusters > 1 and self.S.any():
+        if self._n_clusters > 1 and self._S.any():
             for ix in range(self._n_clusters):
                 # Same cluster
-                a = self.S[ix, ix]
+                a = self._S[ix, ix]
                 # Other clusters
-                local_S = np.delete(self.S[:, ix], ix)
+                local_S = np.delete(self._S[:, ix], ix)
                 b = np.min(local_S)
-                self.sil_coefs[ix] = (b - a) / np.maximum(a, b)
+                self._sil_coefs[ix] = (b - a) / np.maximum(a, b)
             # cSIL index value
-            self.criterion_value = np.sum(self.sil_coefs) / self._n_clusters
+            self.criterion_value = np.sum(self._sil_coefs) / self._n_clusters
 
         else:
             self.criterion_value = 0.0

@@ -32,10 +32,10 @@ class GD53(_base.CVI):
         super().__init__()
 
         # CH-specific initialization
-        self.mu = np.zeros([0])     # dim
-        self.D = np.zeros([0, 0])   # n_clusters x n_clusters
-        self.inter = 0.0
-        self.intra = 0.0
+        self._mu = np.zeros([0])     # dim
+        self._D = np.zeros([0, 0])   # n_clusters x n_clusters
+        self._inter = 0.0
+        self._intra = 0.0
 
     @_base._add_docs(_base._setup_doc)
     def _setup(self, sample: np.ndarray):
@@ -47,7 +47,7 @@ class GD53(_base.CVI):
         super()._setup(sample)
 
         # GD53-specific setup
-        self.mu = sample
+        self._mu = sample
 
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
@@ -65,8 +65,8 @@ class GD53(_base.CVI):
         if self._n_samples == 0:
             self._setup(sample)
         else:
-            self.mu = (
-                (1 - 1/n_samples_new) * self.mu
+            self._mu = (
+                (1 - 1/n_samples_new) * self._mu
                 + (1/n_samples_new) * sample
             )
 
@@ -81,7 +81,7 @@ class GD53(_base.CVI):
                 D_new = np.zeros((1, 1))
             else:
                 D_new = np.zeros((self._n_clusters + 1, self._n_clusters + 1))
-                D_new[0:self._n_clusters, 0:self._n_clusters] = self.D
+                D_new[0:self._n_clusters, 0:self._n_clusters] = self._D
                 d_column_new = np.zeros(self._n_clusters + 1)
                 for jx in range(self._n_clusters):
                     d_column_new[jx] = (
@@ -98,7 +98,7 @@ class GD53(_base.CVI):
             # Update 2-D parameters with numpy vstacks
             self._v = np.vstack([self._v, v_new])
             self._G = np.vstack([self._G, G_new])
-            self.D = D_new
+            self._D = D_new
 
         # ELSE OLD CLUSTER LABEL
         else:
@@ -134,8 +134,8 @@ class GD53(_base.CVI):
             self._v[i_label, :] = v_new
             self._CP[i_label] = CP_new
             self._G[i_label, :] = G_new
-            self.D[i_label, :] = d_column_new
-            self.D[:, i_label] = d_column_new
+            self._D[i_label, :] = d_column_new
+            self._D[:, i_label] = d_column_new
 
         # Update the parameters that do not depend on label novelty
         self._n_samples = n_samples_new
@@ -150,14 +150,14 @@ class GD53(_base.CVI):
         super()._setup_batch(data)
 
         # Take the average across all samples, but cast to 1-D vector
-        self.mu = np.mean(data, axis=0)
+        self._mu = np.mean(data, axis=0)
         u = np.unique(labels)
         self._n_clusters = u.size
         self._n = [0 for _ in range(self._n_clusters)]
         self._v = np.zeros((self._n_clusters, self._dim))
         self._CP = [0.0 for _ in range(self._n_clusters)]
         self._G = np.zeros((self._n_clusters, self._dim))
-        self.D = np.zeros((self._n_clusters, self._n_clusters))
+        self._D = np.zeros((self._n_clusters, self._n_clusters))
 
         for ix in range(self._n_clusters):
             # subset_indices = lambda x: labels[x] == ix
@@ -172,11 +172,11 @@ class GD53(_base.CVI):
 
         for ix in range(self._n_clusters - 1):
             for jx in range(ix + 1, self._n_clusters):
-                self.D[ix, jx] = (
+                self._D[ix, jx] = (
                     (self._CP[ix] + self._CP[jx]) / (self._n[ix] + self._n[jx])
                 )
 
-        self.D = self.D + np.transpose(self.D)
+        self._D = self._D + np.transpose(self._D)
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):
@@ -185,16 +185,16 @@ class GD53(_base.CVI):
         """
 
         if self._n_clusters > 1:
-            self.intra = 2 * np.max(np.divide(self._CP, self._n))
+            self._intra = 2 * np.max(np.divide(self._CP, self._n))
             # Between-group measure of separation/isolation
-            self.inter = (
-                np.min(self.D[
+            self._inter = (
+                np.min(self._D[
                     np.triu(
                         np.ones((self._n_clusters, self._n_clusters), bool), 1
                     ),
                 ])
             )
             # GD53 index value
-            self.criterion_value = self.inter / self.intra
+            self.criterion_value = self._inter / self._intra
         else:
             self.criterion_value = 0.0

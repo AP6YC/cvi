@@ -32,10 +32,10 @@ class WB(_base.CVI):
         super().__init__()
 
         # WB-specific initialization
-        self.mu = np.zeros([0])     # dim
-        self.SEP = np.zeros([0])     # dim
-        self.BGSS = 0.0
-        self.WGSS = 0.0
+        self._mu = np.zeros([0])     # dim
+        self._SEP = np.zeros([0])     # dim
+        self._BGSS = 0.0
+        self._WGSS = 0.0
 
     @_base._add_docs(_base._setup_doc)
     def _setup(self, sample: np.ndarray):
@@ -47,8 +47,8 @@ class WB(_base.CVI):
         super()._setup(sample)
 
         # WB-specific setup
-        self.SEP = np.zeros([self._dim])
-        self.mu = sample
+        self._SEP = np.zeros([self._dim])
+        self._mu = sample
 
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
@@ -66,8 +66,8 @@ class WB(_base.CVI):
         if self._n_samples == 0:
             self._setup(sample)
         else:
-            self.mu = (
-                (1 - 1/n_samples_new) * self.mu
+            self._mu = (
+                (1 - 1/n_samples_new) * self._mu
                 + (1/n_samples_new) * sample
             )
 
@@ -116,9 +116,9 @@ class WB(_base.CVI):
 
         # Update the parameters that do not depend on label novelty
         self._n_samples = n_samples_new
-        # self.mu = mu_new
-        self.SEP = np.array([
-            self._n[ix] * sum((self._v[ix, :] - self.mu)**2)
+        # self._mu = mu_new
+        self._SEP = np.array([
+            self._n[ix] * sum((self._v[ix, :] - self._mu)**2)
             for ix in range(self._n_clusters)
         ])
 
@@ -132,13 +132,13 @@ class WB(_base.CVI):
         super()._setup_batch(data)
 
         # Take the average across all samples, but cast to 1-D vector
-        self.mu = np.mean(data, axis=0)
+        self._mu = np.mean(data, axis=0)
         u = np.unique(labels)
         self._n_clusters = u.size
         self._n = np.zeros(self._n_clusters, dtype=int)
         self._v = np.zeros((self._n_clusters, self._dim))
         self._CP = np.zeros(self._n_clusters)
-        self.SEP = np.zeros(self._n_clusters)
+        self._SEP = np.zeros(self._n_clusters)
 
         for ix in range(self._n_clusters):
             subset_indices = (
@@ -149,7 +149,7 @@ class WB(_base.CVI):
             self._v[ix, :] = np.mean(subset, axis=0)
             diff_x_v = subset - self._v[ix, :] * np.ones((self._n[ix], 1))
             self._CP[ix] = np.sum(diff_x_v ** 2)
-            self.SEP[ix] = self._n[ix] * np.sum((self._v[ix, :] - self.mu) ** 2)
+            self._SEP[ix] = self._n[ix] * np.sum((self._v[ix, :] - self._mu) ** 2)
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):
@@ -159,13 +159,13 @@ class WB(_base.CVI):
 
         if self._n_clusters > 2:
             # Within group sum of scatters
-            self.WGSS = sum(self._CP)
+            self._WGSS = sum(self._CP)
             # Between groups sum of scatters
-            self.BGSS = sum(self.SEP)
+            self._BGSS = sum(self._SEP)
             # WB index value
             self.criterion_value = (
-                (self.WGSS / self.BGSS) * self._n_clusters
+                (self._WGSS / self._BGSS) * self._n_clusters
             )
         else:
-            self.BGSS = 0.0
+            self._BGSS = 0.0
             self.criterion_value = 0.0
