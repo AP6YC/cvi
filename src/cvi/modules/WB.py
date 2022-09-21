@@ -66,7 +66,10 @@ class WB(_base.CVI):
         if self.n_samples == 0:
             self._setup(sample)
         else:
-            self.mu = (1 - 1/n_samples_new) * self.mu + (1/n_samples_new) * sample
+            self.mu = (
+                (1 - 1/n_samples_new) * self.mu
+                + (1/n_samples_new) * sample
+            )
 
         # IF NEW CLUSTER LABEL
         # Correct for python 0-indexing

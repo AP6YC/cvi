@@ -14,6 +14,7 @@ from .modules import (
     GD43,
     GD53,
     WB,
+    XB,
 )
 
 # Set these names to be imported
@@ -25,6 +26,7 @@ __all__ = [
     "GD43",
     "GD53",
     "WB",
+    "XB",
 ]
 
 # Convenience variable containing all implemented modules
@@ -35,4 +37,5 @@ MODULES = [
     GD43,
     GD53,
     WB,
+    XB,
 ]

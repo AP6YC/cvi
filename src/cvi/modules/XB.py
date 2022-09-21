@@ -1,5 +1,5 @@
 """
-The Generalized Dunn's Index 53 (GD53) Cluster Validity Index.
+The Xie-Beni (XB) Cluster Validity Index.
 """
 
 # Custom imports
@@ -9,50 +9,49 @@ import numpy as np
 from . import _base
 
 
-# GD53 object definition
-class GD53(_base.CVI):
+# XB object definition
+class XB(_base.CVI):
     """
-    The stateful information of the Generalized Dunn's Index 53 (GD53) Cluster Validity Index.
+    The stateful information of the Xie-Beni (XB) Cluster Validity Index.
 
     References
     ----------
-    1. A. Ibrahim, J. M. Keller, and J. C. Bezdek, "Evaluating Evolving Structure in Streaming Data With Modified Dunn's Indices," IEEE Transactions on Emerging Topics in Computational Intelligence, pp. 1-12, 2019.
-    2. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML].
+    1. X. L. Xie and G. Beni, "A Validity Measure for Fuzzy Clustering," IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 13, no. 8, pp. 841-847, 1991.
+    2. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML]. [Online].
     3. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
-    4. J. C. Dunn, "A fuzzy relative of the ISODATA process and its use in detecting compact well-separated clusters," J. Cybern., vol. 3, no. 3 , pp. 32-57, 1973.
-    5. J. C. Bezdek and N. R. Pal, "Some new indexes of cluster validity," IEEE Trans. Syst., Man, and Cybern., vol. 28, no. 3, pp. 301-315, Jun. 1998.
     """
 
     def __init__(self):
         """
-        Generalized Dunn's Index 53 (GD53) initialization routine.
+        XB initialization routine.
         """
 
         # Run the base initialization
         super().__init__()
 
-        # CH-specific initialization
+        # XB-specific initialization
         self.mu = np.zeros([0])     # dim
+        self.SEP = np.zeros([0])    # dim
         self.D = np.zeros([0, 0])   # n_clusters x n_clusters
-        self.inter = 0.0
-        self.intra = 0.0
+        self.WGSS = 0.0
 
     @_base._add_docs(_base._setup_doc)
     def _setup(self, sample: np.ndarray):
         """
-        Generalized Dunn's Index 53 (GD53) setup routine.
+        Xie-Beni (XB) setup routine.
         """
 
         # Run the generic setup routine
         super()._setup(sample)
 
-        # GD53-specific setup
+        # XB-specific setup
+        self.SEP = np.zeros([self.dim])
         self.mu = sample
 
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
         """
-        Incremental parameter update for the Generalized Dunn's Index 53 (GD53) CVI.
+        Incremental parameter update for the Xie-Beni (XB) CVI.
         """
 
         # Get the internal label corresponding to the provided label
@@ -77,6 +76,7 @@ class GD53(_base.CVI):
             v_new = sample
             CP_new = 0.0
             G_new = np.zeros(self.dim)
+
             if self.n_clusters == 0:
                 D_new = np.zeros((1, 1))
             else:
@@ -85,7 +85,7 @@ class GD53(_base.CVI):
                 d_column_new = np.zeros(self.n_clusters + 1)
                 for jx in range(self.n_clusters):
                     d_column_new[jx] = (
-                        (CP_new + self.CP[jx]) / (n_new + self.n[jx])
+                        np.sum((v_new - self.v[jx, :]) ** 2)
                     )
                 D_new[i_label, :] = d_column_new
                 D_new[:, i_label] = d_column_new
@@ -126,7 +126,7 @@ class GD53(_base.CVI):
                 if jx == i_label:
                     continue
                 d_column_new[jx] = (
-                    (CP_new + self.CP[jx]) / (n_new + self.n[jx])
+                    np.sum((v_new - self.v[jx, :]) ** 2)
                 )
 
             # Update parameters
@@ -143,7 +143,7 @@ class GD53(_base.CVI):
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         """
-        Batch parameter update for the Generalized Dunn's Index 53 (GD53) CVI.
+        Batch parameter update for the Xie-Beni (XB) CVI.
         """
 
         # Setup the CVI for batch mode
@@ -153,14 +153,12 @@ class GD53(_base.CVI):
         self.mu = np.mean(data, axis=0)
         u = np.unique(labels)
         self.n_clusters = u.size
-        self.n = [0 for _ in range(self.n_clusters)]
+        self.n = np.zeros(self.n_clusters, dtype=int)
         self.v = np.zeros((self.n_clusters, self.dim))
-        self.CP = [0.0 for _ in range(self.n_clusters)]
-        self.G = np.zeros((self.n_clusters, self.dim))
+        self.CP = np.zeros(self.n_clusters)
         self.D = np.zeros((self.n_clusters, self.n_clusters))
 
         for ix in range(self.n_clusters):
-            # subset_indices = lambda x: labels[x] == ix
             subset_indices = (
                 [x for x in range(len(labels)) if labels[x] == ix]
             )
@@ -173,28 +171,30 @@ class GD53(_base.CVI):
         for ix in range(self.n_clusters - 1):
             for jx in range(ix + 1, self.n_clusters):
                 self.D[ix, jx] = (
-                    (self.CP[ix] + self.CP[jx]) / (self.n[ix] + self.n[jx])
+                    np.sum((self.v[ix, :] - self.v[jx, :]) ** 2)
                 )
-
-        self.D = self.D + np.transpose(self.D)
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):
         """
-        Criterion value evaluation method for the Generalized Dunn's Index 53 (GD53) CVI.
+        Criterion value evaluation method for the Xie-Beni (XB) CVI.
         """
 
         if self.n_clusters > 1:
-            self.intra = 2 * np.max(np.divide(self.CP, self.n))
-            # Between-group measure of separation/isolation
-            self.inter = (
-                np.min(self.D[
-                    np.triu(
-                        np.ones((self.n_clusters, self.n_clusters), bool), 1
-                    ),
-                ])
+            # Within group sum of scatters
+            self.WGSS = sum(self.CP)
+            # # Between groups sum of scatters
+            # self.BGSS = sum(self.SEP)
+            # Assume a symmetric dimension
+            dim = self.D.shape[0]
+            # self.values = (
+            #     [self.D[i, j] for i in range(dim) for j in range(dim) if j > i]
+            # )
+            values = self.D[np.triu_indices(dim, k=1)]
+            self.SEP = np.min(values)
+            # XB index value
+            self.criterion_value = (
+                self.WGSS / (self.n_samples * self.SEP)
             )
-            # GD53 index value
-            self.criterion_value = self.inter / self.intra
         else:
             self.criterion_value = 0.0
