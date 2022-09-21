@@ -476,7 +476,7 @@ class iGD:
             GD type, either 43 or 53.
         """
 
-        assert(t == 43 or t == 53)
+        assert (t == 43 or t == 53)
 
         self.t = t
         self.d = np.ones((0, 0))*np.inf
@@ -530,19 +530,19 @@ class iGD:
             if self.t == 43:
                 for j in range(len(self.cluster_centers)):
                     if c_i != j:
-                        self.d[c_i,j] = norm22(
+                        self.d[c_i, j] = norm22(
                             self.cluster_centers[c_i]
                             - self.cluster_centers[j]
                         )
-                        self.d[j,c_i] = self.d[c_i,j]
+                        self.d[j, c_i] = self.d[c_i, j]
             else:
                 for j in range(len(self.cluster_centers)):
                     if c_i != j:
-                        self.d[c_i,j] = (
+                        self.d[c_i, j] = (
                             (self.CP[c_i] + self.CP[j])
                             / (self.cluster_sizes[c_i] + self.cluster_sizes[j])
                         )
-                        self.d[j,c_i] = self.d[c_i,j]
+                        self.d[j, c_i] = self.d[c_i, j]
             self.D[c_i] = (
                 2 * self.CP[c_i]
                 / self.cluster_sizes[c_i].len
@@ -551,19 +551,37 @@ class iGD:
 
         return self.output
 
+
 class iGD43(iGD):
+    """
+    Generalized Dunn's Index 43 (GD43) CVI.
+    """
+
     def __init__(self):
         super().__init__(43)
 
+
 class iGD53(iGD):
+    """
+    Generalized Dunn's Index 53 (GD53)
+    """
+
     def __init__(self):
         super().__init__(53)
 
+
 class iSIL:
+    """
+    Incremental Silhouette (SIL) index.
+    """
+
     def __init__(self):
+        """
+        SIL constructor.
+        """
 
         self.sc = []
-        self.b = np.ones((0,0))*np.inf
+        self.b = np.ones((0, 0)) * np.inf
         self.output = 0
         self.N = 0
 
@@ -572,37 +590,163 @@ class iSIL:
         self.CP = []
         self.g = []
 
-        self.sij = np.zeros((0,0))
+        self.sij = np.zeros((0, 0))
 
-    def cp_update(self,x,i):
-        self.CP[i] += np.linalg.norm(x)**2
+    def update(self, x: np.ndarray, i: int):
+        """
+        SIL incremental update.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        i : int
+            TODO
+        """
+        self.CP[i] += np.linalg.norm(x) ** 2
         self.g[i] += x
 
-    def s_ij_new(self,x,i,j,J,nj,nj_old, cpj_old, vj, vi,gj_old,sij_old):
-        zi = x-vi
-        zj = x-vj
+    def s_ij_new(
+        self,
+        x: np.ndarray,
+        i: int,
+        j: int,
+        J: int,
+        nj: int,
+        nj_old: int,
+        cpj_old: float,
+        vj: np.ndarray,
+        vi: np.ndarray,
+        gj_old: np.ndarray,
+        sij_old: float
+    ):
+        """
+        Computes the updated S_ij entry.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        i : int
+            TODO
+        j : int
+            TODO
+        J : int
+            TODO
+        nj : int
+            TODO
+        nj_old : int
+            TODO
+        cpj_old : float
+            TODO
+        vj : np.ndarray
+            TODO
+        vi : np.ndarray
+            TODO
+        gj_old : np.ndarray
+            TODO
+        sij_old : float
+            TODO
+        """
+
+        zi = x - vi
+        zj = x - vj
         if i != J:
             if j == J:
-                return (1/nj)*(cpj_old+np.linalg.norm(zi)**2 +nj*np.linalg.norm(vi)**2 - 2*np.dot(vi,gj_old))
+                local_return = (
+                    (1 / nj) * (
+                        cpj_old
+                        + np.linalg.norm(zi) ** 2
+                        + nj * np.linalg.norm(vi) ** 2
+                        - 2 * np.dot(vi, gj_old)
+                    )
+                )
+                return local_return
             else:
                 return sij_old
         else:
             if j == J:
-                return (1/nj)*(cpj_old+np.linalg.norm(zj)**2 +nj_old*np.linalg.norm(vj)**2 - 2*np.dot(vj,gj_old))
+                local_return = (
+                    (1 / nj) * (
+                        cpj_old
+                        + np.linalg.norm(zj) ** 2
+                        + nj_old * np.linalg.norm(vj) ** 2
+                        - 2 * np.dot(vj, gj_old)
+                    )
+                )
+                return local_return
             else:
-                return (1/nj)*(cpj_old +nj*np.linalg.norm(vi)**2 - 2*np.dot(vi,gj_old))
+                local_return = (
+                    (1 / nj) * (
+                        cpj_old
+                        + nj * np.linalg.norm(vi) ** 2
+                        - 2 * np.dot(vi, gj_old)
+                    )
+                )
+                return local_return
 
-    def s_ij_new_cluster(self,x,i,j,J,nj_old,cpj_old, vi_new, vi_old,gj_old,sij_old):
+    def s_ij_new_cluster(
+        self,
+        x: np.ndarray,
+        i: int,
+        j: int,
+        J: int,
+        nj_old: int,
+        cpj_old: float,
+        vi_new: np.ndarray,
+        vi_old: np.ndarray,
+        gj_old: np.ndarray,
+        sij_old: float
+    ):
+        """
+        TODO
+
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        i : int
+            TODO
+        j : int
+            TODO
+        J : int
+            TODO
+        nj_old : int
+            TODO
+        cpj_old : float
+            TODO
+        vi_new : np.ndarray
+            TODO
+        vi_old : np.ndarray
+            TODO
+        gj_old : np.ndarray
+            TODO
+        sij_old : float
+            TODO
+        """
+
         if i != J:
             if j == J:
-                return np.linalg.norm(x)**2 + np.linalg.norm(vi_old)**2 - 2*np.dot(vi_old,x)
+                local_return = (
+                    np.linalg.norm(x) ** 2
+                    + np.linalg.norm(vi_old) ** 2
+                    - 2 * np.dot(vi_old, x)
+                )
+                return local_return
             else:
                 return sij_old
         else:
             if j == J:
                 return 0
             else:
-                return  (1 / nj_old) * (cpj_old + nj_old * np.linalg.norm(vi_new) ** 2 - 2 * np.dot(vi_new, gj_old))
+                local_return = (
+                    (1 / nj_old) * (
+                        cpj_old
+                        + nj_old * np.linalg.norm(vi_new) ** 2
+                        - 2 * np.dot(vi_new, gj_old)
+                    )
+                )
+                return local_return
 
     def sci(self,i, J):
         A = min(self.sij[i,l] for l in range(len(self.cluster_centers)) if l != J) - self.sij[i,J]
@@ -665,10 +809,10 @@ class iDB:
                     for t in range(len(x)):
                         if self.cluster_sizes[j] > 0:
                             self.M[c_i, j] = abs(self.cluster_centers[c_i][t]-self.cluster_centers[j][t])**self.p
-                    self.M[c_i, j] = self.M[c_i, j] ** (1 ./ self.p)
+                    self.M[c_i, j] = self.M[c_i, j] ** (1./self.p)
                     self.M[j, c_i] = self.M[c_i, j]
                     if self.cluster_sizes[j] > 0:
-                        self.R[c_i] = max(self.R[c_i], (self.S[c_i]+self.S[j])/self.M[c_i,j])
+                        self.R[c_i] = max(self.R[c_i], (self.S[c_i] + self.S[j]) / self.M[c_i,j])
 
             self.output = np.sum(self.R)/sum([clen > 0 for clen in self.cluster_sizes])
         return self.output
