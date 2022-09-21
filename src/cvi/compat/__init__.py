@@ -23,13 +23,3 @@ __all__ = [
     "iPS",
     "iXB",
 ]
-
-MODULES = [
-    iDB,
-    iSIL,
-    iGD43,
-    iGD53,
-    iCH,
-    iPS,
-    iXB,
-]

@@ -1020,3 +1020,14 @@ def iCVI(name):
         return iXB()
     else:
         raise ValueError('iCVI {} not implemented'.format(name))
+
+
+MODULES = [
+    iDB,
+    iSIL,
+    iGD43,
+    iGD53,
+    iCH,
+    iPS,
+    iXB,
+]

@@ -17,7 +17,8 @@ from .modules import (
     XB,
 )
 
-import compat
+# import compat
+from . import compat
 
 # Set these names to be imported
 __all__ = [
