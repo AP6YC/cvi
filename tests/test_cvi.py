@@ -52,9 +52,7 @@ def get_cvis() -> List[cvi.CVI]:
 
     # Construct a list of CVI objects
     cvis = [
-        cvi.DB(),
-        cvi.cSIL(),
-        cvi.CH(),
+        local_cvi() for local_cvi in cvi.MODULES
     ]
 
     return cvis
@@ -220,7 +218,8 @@ def data() -> TestData:
     This fixture is run once for the entire pytest session.
     """
 
-    p = 0.1
+    # p = 0.1
+    p = 1
     lg.info("LOADING DATA")
 
     data_path = Path("tests", "data")
@@ -360,8 +359,9 @@ class TestCVI:
                 #     < tolerance
                 # )
                 lg.info(
-                    f"I: {b_cvis[i].criterion_value},"
-                    f"B: {i_cvis[i].criterion_value},"
+                    f"CVI: {type(i_cvis[i]).__name__}, "
+                    f"I: {b_cvis[i].criterion_value:.5f}, "
+                    f"B: {i_cvis[i].criterion_value:.5f},"
                     # f"BI: {bi_cvis[i].criterion_value},"
                 )
 

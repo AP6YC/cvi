@@ -36,21 +36,21 @@ class CH(_base.CVI):
         self.BGSS = 0.0
         self.WGSS = 0.0
 
-    @_base.add_docs(_base.setup_doc)
-    def setup(self, sample: np.ndarray):
+    @_base._add_docs(_base._setup_doc)
+    def _setup(self, sample: np.ndarray):
         """
         Calinski-Harabasz (CH) setup routine.
         """
 
         # Run the generic setup routine
-        super().setup(sample)
+        super()._setup(sample)
 
         # CH-specific setup
         self.SEP = np.zeros([self.dim])
         self.mu = sample
 
-    @_base.add_docs(_base.param_inc_doc)
-    def param_inc(self, sample: np.ndarray, label: int):
+    @_base._add_docs(_base._param_inc_doc)
+    def _param_inc(self, sample: np.ndarray, label: int):
         """
         Incremental parameter update for the Calinski-Harabasz (CH) CVI.
         """
@@ -63,7 +63,7 @@ class CH(_base.CVI):
 
         # Check if the module has been setup, then set the mu accordingly
         if self.n_samples == 0:
-            self.setup(sample)
+            self._setup(sample)
         else:
             self.mu = (1 - 1/n_samples_new) * self.mu + (1/n_samples_new) * sample
 
@@ -118,14 +118,14 @@ class CH(_base.CVI):
             for ix in range(self.n_clusters)
         ])
 
-    @_base.add_docs(_base.param_batch_doc)
-    def param_batch(self, data: np.ndarray, labels: np.ndarray):
+    @_base._add_docs(_base._param_batch_doc)
+    def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         """
         Batch parameter update for the Calinski-Harabasz (CH) CVI.
         """
 
         # Setup the CVI for batch mode
-        super().setup_batch(data)
+        super()._setup_batch(data)
 
         # Take the average across all samples, but cast to 1-D vector
         self.mu = np.mean(data, axis=0)
@@ -147,8 +147,8 @@ class CH(_base.CVI):
             self.CP[ix] = np.sum(diff_x_v ** 2)
             self.SEP[ix] = self.n[ix] * np.sum((self.v[ix, :] - self.mu) ** 2)
 
-    @_base.add_docs(_base.evaluate_doc)
-    def evaluate(self):
+    @_base._add_docs(_base._evaluate_doc)
+    def _evaluate(self):
         """
         Criterion value evaluation method for the Calinski-Harabasz (CH) CVI.
         """

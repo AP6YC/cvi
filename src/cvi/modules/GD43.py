@@ -1,5 +1,5 @@
 """
-The Davies-Bouldin (DB) Cluster Validity Index.
+The Generalized Dunn's Index 43 (GD43) Cluster Validity Index.
 """
 
 # Custom imports
@@ -9,21 +9,23 @@ import numpy as np
 from . import _base
 
 
-# DB object definition
-class DB(_base.CVI):
+# GD43 object definition
+class GD43(_base.CVI):
     """
-    The stateful information of the Davies-Bouldin (DB) Cluster Validity Index.
+    The stateful information of the Generalized Dunn's Index 43 (GD43) Cluster Validity Index.
 
     References
     ----------
-    1. D. L. Davies and D. W. Bouldin, "A cluster separation measure," IEEE Transaction on Pattern Analysis and Machine Intelligence, vol. 1, no. 2, pp. 224-227, Feb. 1979.
-    2. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML]. [Online].
+    1. A. Ibrahim, J. M. Keller, and J. C. Bezdek, "Evaluating Evolving Structure in Streaming Data With Modified Dunn's Indices," IEEE Transactions on Emerging Topics in Computational Intelligence, pp. 1-12, 2019.
+    2. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML].
     3. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
+    4. J. C. Dunn, "A fuzzy relative of the ISODATA process and its use in detecting compact well-separated clusters," J. Cybern., vol. 3, no. 3 , pp. 32-57, 1973.
+    5. J. C. Bezdek and N. R. Pal, "Some new indexes of cluster validity," IEEE Trans. Syst., Man, and Cybern., vol. 28, no. 3, pp. 301-315, Jun. 1998.
     """
 
     def __init__(self):
         """
-        Davies-Bouldin (DB) initialization routine.
+        Generalized Dunn's Index 43 (GD43) initialization routine.
         """
 
         # Run the base initialization
@@ -31,26 +33,26 @@ class DB(_base.CVI):
 
         # CH-specific initialization
         self.mu = np.zeros([0])     # dim
-        self.R = np.zeros([0, 0])   # n_clusters x dim
         self.D = np.zeros([0, 0])   # n_clusters x n_clusters
-        self.S = []                 # dim
+        self.inter = 0.0
+        self.intra = 0.0
 
     @_base._add_docs(_base._setup_doc)
     def _setup(self, sample: np.ndarray):
         """
-        Davies-Bouldin (DB) setup routine.
+        Generalized Dunn's Index 43 (GD43) setup routine.
         """
 
         # Run the generic setup routine
         super()._setup(sample)
 
-        # DB-specific setup
+        # GD43-specific setup
         self.mu = sample
 
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
         """
-        Incremental parameter update for the Davies-Bouldin (DB) CVI.
+        Incremental parameter update for the Generalized Dunn's Index 43 (GD43) CVI.
         """
 
         # Get the internal label corresponding to the provided label
@@ -75,7 +77,6 @@ class DB(_base.CVI):
             v_new = sample
             CP_new = 0.0
             G_new = np.zeros(self.dim)
-            S_new = 0.0
             if self.n_clusters == 0:
                 D_new = np.zeros((1, 1))
             else:
@@ -93,7 +94,6 @@ class DB(_base.CVI):
             self.n_clusters += 1
             self.n.append(n_new)
             self.CP.append(CP_new)
-            self.S.append(S_new)
 
             # Update 2-D parameters with numpy vstacks
             self.v = np.vstack([self.v, v_new])
@@ -120,14 +120,13 @@ class DB(_base.CVI):
                 + diff_x_v
                 + self.n[i_label] * delta_v
             )
-            S_new = CP_new / n_new
             d_column_new = np.zeros(self.n_clusters)
             for jx in range(self.n_clusters):
                 # Skip the current i_label index
                 if jx == i_label:
                     continue
                 d_column_new[jx] = (
-                    np.sum((v_new - self.v[jx, :]) ** 2)
+                    np.sqrt(np.sum((v_new - self.v[jx, :]) ** 2))
                 )
 
             # Update parameters
@@ -135,9 +134,7 @@ class DB(_base.CVI):
             self.v[i_label, :] = v_new
             self.CP[i_label] = CP_new
             self.G[i_label, :] = G_new
-            self.S[i_label] = S_new
             self.D[i_label, :] = d_column_new
-            # self.D[:, i_label] = np.tranpose(d_column_new)
             self.D[:, i_label] = d_column_new
 
         # Update the parameters that do not depend on label novelty
@@ -146,7 +143,7 @@ class DB(_base.CVI):
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         """
-        Batch parameter update for the Davies-Bouldin (DB) CVI.
+        Batch parameter update for the Generalized Dunn's Index 43 (GD43) CVI.
         """
 
         # Setup the CVI for batch mode
@@ -156,15 +153,11 @@ class DB(_base.CVI):
         self.mu = np.mean(data, axis=0)
         u = np.unique(labels)
         self.n_clusters = u.size
-        # self.n = np.zeros(self.n_clusters, dtype=int)
         self.n = [0 for _ in range(self.n_clusters)]
         self.v = np.zeros((self.n_clusters, self.dim))
-        # self.CP = np.zeros(self.n_clusters)
-        self.CP = [0 for _ in range(self.n_clusters)]
+        self.CP = [0.0 for _ in range(self.n_clusters)]
         self.G = np.zeros((self.n_clusters, self.dim))
         self.D = np.zeros((self.n_clusters, self.n_clusters))
-        # self.S = np.zeros(self.n_clusters)
-        self.S = [0 for _ in range(self.n_clusters)]
 
         for ix in range(self.n_clusters):
             # subset_indices = lambda x: labels[x] == ix
@@ -176,12 +169,11 @@ class DB(_base.CVI):
             self.v[ix, :] = np.mean(subset, axis=0)
             diff_x_v = subset - self.v[ix, :] * np.ones((self.n[ix], 1))
             self.CP[ix] = np.sum(diff_x_v ** 2)
-            self.S[ix] = self.CP[ix] / self.n[ix]
 
         for ix in range(self.n_clusters - 1):
             for jx in range(ix + 1, self.n_clusters):
                 self.D[ix, jx] = (
-                    np.sum((self.v[ix, :] - self.v[jx, :]) ** 2)
+                    np.sqrt(np.sum((self.v[ix, :] - self.v[jx, :]) ** 2))
                 )
 
         self.D = self.D + np.transpose(self.D)
@@ -189,19 +181,20 @@ class DB(_base.CVI):
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):
         """
-        Criterion value evaluation method for the Davies-Bouldin (DB) CVI.
+        Criterion value evaluation method for the Generalized Dunn's Index 43 (GD43) CVI.
         """
 
         if self.n_clusters > 1:
-            self.R = np.zeros((self.n_clusters, self.n_clusters))
-            for ix in range(self.n_clusters - 1):
-                for jx in range(ix + 1, self.n_clusters):
-                    self.R[jx, ix] = (
-                        (self.S[ix] + self.S[jx]) / self.D[jx, ix]
-                    )
-            self.R = self.R + np.transpose(self.R)
-            self.criterion_value = (
-                np.sum(np.max(self.R, axis=0)) / self.n_clusters
+            self.intra = 2 * np.max(np.divide(self.CP, self.n))
+            # Between-group measure of separation/isolation
+            self.inter = (
+                np.min(self.D[
+                    np.triu(
+                        np.ones((self.n_clusters, self.n_clusters), bool), 1
+                    ),
+                ])
             )
+            # GD43 index value
+            self.criterion_value = self.inter / self.intra
         else:
             self.criterion_value = 0.0

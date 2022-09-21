@@ -5,22 +5,26 @@ The :mod:`modules` gathers all CVI implementations.
 from ._base import (
     LabelMap,
     CVI,
-    add_docs,
-    param_inc_doc,
-    param_batch_doc,
+    _add_docs,
+    _param_inc_doc,
+    _param_batch_doc,
 )
 
 from .CH import CH
 from .cSIL import cSIL
 from .DB import DB
+from .GD43 import GD43
+from .GD53 import GD53
 
 __all__ = [
     "LabelMap",
     "CVI",
-    "add_docs",
-    "param_inc_doc",
-    "param_batch_doc",
+    "_add_docs",
+    "_param_inc_doc",
+    "_param_batch_doc",
     "CH",
     "cSIL",
     "DB",
+    "GD43",
+    "GD53",
 ]
