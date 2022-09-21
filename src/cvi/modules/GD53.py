@@ -85,7 +85,7 @@ class GD53(_base.CVI):
                 d_column_new = np.zeros(self.n_clusters + 1)
                 for jx in range(self.n_clusters):
                     d_column_new[jx] = (
-                        np.sum((v_new - self.v[jx, :]) ** 2)
+                        (CP_new + self.CP[jx]) / (n_new + self.n[jx])
                     )
                 D_new[i_label, :] = d_column_new
                 D_new[:, i_label] = d_column_new

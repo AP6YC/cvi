@@ -31,7 +31,8 @@ class XB(_base.CVI):
 
         # XB-specific initialization
         self.mu = np.zeros([0])     # dim
-        self.SEP = np.zeros([0])     # dim
+        self.SEP = np.zeros([0])    # dim
+        self.D = np.zeros([0, 0])   # n_clusters x n_clusters
         self.WGSS = 0.0
 
     @_base._add_docs(_base._setup_doc)
@@ -76,6 +77,19 @@ class XB(_base.CVI):
             CP_new = 0.0
             G_new = np.zeros(self.dim)
 
+            if self.n_clusters == 0:
+                D_new = np.zeros((1, 1))
+            else:
+                D_new = np.zeros((self.n_clusters + 1, self.n_clusters + 1))
+                D_new[0:self.n_clusters, 0:self.n_clusters] = self.D
+                d_column_new = np.zeros(self.n_clusters + 1)
+                for jx in range(self.n_clusters):
+                    d_column_new[jx] = (
+                        np.sum((v_new - self.v[jx, :]) ** 2)
+                    )
+                D_new[i_label, :] = d_column_new
+                D_new[:, i_label] = d_column_new
+
             # Update 1-D parameters with list appends
             self.n_clusters += 1
             self.n.append(n_new)
@@ -84,6 +98,7 @@ class XB(_base.CVI):
             # Update 2-D parameters with numpy vstacks
             self.v = np.vstack([self.v, v_new])
             self.G = np.vstack([self.G, G_new])
+            self.D = D_new
 
         # ELSE OLD CLUSTER LABEL
         else:
@@ -105,19 +120,25 @@ class XB(_base.CVI):
                 + diff_x_v
                 + self.n[i_label] * delta_v
             )
+            d_column_new = np.zeros(self.n_clusters)
+            for jx in range(self.n_clusters):
+                # Skip the current i_label index
+                if jx == i_label:
+                    continue
+                d_column_new[jx] = (
+                    np.sum((v_new - self.v[jx, :]) ** 2)
+                )
+
             # Update parameters
             self.n[i_label] = n_new
             self.v[i_label, :] = v_new
             self.CP[i_label] = CP_new
             self.G[i_label, :] = G_new
+            self.D[i_label, :] = d_column_new
+            self.D[:, i_label] = d_column_new
 
         # Update the parameters that do not depend on label novelty
         self.n_samples = n_samples_new
-        # self.mu = mu_new
-        self.SEP = np.array([
-            self.n[ix] * sum((self.v[ix, :] - self.mu)**2)
-            for ix in range(self.n_clusters)
-        ])
 
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
@@ -135,7 +156,7 @@ class XB(_base.CVI):
         self.n = np.zeros(self.n_clusters, dtype=int)
         self.v = np.zeros((self.n_clusters, self.dim))
         self.CP = np.zeros(self.n_clusters)
-        self.SEP = np.zeros(self.n_clusters)
+        self.D = np.zeros((self.n_clusters, self.n_clusters))
 
         for ix in range(self.n_clusters):
             subset_indices = (
@@ -146,7 +167,12 @@ class XB(_base.CVI):
             self.v[ix, :] = np.mean(subset, axis=0)
             diff_x_v = subset - self.v[ix, :] * np.ones((self.n[ix], 1))
             self.CP[ix] = np.sum(diff_x_v ** 2)
-            self.SEP[ix] = self.n[ix] * np.sum((self.v[ix, :] - self.mu) ** 2)
+
+        for ix in range(self.n_clusters - 1):
+            for jx in range(ix + 1, self.n_clusters):
+                self.D[ix, jx] = (
+                    np.sum((self.v[ix, :] - self.v[jx, :]) ** 2)
+                )
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):
@@ -154,15 +180,21 @@ class XB(_base.CVI):
         Criterion value evaluation method for the Xie-Beni (XB) CVI.
         """
 
-        if self.n_clusters > 2:
+        if self.n_clusters > 1:
             # Within group sum of scatters
             self.WGSS = sum(self.CP)
-            # Between groups sum of scatters
-            self.BGSS = sum(self.SEP)
+            # # Between groups sum of scatters
+            # self.BGSS = sum(self.SEP)
+            # Assume a symmetric dimension
+            dim = self.D.shape[0]
+            # self.values = (
+            #     [self.D[i, j] for i in range(dim) for j in range(dim) if j > i]
+            # )
+            values = self.D[np.triu_indices(dim, k=1)]
+            self.SEP = np.min(values)
             # XB index value
             self.criterion_value = (
-                (self.WGSS / self.BGSS) * self.n_clusters
+                self.WGSS / (self.n_samples * self.SEP)
             )
         else:
-            self.BGSS = 0.0
             self.criterion_value = 0.0
