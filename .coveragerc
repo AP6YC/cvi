@@ -1,3 +1,8 @@
+[run]
+omit =
+    # Ignore compat modules
+    src/cvi/compat/*
+
 [report]
 exclude_lines =
     pragma: no cover

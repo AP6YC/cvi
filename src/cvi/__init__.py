@@ -17,6 +17,9 @@ from .modules import (
     XB,
 )
 
+# import compat
+from . import compat
+
 # Set these names to be imported
 __all__ = [
     "CVI",
@@ -27,6 +30,7 @@ __all__ = [
     "GD53",
     "WB",
     "XB",
+    "compat",
 ]
 
 # Convenience variable containing all implemented modules
