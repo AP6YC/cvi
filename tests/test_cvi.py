@@ -259,6 +259,14 @@ def data() -> TestData:
 # --------------------------------------------------------------------------- #
 
 
+class TestCompat:
+    """
+    Compat entries tests.
+    """
+    def test_modules(self, data: TestData):
+        pass
+
+
 class TestCVI:
     """
     Pytest class containing CVI/ICVI unit tests.
