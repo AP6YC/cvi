@@ -218,8 +218,8 @@ def data() -> TestData:
     This fixture is run once for the entire pytest session.
     """
 
-    p = 0.1
-    # p = 1
+    # p = 0.1
+    p = 1
     lg.info("LOADING DATA")
 
     data_path = Path("tests", "data")
@@ -344,8 +344,10 @@ class TestCVI:
             # Test equivalence between batch and incremental results
             for i in range(len(i_cvis)):
                 # I -> B
+                a = i_cvis[i].criterion_value
+                b = b_cvis[i].criterion_value
                 assert (
-                    (i_cvis[i].criterion_value - b_cvis[i].criterion_value)
+                    (abs(a - b) / ((a + b) / 2))
                     < tolerance
                 )
                 # # I -> BI
