@@ -55,14 +55,14 @@ class CVI():
         CVI base class initialization method.
         """
 
-        self.label_map = LabelMap()
-        self.dim = 0
-        self.n_samples = 0
-        self.n = []                 # dim
-        self.v = np.zeros([0, 0])   # n_clusters x dim
-        self.CP = []                # dim
-        self.G = np.zeros([0, 0])   # n_clusters x dim
-        self.n_clusters = 0
+        self._label_map = LabelMap()
+        self._dim = 0
+        self._n_samples = 0
+        self._n = []                 # dim
+        self._v = np.zeros([0, 0])   # n_clusters x dim
+        self._CP = []                # dim
+        self._G = np.zeros([0, 0])   # n_clusters x dim
+        self._n_clusters = 0
         self.criterion_value = 0.0
         self._is_setup = False
 
@@ -77,11 +77,11 @@ class CVI():
         """
 
         # Infer the dimension as the length of the provided sample
-        self.dim = len(sample)
+        self._dim = len(sample)
 
         # Set the sizes of common arrays for consistent appending
-        self.v = np.zeros([0, self.dim])
-        self.G = np.zeros([0, self.dim])
+        self._v = np.zeros([0, self._dim])
+        self._G = np.zeros([0, self._dim])
 
         # Declare that the CVI is internally setup
         self._is_setup = True
@@ -97,7 +97,7 @@ class CVI():
         """
 
         # Infer the data dimension and number of samples
-        self.n_samples, self.dim = data.shape
+        self._n_samples, self._dim = data.shape
         self._is_setup = True
 
     @abstractmethod
