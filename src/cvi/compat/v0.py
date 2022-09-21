@@ -329,6 +329,13 @@ class iPS:
     def update(self, x: np.ndarray, c_i: int):
         """
         PS incremental update.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        c_i : int
+            TODO
         """
 
         if c_i >= len(self.cluster_centers):
@@ -336,14 +343,37 @@ class iPS:
             self.cluster_sizes.append(1)
             self.PS_i.append(0)
         else:
-            self.cluster_centers[c_i], self.cluster_sizes[c_i] = cluster_center_update(x, self.cluster_centers[c_i], self.cluster_sizes[c_i])
-        self.max_cluster_size = np.maximum(self.max_cluster_size, self.cluster_sizes[c_i])
-        b_ = [norm22(self.cluster_centers[c_i]-self.cluster_centers[c_j]) for c_j in range(len(self.cluster_centers)) if c_j != c_i]
+            (
+                self.cluster_centers[c_i],
+                self.cluster_sizes[c_i]
+            ) = cluster_center_update(
+                x,
+                self.cluster_centers[c_i],
+                self.cluster_sizes[c_i]
+            )
+        self.max_cluster_size = (
+            np.maximum(self.max_cluster_size, self.cluster_sizes[c_i])
+        )
+        b_ = ([
+            norm22(self.cluster_centers[c_i] - self.cluster_centers[c_j])
+            for c_j in range(len(self.cluster_centers))
+            if c_j != c_i
+        ])
         if b_:
             b = np.min(b_)
-            self.mean_cluster_center = np.sum(self.cluster_centers) / len(self.cluster_centers)
-            Bt = np.sum(norm22(cc - self.mean_cluster_center) for cc in self.cluster_centers) / len(self.cluster_centers)
-            self.PS_i[c_i] = self.cluster_sizes[c_i] / self.max_cluster_size - np.exp(-b / Bt)
+            self.mean_cluster_center = (
+                np.sum(self.cluster_centers) / len(self.cluster_centers)
+            )
+            Bt = (
+                np.sum(
+                    norm22(cc - self.mean_cluster_center)
+                    for cc in self.cluster_centers
+                ) / len(self.cluster_centers)
+            )
+            self.PS_i[c_i] = (
+                self.cluster_sizes[c_i] / self.max_cluster_size
+                - np.exp(-b / Bt)
+            )
         else:
             self.PS_i[c_i] = 0
 
