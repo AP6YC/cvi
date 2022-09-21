@@ -5,7 +5,10 @@ Incremental CVI variants.
 # Custom imports
 import numpy as np
 
-from typing import Optional
+from typing import (
+    Optional,
+    Tuple,
+)
 
 
 class Cluster:
@@ -166,7 +169,7 @@ def CP_update(
     v_new: Optional[np.ndarray] = None,
     p: int = 2,
     q: int = 2
-):
+) -> Tuple[float, np.ndarray, np.ndarray, np.ndarray]:
     """
     CP and optionally G, v, and n update.
 
@@ -189,6 +192,11 @@ def CP_update(
     p : int = 2
         TODO
     q : int = 2
+        TODO
+
+    Returns
+    -------
+    Tuple[float, np.ndarray, np.ndarray, np.ndarray]
         TODO
     """
 
@@ -215,7 +223,7 @@ def cluster_center_update(
     x: np.ndarray,
     v_old: np.ndarray,
     n_old: np.ndarray
-):
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Updates the cluster center incrementally.
 
@@ -227,6 +235,10 @@ def cluster_center_update(
         TODO
     n_old : np.ndarray
         TODO
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
     """
 
     n_new = n_old + 1
@@ -256,7 +268,7 @@ class iXB:
         self.cluster_sizes = []
         self.g = None
 
-    def update(self, x: np.ndarray, c_i: int):
+    def update(self, x: np.ndarray, c_i: int) -> float:
         """
         XB incremental update method.
 
@@ -265,6 +277,11 @@ class iXB:
         x : np.ndarray
             TODO
         c_i : int
+            TODO
+
+        Returns
+        -------
+        float
             TODO
         """
 
@@ -326,7 +343,7 @@ class iPS:
         self.cluster_centers = []
         self.cluster_sizes = []
 
-    def update(self, x: np.ndarray, c_i: int):
+    def update(self, x: np.ndarray, c_i: int) -> float:
         """
         PS incremental update.
 
@@ -335,6 +352,11 @@ class iPS:
         x : np.ndarray
             TODO
         c_i : int
+            TODO
+
+        Returns
+        -------
+        float
             TODO
         """
 
@@ -405,7 +427,7 @@ class iCH:
         self.cluster_sizes = []
         self.g = None
 
-    def update(self, x: np.ndarray, c_i: int):
+    def update(self, x: np.ndarray, c_i: int) -> float:
         """
         CH incremental update.
 
@@ -414,6 +436,11 @@ class iCH:
         x : np.ndarray
             TODO
         c_i : int
+            TODO
+
+        Returns
+        -------
+        float
             TODO
         """
 
@@ -488,7 +515,7 @@ class iGD:
         self.g = None
         self.CP = []
 
-    def update(self, x: np.ndarray, c_i: int):
+    def update(self, x: np.ndarray, c_i: int) -> float:
         """
         GD incremental update.
 
@@ -497,6 +524,11 @@ class iGD:
         x : np.ndarray
             TODO
         c_i : int
+            TODO
+
+        Returns
+        -------
+        float
             TODO
         """
 
@@ -620,7 +652,7 @@ class iSIL:
         vi: np.ndarray,
         gj_old: np.ndarray,
         sij_old: float
-    ):
+    ) -> float:
         """
         Computes the updated S_ij entry.
 
@@ -647,6 +679,11 @@ class iSIL:
         gj_old : np.ndarray
             TODO
         sij_old : float
+            TODO
+
+        Returns
+        -------
+        float
             TODO
         """
 
@@ -698,7 +735,7 @@ class iSIL:
         vi_old: np.ndarray,
         gj_old: np.ndarray,
         sij_old: float
-    ):
+    ) -> float:
         """
         TODO
 
@@ -723,6 +760,11 @@ class iSIL:
         gj_old : np.ndarray
             TODO
         sij_old : float
+            TODO
+
+        Returns
+        -------
+        float
             TODO
         """
 
@@ -786,7 +828,7 @@ class iSIL:
         )
         return A / B
 
-    def update(self, x: np.ndarray, c_i: int):
+    def update(self, x: np.ndarray, c_i: int) -> float:
         """
         SIL incremental update.
 
@@ -795,6 +837,11 @@ class iSIL:
         x : np.ndarray
             TODO
         c_i : int
+            TODO
+
+        Returns
+        -------
+        float
             TODO
         """
 
@@ -856,11 +903,18 @@ class iSIL:
 
 
 class iDB:
+    """
+    Incremental Davies-Bouldin (DB) CVI.
+    """
+
     def __init__(self):
+        """
+        DB constructor.
+        """
 
         self.R = []
         self.S = []
-        self.M = np.zeros((0,0))
+        self.M = np.zeros((0, 0))
         self.p = 1
         self.q = 1
         self.output = 0
@@ -871,36 +925,85 @@ class iDB:
         self.g = None
         self.CP = []
 
-    def update(self,x,c_i):
+    def update(self, x: np.ndarray, c_i: int) -> float:
+        """
+        DB incremental update.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        c_i : int
+            TODO
+
+        Returns
+        -------
+        float
+            TODO
+        """
+
         self.N += 1
         if c_i == len(self.cluster_centers):
             self.cluster_centers.append(x)
             self.cluster_sizes.append(1)
             self.R.append(0)
             self.S.append(0)
-            self.M = np.pad(self.M, [(0, 1), (0, 1)], mode='constant', constant_values=0)
+            self.M = np.pad(
+                self.M,
+                [(0, 1), (0, 1)],
+                mode='constant',
+                constant_values=0
+            )
         elif c_i > len(self.cluster_sizes):
             raise ValueError('Invalid Cluster Ordering')
         else:
-            self.CP[c_i], self.g, self.cluster_centers[c_i], self.cluster_sizes[c_i] = CP_update(x,self.cluster_centers[c_i],self.cluster_sizes[c_i], self.g,self.CP[c_i], p=self.p, q=self.q)
-            self.S[c_i] = ((1/self.cluster_sizes[c_i])*self.CP[c_i])**(1/self.q)
+            (
+                self.CP[c_i],
+                self.g,
+                self.cluster_centers[c_i],
+                self.cluster_sizes[c_i]
+            ) = CP_update(
+                x,
+                self.cluster_centers[c_i],
+                self.cluster_sizes[c_i],
+                self.g,
+                self.CP[c_i],
+                p=self.p,
+                q=self.q
+            )
+            self.S[c_i] = (
+                ((1 / self.cluster_sizes[c_i]) * self.CP[c_i]) ** (1 / self.q)
+            )
             self.R[c_i] = 0
             for j in range(len(self.cluster_sizes)):
                 if j != c_i:
                     self.M[c_i, j] = 0
                     for t in range(len(x)):
                         if self.cluster_sizes[j] > 0:
-                            self.M[c_i, j] = abs(self.cluster_centers[c_i][t]-self.cluster_centers[j][t])**self.p
+                            self.M[c_i, j] = (
+                                abs(
+                                    self.cluster_centers[c_i][t] - self.cluster_centers[j][t]
+                                ) ** self.p
+                            )
                     self.M[c_i, j] = self.M[c_i, j] ** (1./self.p)
                     self.M[j, c_i] = self.M[c_i, j]
                     if self.cluster_sizes[j] > 0:
-                        self.R[c_i] = max(self.R[c_i], (self.S[c_i] + self.S[j]) / self.M[c_i,j])
+                        self.R[c_i] = max(
+                            self.R[c_i],
+                            (self.S[c_i] + self.S[j]) / self.M[c_i, j]
+                        )
 
-            self.output = np.sum(self.R)/sum([clen > 0 for clen in self.cluster_sizes])
+            self.output = (
+                np.sum(self.R)
+                / sum([clen > 0 for clen in self.cluster_sizes])
+            )
         return self.output
 
 
 def iCVI(name):
+    """
+    ICVI convenience constructor.
+    """
     if name == 'iDB':
         return iDB()
     elif name == 'iSIL':
