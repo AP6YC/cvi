@@ -32,7 +32,6 @@ class XB(_base.CVI):
         # XB-specific initialization
         self.mu = np.zeros([0])     # dim
         self.SEP = np.zeros([0])     # dim
-        self.BGSS = 0.0
         self.WGSS = 0.0
 
     @_base._add_docs(_base._setup_doc)
@@ -64,7 +63,10 @@ class XB(_base.CVI):
         if self.n_samples == 0:
             self._setup(sample)
         else:
-            self.mu = (1 - 1/n_samples_new) * self.mu + (1/n_samples_new) * sample
+            self.mu = (
+                (1 - 1/n_samples_new) * self.mu
+                + (1/n_samples_new) * sample
+            )
 
         # IF NEW CLUSTER LABEL
         # Correct for python 0-indexing
