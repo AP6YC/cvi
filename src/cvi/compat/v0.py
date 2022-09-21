@@ -462,7 +462,19 @@ class iCH:
 
 
 class iGD:
-    def __init__(self, t=43):
+    """
+    Incremental Generalized Dunn's (GD) Index.
+    """
+
+    def __init__(self, t: int = 43):
+        """
+        GD constructor.
+
+        Parameters
+        ----------
+        t : int
+            GD type, either 43 or 53.
+        """
 
         assert(t == 43 or t == 53)
 
@@ -476,29 +488,66 @@ class iGD:
         self.g = None
         self.CP = []
 
-    def update(self, x, c_i):
+    def update(self, x: np.ndarray, c_i: int):
+        """
+        GD incremental update.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        c_i : int
+            TODO
+        """
+
         if c_i == len(self.cluster_centers):
             self.cluster_centers.append(x)
             self.cluster_sizes.append(1)
             self.CP.append(0)
-            self.d = np.pad(self.d, [(0, 1), (0, 1)], mode='constant', constant_values=np.inf)
+            self.d = np.pad(
+                self.d,
+                [(0, 1), (0, 1)],
+                mode='constant',
+                constant_values=np.inf
+            )
             self.D.append(-np.inf)
         elif c_i > len(self.cluster_sizes):
             raise ValueError('Invalid Cluster Ordering')
         else:
-            self.CP[c_i], self.g, self.cluster_centers[c_i], self.cluster_sizes[c_i] = CP_update(x, self.cluster_centers[c_i], self.cluster_sizes[c_i], self.g, self.CP[c_i], p=1)
+            (
+                self.CP[c_i],
+                self.g,
+                self.cluster_centers[c_i],
+                self.cluster_sizes[c_i]
+            ) = CP_update(
+                x,
+                self.cluster_centers[c_i],
+                self.cluster_sizes[c_i],
+                self.g,
+                self.CP[c_i],
+                p=1
+            )
             if self.t == 43:
                 for j in range(len(self.cluster_centers)):
                     if c_i != j:
-                        self.d[c_i,j] = norm22(self.cluster_centers[c_i] - self.cluster_centers[j])
+                        self.d[c_i,j] = norm22(
+                            self.cluster_centers[c_i]
+                            - self.cluster_centers[j]
+                        )
                         self.d[j,c_i] = self.d[c_i,j]
             else:
                 for j in range(len(self.cluster_centers)):
                     if c_i != j:
-                        self.d[c_i,j] = ( self.CP[c_i] + self.CP[j] ) / (self.cluster_sizes[c_i]+self.cluster_sizes[j])
+                        self.d[c_i,j] = (
+                            (self.CP[c_i] + self.CP[j])
+                            / (self.cluster_sizes[c_i] + self.cluster_sizes[j])
+                        )
                         self.d[j,c_i] = self.d[c_i,j]
-            self.D[c_i] = 2*self.CP[c_i] / self.cluster_sizes[c_i].len
-            self.output = np.min(self.d)/np.max(self.D)
+            self.D[c_i] = (
+                2 * self.CP[c_i]
+                / self.cluster_sizes[c_i].len
+            )
+            self.output = np.min(self.d) / np.max(self.D)
 
         return self.output
 
