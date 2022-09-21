@@ -382,7 +382,15 @@ class iPS:
 
 
 class iCH:
+    """
+    Incremental Calinski-Harabasz (CH) CVI.
+    """
+
     def __init__(self):
+        """
+        CH constructor.
+        """
+
         self.clusters = Clusters()
 
         self.WGSS = 0
@@ -397,9 +405,22 @@ class iCH:
         self.cluster_sizes = []
         self.g = None
 
-    def update(self, x, c_i):
+    def update(self, x: np.ndarray, c_i: int):
+        """
+        CH incremental update.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        c_i : int
+            TODO
+        """
+
         self.N += 1
-        self.data_center = ((self.N - 1) * self.data_center + x) / self.N
+        self.data_center = (
+            ((self.N - 1) * self.data_center + x) / self.N
+        )
         if c_i == len(self.clusters):
             self.cluster_centers.append(x)
             self.cluster_sizes.append(1)
@@ -409,15 +430,32 @@ class iCH:
             raise ValueError('Invalid Cluster Ordering')
         else:
             self.WGSS -= self.WGSS_i[c_i]
-            self.WGSS_i[c_i], self.g, self.cluster_centers[c_i], self.cluster_sizes[c_i] = CP_update(x, self.cluster_centers[c_i], self.cluster_sizes[c_i], self.g, self.WGSS_i[c_i])
+            (
+                self.WGSS_i[c_i],
+                self.g,
+                self.cluster_centers[c_i],
+                self.cluster_sizes[c_i]
+            ) = CP_update(
+                x,
+                self.cluster_centers[c_i],
+                self.cluster_sizes[c_i],
+                self.g,
+                self.WGSS_i[c_i]
+            )
             self.WGSS += self.WGSS_i[c_i]
 
         self.BGSS -= self.BGSS_i[c_i]
-        self.BGSS_i[c_i] = self.cluster_sizes[c_i]*norm22(self.cluster_centers[c_i] - self.data_center)
+        self.BGSS_i[c_i] = (
+            self.cluster_sizes[c_i]
+            * norm22(self.cluster_centers[c_i] - self.data_center)
+        )
         self.BGSS += self.BGSS_i[c_i]
 
-        if len(self.cluster_centers) > 1 and self.N-len(self.cluster_centers) > 0:
-            self.output = (self.BGSS/(len(self.cluster_centers)-1)) / (self.WGSS/(self.N-len(self.cluster_centers)))
+        if (len(self.cluster_centers) > 1) and (self.N - len(self.cluster_centers) > 0):
+            self.output = (
+                (self.BGSS / (len(self.cluster_centers) - 1))
+                / (self.WGSS / (self.N - len(self.cluster_centers)))
+            )
         else:
             self.output = 0
         return self.output
