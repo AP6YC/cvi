@@ -50,7 +50,7 @@ class Cluster:
             self.dim = len(x)
         assert self.dim == len(x)
         if self.radial:
-            new_center = (self.center*self.len + x)/ (self.len+1)
+            new_center = (self.center * self.len + x) / (self.len + 1)
             self.center = new_center
         if self.box:
             assert np.max(x) <= 1
@@ -143,28 +143,78 @@ class Clusters(list):
                 self.append(Cluster)
             self[c].add_point(c, c)
 
-def norm22(x):
-    return np.linalg.norm(x,2)**2
+
+def norm22(x: np.ndarray):
+    """
+    Calculates the 2-norm squared.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        The vector to norm and square.
+    """
+    return np.linalg.norm(x, 2) ** 2
 
 
-def CP_update(x,v_old, n_old,g_old=None,cp_old=0,n_new=None,v_new=None,p=2,q=2):
+def CP_update(
+    x: np.ndarray,
+    v_old: np.ndarray,
+    n_old: np.ndarray,
+    g_old: Optional[np.ndarray] = None,
+    cp_old: float = 0,
+    n_new: Optional[np.ndarray] = None,
+    v_new: Optional[np.ndarray] = None,
+    p: int = 2,
+    q: int = 2
+):
+    """
+    CP and optionally G, v, and n update.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        TODO
+    v_old : np.ndarray
+        TODO
+    n_old : np.ndarray,
+        TODO
+    g_old : Optional[np.ndarray] = None
+        TODO
+    cp_old : float = 0
+        TODO
+    n_new : Optional[np.ndarray] = None
+        TODO
+    v_new : Optional[np.ndarray] = None
+        TODO
+    p : int = 2
+        TODO
+    q : int = 2
+        TODO
+    """
+
     if g_old is None:
         g_old = np.zeros_like(x)
     if n_new is None:
-        n_new = n_old+1
+        n_new = n_old + 1
     if v_new is None:
-        v_new = v_old + (x-v_old)/n_new
-    delta_v = v_old-v_new
-    z = x-v_new
-    g_new = g_old+z+n_old*delta_v
-    cp_new = cp_old+np.linalg.norm(z,q)**p + n_old*np.linalg.norm(delta_v,q)**p + np.sqrt(2*np.dot(delta_v,g_old))**p
+        v_new = v_old + (x - v_old) / n_new
+    delta_v = v_old - v_new
+    z = x - v_new
+    g_new = g_old + z + n_old * delta_v
+    cp_new = (
+        cp_old
+        + np.linalg.norm(z, q) ** p
+        + n_old * np.linalg.norm(delta_v, q) ** p
+        + np.sqrt(2 * np.dot(delta_v, g_old)) ** p
+    )
+
     return cp_new, g_new, v_new, n_new
 
-def cluster_center_update(x,v_old,n_old):
+
+def cluster_center_update(x, v_old, n_old):
     n_new = n_old + 1
     v_new = v_old + (x - v_old) / n_new
     return v_new, n_new
-
 
 
 class iXB:
@@ -181,7 +231,7 @@ class iXB:
         self.cluster_sizes = []
         self.g = None
 
-    def update(self,x,c_i):
+    def update(self, x, c_i):
         self.N += 1
         if c_i == len(self.cluster_sizes):
             self.cluster_centers.append(x)
@@ -192,19 +242,17 @@ class iXB:
             raise ValueError('Invalid Cluster Ordering')
         else:
             self.WGSS -= self.WGSS_i[c_i]
-            self.WGSS_i[c_i], self.g, self.cluster_centers[c_i],self.cluster_sizes[c_i] = CP_update(x, self.cluster_centers[c_i], self.cluster_sizes[c_i], self.g, self.WGSS_i[c_i])
+            self.WGSS_i[c_i], self.g, self.cluster_centers[c_i], self.cluster_sizes[c_i] = CP_update(x, self.cluster_centers[c_i], self.cluster_sizes[c_i], self.g, self.WGSS_i[c_i])
         # self.WGSS_i[c_i] = CP(self.clusters[c_i].center,self.clusters[c_i],2,2)
         self.WGSS += self.WGSS_i[c_i]
         self.min_v_i[c_i] = np.inf
         for j in range(len(self.cluster_centers)):
             if j != c_i:
-                self.min_v_i[c_i] = np.minimum(self.min_v_i[c_i],norm22(self.cluster_centers[c_i]-self.cluster_centers[j]))
-        self.min_v = min([self.min_v,self.min_v_i[c_i]])
+                self.min_v_i[c_i] = np.minimum(self.min_v_i[c_i], norm22(self.cluster_centers[c_i]-self.cluster_centers[j]))
+        self.min_v = min([self.min_v, self.min_v_i[c_i]])
 
         self.output = (self.WGSS/self.N)/self.min_v
         return self.output
-
-
 
 
 class iPS:
@@ -218,13 +266,13 @@ class iPS:
         self.cluster_centers = []
         self.cluster_sizes = []
 
-    def update(self,x,c_i):
+    def update(self, x, c_i):
         if c_i >= len(self.cluster_centers):
             self.cluster_centers.append(x)
             self.cluster_sizes.append(1)
             self.PS_i.append(0)
         else:
-            self.cluster_centers[c_i], self.cluster_sizes[c_i] = cluster_center_update(x,self.cluster_centers[c_i],self.cluster_sizes[c_i])
+            self.cluster_centers[c_i], self.cluster_sizes[c_i] = cluster_center_update(x, self.cluster_centers[c_i], self.cluster_sizes[c_i])
         self.max_cluster_size = np.maximum(self.max_cluster_size, self.cluster_sizes[c_i])
         b_ = [norm22(self.cluster_centers[c_i]-self.cluster_centers[c_j]) for c_j in range(len(self.cluster_centers)) if c_j != c_i]
         if b_:
@@ -237,6 +285,7 @@ class iPS:
 
             self.output = np.sum(self.PS_i)
         return self.output
+
 
 class iCH:
     def __init__(self):
@@ -254,7 +303,7 @@ class iCH:
         self.cluster_sizes = []
         self.g = None
 
-    def update(self,x,c_i):
+    def update(self, x, c_i):
         self.N += 1
         self.data_center = ((self.N - 1) * self.data_center + x) / self.N
         if c_i == len(self.clusters):
@@ -266,7 +315,7 @@ class iCH:
             raise ValueError('Invalid Cluster Ordering')
         else:
             self.WGSS -= self.WGSS_i[c_i]
-            self.WGSS_i[c_i], self.g, self.cluster_centers[c_i],self.cluster_sizes[c_i] = CP_update(x, self.cluster_centers[c_i], self.cluster_sizes[c_i], self.g, self.WGSS_i[c_i])
+            self.WGSS_i[c_i], self.g, self.cluster_centers[c_i], self.cluster_sizes[c_i] = CP_update(x, self.cluster_centers[c_i], self.cluster_sizes[c_i], self.g, self.WGSS_i[c_i])
             self.WGSS += self.WGSS_i[c_i]
 
         self.BGSS -= self.BGSS_i[c_i]
@@ -280,14 +329,13 @@ class iCH:
         return self.output
 
 
-
 class iGD:
-    def __init__(self,t=43):
+    def __init__(self, t=43):
 
-        assert(t==43 or t==53)
+        assert(t == 43 or t == 53)
 
         self.t = t
-        self.d = np.ones((0,0))*np.inf
+        self.d = np.ones((0, 0))*np.inf
         self.D = []
         self.output = 0
 
@@ -296,7 +344,7 @@ class iGD:
         self.g = None
         self.CP = []
 
-    def update(self,x,c_i):
+    def update(self, x, c_i):
         if c_i == len(self.cluster_centers):
             self.cluster_centers.append(x)
             self.cluster_sizes.append(1)
@@ -443,6 +491,7 @@ class iDB:
 
             self.output = np.sum(self.R)/sum([clen > 0 for clen in self.cluster_sizes])
         return self.output
+
 
 def iCVI(name):
     if name == 'iDB':
