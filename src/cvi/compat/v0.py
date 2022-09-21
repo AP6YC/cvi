@@ -748,9 +748,29 @@ class iSIL:
                 )
                 return local_return
 
-    def sci(self,i, J):
-        A = min(self.sij[i,l] for l in range(len(self.cluster_centers)) if l != J) - self.sij[i,J]
-        B = max(self.sij[i,J],max(self.sij[i,l] for l in range(len(self.cluster_centers)) if l != J))
+    def sci(self, i: int, J: int):
+        """
+        TODO
+        """
+
+        A = (
+            min([
+                self.sij[i, ij]
+                for ij in range(len(self.cluster_centers))
+                if ij != J
+            ])
+            - self.sij[i, J]
+        )
+        B = (
+            max(
+                self.sij[i, J],
+                max([
+                    self.sij[i, ij]
+                    for ij in range(len(self.cluster_centers))
+                    if ij != J
+                ])
+            )
+        )
         return A/B
 
     def update(self,x,c_i):
