@@ -1008,7 +1008,7 @@ def iCVI(name):
         return iDB()
     elif name == 'iSIL':
         return iSIL()
-    elif name == 'GD43':
+    elif name == 'iGD43':
         return iGD43()
     elif name == 'iGD53':
         return iGD53()
