@@ -5,9 +5,26 @@ Incremental CVI variants.
 # Custom imports
 import numpy as np
 
+from typing import Optional
+
 
 class Cluster:
-    def __init__(self,radial=True, box=False):
+    """
+    Base cluster class.
+    """
+
+    def __init__(self, radial: bool = True, box: bool = False):
+        """
+        Cluster constructor.
+
+        Parameters
+        ----------
+        radial : bool
+            TODO
+        box : bool
+            TODO
+        """
+
         self.radial = radial
         self.box = box
         self.len = 0
@@ -17,7 +34,18 @@ class Cluster:
         self.indicies = []
         self.dim = 0
 
-    def add_point(self, x, i=None):
+    def add_point(self, x: np.ndarray, i: Optional[int] = None):
+        """
+        Adds a point to the cluster.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        i : Optional[int]
+            TODO
+        """
+
         if not self.points:
             self.dim = len(x)
         assert self.dim == len(x)
@@ -38,28 +66,77 @@ class Cluster:
             self.indicies.append(i)
         self.len += 1
 
-    def min_distance(self, x, norm_ord=2):
+    def min_distance(self, x: np.ndarray, norm_ord: Optional[int] = 2):
+        """
+        Calculates the minimum distance to the nearest cluster.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        norm_ord : Optional[int]
+            TODO
+        """
+
         min_d = np.inf
         for y in self.points:
-            d_y = np.linalg.norm((x-y),norm_ord)
-            min_d = np.minimum(min_d,d_y)
+            d_y = np.linalg.norm((x - y), norm_ord)
+            min_d = np.minimum(min_d, d_y)
         return min_d
 
-    def avg_distance(self,x,norm_ord=2):
+    def avg_distance(self, x: np.ndarray, norm_ord: Optional[int] = 2) -> float:
+        """
+        Gets the average distance of a point.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        norm_ord : Optional[int]
+            TODO
+        """
+
         avg_d = 0
         for y in self.points:
             avg_d += np.linalg.norm((x - y), norm_ord)
         avg_d /= self.len
         return avg_d
 
-    def center_distance(self,x,norm_ord=2):
-        return np.linalg.norm(self.center-x,norm_ord)
+    def center_distance(self, x: np.ndarray, norm_ord: Optional[int] = 2):
+        """
+        Gets the center distance of a point.
 
-    def within_bounding_box(self,x):
-        return np.array_equal(np.minimum(x,self.bounding_box), self.bounding_box)
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        norm_ord : Optional[int]
+            TODO
+        """
+
+        return np.linalg.norm(self.center - x, norm_ord)
+
+    def within_bounding_box(self, x: np.ndarray):
+        """
+        Checks if a point is within a bounding box.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        """
+
+        return_val = np.array_equal(
+            np.minimum(x, self.bounding_box),
+            self.bounding_box
+        )
+        return return_val
 
 
 class Clusters(list):
+    """
+    Base clusters class.
+    """
     def from_list(self, X, C):
         for x, c in zip(X, C):
             if c >= self.__len__():
