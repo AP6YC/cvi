@@ -211,14 +211,39 @@ def CP_update(
     return cp_new, g_new, v_new, n_new
 
 
-def cluster_center_update(x, v_old, n_old):
+def cluster_center_update(
+    x: np.ndarray,
+    v_old: np.ndarray,
+    n_old: np.ndarray
+):
+    """
+    Updates the cluster center incrementally.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        TODO
+    v_old : np.ndarray
+        TODO
+    n_old : np.ndarray
+        TODO
+    """
+
     n_new = n_old + 1
     v_new = v_old + (x - v_old) / n_new
     return v_new, n_new
 
 
 class iXB:
+    """
+    Incremental Xie-Beni (XB) CVI.
+    """
+
     def __init__(self):
+        """
+        XB constructor.
+        """
+
         self.min_v = np.inf
         self.min_v_i = []
         self.N = 0
@@ -231,7 +256,18 @@ class iXB:
         self.cluster_sizes = []
         self.g = None
 
-    def update(self, x, c_i):
+    def update(self, x: np.ndarray, c_i: int):
+        """
+        XB incremental update method.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        c_i : int
+            TODO
+        """
+
         self.N += 1
         if c_i == len(self.cluster_sizes):
             self.cluster_centers.append(x)
@@ -242,21 +278,45 @@ class iXB:
             raise ValueError('Invalid Cluster Ordering')
         else:
             self.WGSS -= self.WGSS_i[c_i]
-            self.WGSS_i[c_i], self.g, self.cluster_centers[c_i], self.cluster_sizes[c_i] = CP_update(x, self.cluster_centers[c_i], self.cluster_sizes[c_i], self.g, self.WGSS_i[c_i])
+            (
+                self.WGSS_i[c_i],
+                self.g,
+                self.cluster_centers[c_i],
+                self.cluster_sizes[c_i]
+            ) = CP_update(
+                    x,
+                    self.cluster_centers[c_i],
+                    self.cluster_sizes[c_i],
+                    self.g,
+                    self.WGSS_i[c_i]
+            )
+
         # self.WGSS_i[c_i] = CP(self.clusters[c_i].center,self.clusters[c_i],2,2)
         self.WGSS += self.WGSS_i[c_i]
         self.min_v_i[c_i] = np.inf
         for j in range(len(self.cluster_centers)):
             if j != c_i:
-                self.min_v_i[c_i] = np.minimum(self.min_v_i[c_i], norm22(self.cluster_centers[c_i]-self.cluster_centers[j]))
+                self.min_v_i[c_i] = np.minimum(
+                    self.min_v_i[c_i],
+                    norm22(self.cluster_centers[c_i]-self.cluster_centers[j])
+                )
+
         self.min_v = min([self.min_v, self.min_v_i[c_i]])
 
-        self.output = (self.WGSS/self.N)/self.min_v
+        self.output = (self.WGSS / self.N) / self.min_v
         return self.output
 
 
 class iPS:
+    """
+    Incremental Partition Separation (PS).
+    """
+
     def __init__(self):
+        """
+        PS constructor.
+        """
+
         self.mean_cluster_center = None
         self.max_cluster_size = 0
 
@@ -266,7 +326,11 @@ class iPS:
         self.cluster_centers = []
         self.cluster_sizes = []
 
-    def update(self, x, c_i):
+    def update(self, x: np.ndarray, c_i: int):
+        """
+        PS incremental update.
+        """
+
         if c_i >= len(self.cluster_centers):
             self.cluster_centers.append(x)
             self.cluster_sizes.append(1)
@@ -480,12 +544,12 @@ class iDB:
             self.R[c_i] = 0
             for j in range(len(self.cluster_sizes)):
                 if j != c_i:
-                    self.M[c_i,j] = 0
+                    self.M[c_i, j] = 0
                     for t in range(len(x)):
                         if self.cluster_sizes[j] > 0:
-                            self.M[c_i,j] = abs(self.cluster_centers[c_i][t]-self.cluster_centers[j][t])**self.p
-                    self.M[c_i,j] = self.M[c_i,j]**(1./self.p)
-                    self.M[j,c_i] = self.M[c_i,j]
+                            self.M[c_i, j] = abs(self.cluster_centers[c_i][t]-self.cluster_centers[j][t])**self.p
+                    self.M[c_i, j] = self.M[c_i, j] ** (1 ./ self.p)
+                    self.M[j, c_i] = self.M[c_i, j]
                     if self.cluster_sizes[j] > 0:
                         self.R[c_i] = max(self.R[c_i], (self.S[c_i]+self.S[j])/self.M[c_i,j])
 
