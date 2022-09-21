@@ -592,9 +592,9 @@ class iSIL:
 
         self.sij = np.zeros((0, 0))
 
-    def update(self, x: np.ndarray, i: int):
+    def cp_update(self, x: np.ndarray, i: int):
         """
-        SIL incremental update.
+        SIL CP update.
 
         Parameters
         ----------
@@ -603,6 +603,7 @@ class iSIL:
         i : int
             TODO
         """
+
         self.CP[i] += np.linalg.norm(x) ** 2
         self.g[i] += x
 
@@ -748,9 +749,21 @@ class iSIL:
                 )
                 return local_return
 
-    def sci(self, i: int, J: int):
+    def sci(self, i: int, J: int) -> float:
         """
         TODO
+
+        Parameters
+        ----------
+        i : int
+            TODO
+        J : int
+            TODO
+
+        Returns
+        -------
+        float
+            TODO
         """
 
         A = (
@@ -771,27 +784,76 @@ class iSIL:
                 ])
             )
         )
-        return A/B
+        return A / B
 
-    def update(self,x,c_i):
+    def update(self, x: np.ndarray, c_i: int):
+        """
+        SIL incremental update.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            TODO
+        c_i : int
+            TODO
+        """
+
         if c_i == len(self.cluster_sizes):
             self.cluster_centers.append(x)
             self.cluster_sizes.append(1)
             self.sc.append(0)
-            self.b = np.pad(self.b, [(0, 1), (0, 1)], mode='constant', constant_values=np.inf)
-            self.sij = np.pad(self.b, [(0, 1), (0, 1)], mode='constant', constant_values=0)
+            self.b = np.pad(
+                self.b,
+                [(0, 1), (0, 1)],
+                mode='constant',
+                constant_values=np.inf
+            )
+            self.sij = np.pad(
+                self.b,
+                [(0, 1), (0, 1)],
+                mode='constant',
+                constant_values=0
+            )
             self.CP.append(np.linalg.norm(x) ** 2)
             self.g.append(x)
         elif c_i > len(self.cluster_sizes):
             raise ValueError('Invalid Cluster Ordering')
         self.N += 1
-        self.cluster_centers[c_i], self.cluster_sizes[c_i] = cluster_center_update(x, self.cluster_centers[c_i], self.cluster_sizes[c_i])
+        (
+            self.cluster_centers[c_i],
+            self.cluster_sizes[c_i]
+        ) = cluster_center_update(
+            x,
+            self.cluster_centers[c_i],
+            self.cluster_sizes[c_i]
+        )
         for i in range(len(self.cluster_sizes)):
             for j in range(len(self.cluster_sizes)):
-                self.sij[i, j] = self.s_ij_new(x, i, j, c_i, self.cluster_sizes[j], self.cluster_sizes[j]-1, self.CP[j], self.cluster_centers[j], self.cluster_centers[i], self.g[j], self.sij[i, j])
+                self.sij[i, j] = (
+                    self.s_ij_new(
+                        x,
+                        i,
+                        j,
+                        c_i,
+                        self.cluster_sizes[j],
+                        self.cluster_sizes[j] - 1,
+                        self.CP[j],
+                        self.cluster_centers[j],
+                        self.cluster_centers[i],
+                        self.g[j],
+                        self.sij[i, j]
+                    )
+                )
         self.cp_update(x, c_i)
-        self.output = (1/len(self.cluster_centers))*sum([self.sci(i,c_i) for i in range(len(self.cluster_centers))])
+        self.output = (
+            (1 / len(self.cluster_centers))
+            * sum([
+                self.sci(i, c_i)
+                for i in range(len(self.cluster_centers))
+            ])
+        )
         return self.output
+
 
 class iDB:
     def __init__(self):
