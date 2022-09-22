@@ -403,7 +403,7 @@ class Test_get_cvi:
 
         # Create a CVI and tell it that it is setup
         local_cvi = get_one_cvi()
-        local_cvi.is_setup = True
+        local_cvi._is_setup = True
 
         # Test that switching from batch to incremental is not supported
         with pytest.raises(ValueError):
