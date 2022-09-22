@@ -218,8 +218,8 @@ def data() -> TestData:
     This fixture is run once for the entire pytest session.
     """
 
-    # p = 0.1
-    p = 1
+    p = 0.1
+    # p = 1
     lg.info("LOADING DATA")
 
     data_path = Path("tests", "data")
@@ -423,3 +423,32 @@ class Test_get_cvi:
         # Test that batch mode requires more than two labels
         with pytest.raises(ValueError):
             local_cvi.get_cvi(data, labels)
+
+
+# class TestCompat:
+#     """
+#     Compat entries tests.
+#     """
+
+#     def test_v0_modules(self, data: TestData):
+#         """
+#         Unit test for the v0 iCVI modules.
+#         """
+
+#         for key, local_data in data.datasets.items():
+#             lg.info(f"Testing data: {key}")
+#             n_samples = data.count(key)
+
+#             # v0 modules
+#             i_cvis = [
+#                 local_cvi() for local_cvi in cvi.compat.v0.MODULES
+#             ]
+
+#             # Iterate over every module
+#             for local_cvi in i_cvis:
+#                 # Iterate over every sample and label
+#                 for ix in range(n_samples):
+#                     # Grab a sample and label
+#                     sample, label = get_sample(local_data, ix)
+#                     # Update the cvi
+#                     _ = local_cvi.update(sample, label)

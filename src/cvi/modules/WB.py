@@ -1,5 +1,5 @@
 """
-The Calinski-Harabasz (CH) Cluster Validity Index.
+The WB-Index (WB) Cluster Validity Index.
 """
 
 # Custom imports
@@ -9,28 +9,29 @@ import numpy as np
 from . import _base
 
 
-# CH object definition
-class CH(_base.CVI):
+# WB object definition
+class WB(_base.CVI):
     """
-    The stateful information of the Calinski-Harabasz (CH) Cluster Validity Index.
+    The stateful information of the WB-Index (WB) Cluster Validity Index.
 
     References
     ----------
     1. L. E. Brito da Silva, N. M. Melton, and D. C. Wunsch II, "Incremental Cluster Validity Indices for Hard Partitions: Extensions  and  Comparative Study," ArXiv  e-prints, Feb 2019, arXiv:1902.06711v1 [cs.LG].
-    2. T. Calinski and J. Harabasz, "A dendrite method for cluster analysis," Communications in Statistics, vol. 3, no. 1, pp. 1-27, 1974.
-    3. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML]. [Online].
-    4. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
+    2. Q. Zhao, M. Xu, and P. Franti, "Sum-of-Squares Based Cluster Validity Index and Significance Analysis," in Adaptive and Natural Computing Algorithms, M. Kolehmainen, P. Toivanen, and B. Beliczynski, Eds. Berlin, Heidelberg: Springer Berlin Heidelberg, 2009, pp. 313-322.
+    3. Q. Zhao and P. Franti, "WB-index: A sum-of-squares based index for cluster validity," Data Knowledge Engineering, vol. 92, pp. 77-89, 2014.
+    4. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML].
+    5. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
     """
 
     def __init__(self):
         """
-        CH initialization routine.
+        WB initialization routine.
         """
 
         # Run the base initialization
         super().__init__()
 
-        # CH-specific initialization
+        # WB-specific initialization
         self._mu = np.zeros([0])     # dim
         self._SEP = np.zeros([0])     # dim
         self._BGSS = 0.0
@@ -39,20 +40,20 @@ class CH(_base.CVI):
     @_base._add_docs(_base._setup_doc)
     def _setup(self, sample: np.ndarray):
         """
-        Calinski-Harabasz (CH) setup routine.
+        WB-Index (WB) setup routine.
         """
 
         # Run the generic setup routine
         super()._setup(sample)
 
-        # CH-specific setup
+        # WB-specific setup
         self._SEP = np.zeros([self._dim])
         self._mu = sample
 
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
         """
-        Incremental parameter update for the Calinski-Harabasz (CH) CVI.
+        Incremental parameter update for the WB-Index (WB) CVI.
         """
 
         # Get the internal label corresponding to the provided label
@@ -117,14 +118,14 @@ class CH(_base.CVI):
         self._n_samples = n_samples_new
         # self._mu = mu_new
         self._SEP = np.array([
-            self._n[ix] * sum((self._v[ix, :] - self._mu) ** 2)
+            self._n[ix] * sum((self._v[ix, :] - self._mu)**2)
             for ix in range(self._n_clusters)
         ])
 
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         """
-        Batch parameter update for the Calinski-Harabasz (CH) CVI.
+        Batch parameter update for the WB-Index (WB) CVI.
         """
 
         # Setup the CVI for batch mode
@@ -153,7 +154,7 @@ class CH(_base.CVI):
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):
         """
-        Criterion value evaluation method for the Calinski-Harabasz (CH) CVI.
+        Criterion value evaluation method for the WB-Index (WB) CVI.
         """
 
         if self._n_clusters > 2:
@@ -161,10 +162,9 @@ class CH(_base.CVI):
             self._WGSS = sum(self._CP)
             # Between groups sum of scatters
             self._BGSS = sum(self._SEP)
-            # CH index value
+            # WB index value
             self.criterion_value = (
-                (self._BGSS / self._WGSS)
-                * ((self._n_samples - self._n_clusters) / (self._n_clusters - 1))
+                (self._WGSS / self._BGSS) * self._n_clusters
             )
         else:
             self._BGSS = 0.0
