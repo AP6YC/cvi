@@ -67,7 +67,7 @@ By definition, you wouldn't have the _true_ label belonging to each sample (if o
 
 CVIs are metrics of cluster partitioning when true cluster labels are unavailable.
 Each operates on only the information available (i.e., the provided samples of features and the labels prescribed by the clustering algorithm) and produces a _metric_, a number that goes up or down according to how well the CVI believes the clustering algorithm appears to, well, _cluster_.
-Clustering well in this context means correctly partitioning (i.e., separating) the data rather than prescribing too many different clusters (over partitioning) or too few (under partitioning)
+Clustering well in this context means correctly partitioning (i.e., separating) the data rather than prescribing too many different clusters (over partitioning) or too few (under partitioning).
 Every CVI itself also behaves differently in terms of the range and scale of their numbers.
 **Furthermore, each CVI has an original batch implementation and incremental implementation that are equivalent**.
 

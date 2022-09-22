@@ -134,7 +134,6 @@ class CVI():
         # If we got 1D data, do a quick update
         if (data.ndim == 1):
             self._param_inc(data, label)
-            pass
 
         # Otherwise, we got 2D data and do the correct update
         elif (data.ndim == 2):
