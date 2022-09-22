@@ -30,9 +30,9 @@ class rCIP(_base.CVI):
         super().__init__()
 
         # rCIP-specific initialization
-        self._D = np.zeros([0, 0])          # n_clusters x n_clusters
-        self._sigmal = np.zeros([0, 0, 0])  # dim x dim x n_clusters
-        self._delta_term = np.zeros([0, 0]) # dim x dim
+        self._D = np.zeros([0, 0])              # n_clusters x n_clusters
+        self._sigma = np.zeros([0, 0, 0])       # dim x dim x n_clusters
+        self._delta_term = np.zeros([0, 0])     # dim x dim
         self._constant = 0.0
         # NO USE FOR CP IN rCIP
         self._CP = None
@@ -75,9 +75,7 @@ class rCIP(_base.CVI):
         if i_label > self._n_clusters - 1:
             n_new = 1
             v_new = sample
-            CP_new = 0.0
-            G_new = np.zeros(self._dim)
-            S_new = 0.0
+            sigma_new = self._delta_term
             if self._n_clusters == 0:
                 D_new = np.zeros((1, 1))
             else:
@@ -85,8 +83,14 @@ class rCIP(_base.CVI):
                 D_new[0:self._n_clusters, 0:self._n_clusters] = self._D
                 d_column_new = np.zeros(self._n_clusters + 1)
                 for jx in range(self._n_clusters):
+                    diff_m = v_new - self.v[jx, :]
+                    sigma_q = sigma_new + self._sigma[:, :, jx]
                     d_column_new[jx] = (
-                        np.sum((v_new - self._v[jx, :]) ** 2)
+                        self._constant
+                        * (1 / np.sqrt(np.linalg.det(sigma_q)))
+                        * np.exp(-0.5 * np.matmul(
+                            diff_m, np.matmul(np.linalg.inv(sigma_q), diff_m)
+                        ))
                     )
                 D_new[i_label, :] = d_column_new
                 D_new[:, i_label] = d_column_new
@@ -94,13 +98,13 @@ class rCIP(_base.CVI):
             # Update 1-D parameters with list appends
             self._n_clusters += 1
             self._n.append(n_new)
-            self._CP.append(CP_new)
-            self._S.append(S_new)
 
-            # Update 2-D parameters with numpy vstacks
+            # Update 2-D parameters with numpy vstack
             self._v = np.vstack([self._v, v_new])
-            self._G = np.vstack([self._G, G_new])
             self._D = D_new
+
+            # Update 3-D parameters with numpy dstack
+            self._sigma = np.dstack(self._sigma, sigma_new)
 
         # ELSE OLD CLUSTER LABEL
         else:
@@ -109,35 +113,32 @@ class rCIP(_base.CVI):
                 (1 - 1 / n_new) * self._v[i_label, :]
                 + (1 / n_new) * sample
             )
-            delta_v = self._v[i_label, :] - v_new
             diff_x_v = sample - v_new
-            CP_new = (
-                self._CP[i_label]
-                + np.inner(diff_x_v, diff_x_v)
-                + self._n[i_label] * np.inner(delta_v, delta_v)
-                + 2 * np.inner(delta_v, self._G[i_label, :])
+            sigma_new = (
+                ((n_new - 2) / (n_new - 1))
+                * (self._sigma[:, :, i_label] - self._delta_term)
+                + (1 / n_new) * (np.outer(diff_x_v))
+                + self._delta_term
             )
-            G_new = (
-                self._G[i_label, :]
-                + diff_x_v
-                + self._n[i_label] * delta_v
-            )
-            S_new = CP_new / n_new
             d_column_new = np.zeros(self._n_clusters)
             for jx in range(self._n_clusters):
                 # Skip the current i_label index
                 if jx == i_label:
                     continue
+                diff_m = v_new - self._v[jx, :]
+                sigma_q = sigma_new + self._sigma[:, :, jx]
                 d_column_new[jx] = (
-                    np.sum((v_new - self._v[jx, :]) ** 2)
+                    self._constant
+                    * (1 / np.sqrt(np.linalg.det(sigma_q)))
+                    * np.exp(-0.5 * np.matmul(
+                        diff_m, np.matmul(np.linalg.inv(sigma_q), diff_m)
+                    ))
                 )
 
             # Update parameters
             self._n[i_label] = n_new
             self._v[i_label, :] = v_new
-            self._CP[i_label] = CP_new
-            self._G[i_label, :] = G_new
-            self._S[i_label] = S_new
+            self.sigma[:, :, i_label] = sigma_new
             self._D[i_label, :] = d_column_new
             # self._D[:, i_label] = np.tranpose(d_column_new)
             self._D[:, i_label] = d_column_new
@@ -153,37 +154,46 @@ class rCIP(_base.CVI):
 
         # Setup the CVI for batch mode
         super()._setup_batch(data)
+        # TODO include this in a local setup batch method
+        epsilon = 12.0
+        delta = 10.0 ** (-epsilon / self._dim)
+        self._delta_term = np.eye(self._dim) * delta
 
         # Take the average across all samples, but cast to 1-D vector
-        self._mu = np.mean(data, axis=0)
         u = np.unique(labels)
         self._n_clusters = u.size
-        # self._n = np.zeros(self._n_clusters, dtype=int)
         self._n = [0 for _ in range(self._n_clusters)]
         self._v = np.zeros((self._n_clusters, self._dim))
-        # self._CP = np.zeros(self._n_clusters)
-        self._CP = [0 for _ in range(self._n_clusters)]
-        self._G = np.zeros((self._n_clusters, self._dim))
+        self._sigma = np.zeros((self._dim, self._dim, self._n_clusters))
         self._D = np.zeros((self._n_clusters, self._n_clusters))
-        # self._S = np.zeros(self._n_clusters)
-        self._S = [0 for _ in range(self._n_clusters)]
 
         for ix in range(self._n_clusters):
-            # subset_indices = lambda x: labels[x] == ix
             subset_indices = (
                 [x for x in range(len(labels)) if labels[x] == ix]
             )
             subset = data[subset_indices, :]
             self._n[ix] = subset.shape[0]
             self._v[ix, :] = np.mean(subset, axis=0)
-            diff_x_v = subset - self._v[ix, :] * np.ones((self._n[ix], 1))
-            self._CP[ix] = np.sum(diff_x_v ** 2)
-            self._S[ix] = self._CP[ix] / self._n[ix]
+            if self._n[ix] > 1:
+                self._sigma[:, :, ix] = (
+                    (1 / (self._n[ix] - 1)) * (
+                        np.outer(subset)
+                        - self._n[ix] * np.outer(self._v[ix, :])
+                    ) + self._delta_term
+                )
+            else:
+                self._sigma[:, :, ix] = self.delta_term
 
         for ix in range(self._n_clusters - 1):
             for jx in range(ix + 1, self._n_clusters):
+                diff_m = self._v[ix, :] - self._v[jx, :]
+                sigma_q = self._sigma[:, :, ix] + self._sigma[:, :, jx]
                 self._D[ix, jx] = (
-                    np.sum((self._v[ix, :] - self._v[jx, :]) ** 2)
+                    self._constant
+                    * (1 / np.sqrt(np.linalg.det(sigma_q)))
+                    * np.exp(-0.5 * (
+                        diff_m, np.matmul(np.linalg.inv(sigma_q), diff_m)
+                    ))
                 )
 
         self._D = self._D + np.transpose(self._D)
@@ -194,16 +204,10 @@ class rCIP(_base.CVI):
         Criterion value evaluation method for the (Renyi's) representative Cross Information Potential (rCIP) CVI.
         """
 
-        if self._n_clusters > 1:
-            self._R = np.zeros((self._n_clusters, self._n_clusters))
-            for ix in range(self._n_clusters - 1):
-                for jx in range(ix + 1, self._n_clusters):
-                    self._R[jx, ix] = (
-                        (self._S[ix] + self._S[jx]) / self._D[jx, ix]
-                    )
-            self._R = self._R + np.transpose(self._R)
-            self.criterion_value = (
-                np.sum(np.max(self._R, axis=0)) / self._n_clusters
-            )
+        dim = self._D.shape[0]
+        if dim > 1:
+            values = self._D[np.triu_indices(dim, k=1)]
+            self.criterion_value = np.sum(values)
+
         else:
             self.criterion_value = 0.0
