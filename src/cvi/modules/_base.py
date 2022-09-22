@@ -183,29 +183,29 @@ class CVI():
 # --------------------------------------------------------------------------- #
 
 
-def _add_docs(other_func: Callable[[], None]) -> Callable[[], None]:
+def _add_docs(docstring: str) -> Callable[[], None]:
     """
-    A decorator for appending the docstring of one function to another.
+    A decorator for appending a string to the docstring of a function.
 
     Parameters
     ----------
-    other_func : Callable[[], None]
-        The other function whose docstring you want to append to the decorated function.
+    docstring : str
+        The docstring that you want to append to the decorated function.
     """
 
     def dec(func):
-        func.__doc__ = func.__doc__ + other_func.__doc__
+        func.__doc__ = func.__doc__ + docstring
         return func
 
     return dec
 
 
 # --------------------------------------------------------------------------- #
-# DOCSTRING FUNCTIONS
+# DOCSTRINGS
 # --------------------------------------------------------------------------- #
 
-
-def _setup_doc():
+# This docstring documents the shared API for incremental setup
+_setup_doc = (
     """
     Sets up the dimensions of the CVI based on the sample size.
 
@@ -214,12 +214,10 @@ def _setup_doc():
     sample : numpy.ndarray
         A sample vector of features.
     """
+)
 
-    pass
-
-
-# This function documents the shared API for incremental parameter updates
-def _param_inc_doc():
+# This docstring documents the shared API for incremental parameter updates
+_param_inc_doc = (
     """
     Parameters
     ----------
@@ -228,12 +226,10 @@ def _param_inc_doc():
     label : int
         An integer label for the cluster, zero-indexed.
     """
+)
 
-    pass
-
-
-# This function documents the shared API for batch parameter updates
-def _param_batch_doc():
+# This docstring documents the shared API for batch parameter updates
+_param_batch_doc = (
     """
     Parameters
     ----------
@@ -242,14 +238,11 @@ def _param_batch_doc():
     label : numpy.ndarray
         A vector of integer labels, zero-indexed.
     """
+)
 
-    pass
-
-
-# This function documents the shared API for criterion value evaluation
-def _evaluate_doc():
+# This docstring documents the shared API for criterion value evaluation
+_evaluate_doc = (
     """
     Updates the internal `criterion_value` parameter.
     """
-
-    pass
+)
