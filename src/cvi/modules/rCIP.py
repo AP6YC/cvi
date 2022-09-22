@@ -83,7 +83,7 @@ class rCIP(_base.CVI):
                 D_new[0:self._n_clusters, 0:self._n_clusters] = self._D
                 d_column_new = np.zeros(self._n_clusters + 1)
                 for jx in range(self._n_clusters):
-                    diff_m = v_new - self.v[jx, :]
+                    diff_m = v_new - self._v[jx, :]
                     sigma_q = sigma_new + self._sigma[:, :, jx]
                     d_column_new[jx] = (
                         self._constant
@@ -104,7 +104,7 @@ class rCIP(_base.CVI):
             self._D = D_new
 
             # Update 3-D parameters with numpy dstack
-            self._sigma = np.dstack(self._sigma, sigma_new)
+            self._sigma = np.dstack((self._sigma, sigma_new))
 
         # ELSE OLD CLUSTER LABEL
         else:
@@ -117,7 +117,7 @@ class rCIP(_base.CVI):
             sigma_new = (
                 ((n_new - 2) / (n_new - 1))
                 * (self._sigma[:, :, i_label] - self._delta_term)
-                + (1 / n_new) * (np.outer(diff_x_v))
+                + (1 / n_new) * (np.outer(diff_x_v, diff_x_v))
                 + self._delta_term
             )
             d_column_new = np.zeros(self._n_clusters)
@@ -138,7 +138,7 @@ class rCIP(_base.CVI):
             # Update parameters
             self._n[i_label] = n_new
             self._v[i_label, :] = v_new
-            self.sigma[:, :, i_label] = sigma_new
+            self._sigma[:, :, i_label] = sigma_new
             self._D[i_label, :] = d_column_new
             # self._D[:, i_label] = np.tranpose(d_column_new)
             self._D[:, i_label] = d_column_new
@@ -177,12 +177,13 @@ class rCIP(_base.CVI):
             if self._n[ix] > 1:
                 self._sigma[:, :, ix] = (
                     (1 / (self._n[ix] - 1)) * (
-                        np.outer(subset)
-                        - self._n[ix] * np.outer(self._v[ix, :])
+                        # np.outer(subset, subset)
+                        np.matmul(np.transpose(subset), subset)
+                        - self._n[ix] * np.outer(self._v[ix, :], self._v[ix, :])
                     ) + self._delta_term
                 )
             else:
-                self._sigma[:, :, ix] = self.delta_term
+                self._sigma[:, :, ix] = self._delta_term
 
         for ix in range(self._n_clusters - 1):
             for jx in range(ix + 1, self._n_clusters):
@@ -191,7 +192,7 @@ class rCIP(_base.CVI):
                 self._D[ix, jx] = (
                     self._constant
                     * (1 / np.sqrt(np.linalg.det(sigma_q)))
-                    * np.exp(-0.5 * (
+                    * np.exp(-0.5 * np.matmul(
                         diff_m, np.matmul(np.linalg.inv(sigma_q), diff_m)
                     ))
                 )
