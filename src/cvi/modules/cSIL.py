@@ -12,7 +12,7 @@ from . import _base
 # cSIL object definition
 class cSIL(_base.CVI):
     """
-    The stateful information of the Centroid-based Silhouette (cSIL) Cluster Validity Index.
+    The Centroid-based Silhouette (cSIL) Cluster Validity Index.
 
     References
     ----------

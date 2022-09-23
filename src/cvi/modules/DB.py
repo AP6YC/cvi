@@ -12,7 +12,7 @@ from . import _base
 # DB object definition
 class DB(_base.CVI):
     """
-    The stateful information of the Davies-Bouldin (DB) Cluster Validity Index.
+    The Davies-Bouldin (DB) Cluster Validity Index.
 
     References
     ----------

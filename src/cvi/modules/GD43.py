@@ -12,7 +12,7 @@ from . import _base
 # GD43 object definition
 class GD43(_base.CVI):
     """
-    The stateful information of the Generalized Dunn's Index 43 (GD43) Cluster Validity Index.
+    The Generalized Dunn's Index 43 (GD43) Cluster Validity Index.
 
     References
     ----------

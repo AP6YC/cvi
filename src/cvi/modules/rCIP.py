@@ -12,7 +12,7 @@ from . import _base
 # rCIP object definition
 class rCIP(_base.CVI):
     """
-    The stateful information of the (Renyi's) representative Cross Information Potential (rCIP) Cluster Validity Index.
+    The (Renyi's) representative Cross Information Potential (rCIP) Cluster Validity Index.
 
     References
     ----------
