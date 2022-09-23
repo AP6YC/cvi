@@ -12,7 +12,7 @@ from . import _base
 # GD53 object definition
 class GD53(_base.CVI):
     """
-    The stateful information of the Generalized Dunn's Index 53 (GD53) Cluster Validity Index.
+    The Generalized Dunn's Index 53 (GD53) Cluster Validity Index.
 
     References
     ----------

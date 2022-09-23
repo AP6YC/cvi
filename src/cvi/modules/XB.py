@@ -12,7 +12,7 @@ from . import _base
 # XB object definition
 class XB(_base.CVI):
     """
-    The stateful information of the Xie-Beni (XB) Cluster Validity Index.
+    The Xie-Beni (XB) Cluster Validity Index.
 
     References
     ----------

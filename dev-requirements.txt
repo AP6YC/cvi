@@ -2,6 +2,8 @@ pytest
 pandas
 twine
 build
+sphinx
+sphinx-rtd-theme
 setuptools
 numpy
 tqdm

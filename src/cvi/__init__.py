@@ -13,6 +13,7 @@ from .modules import (
     DB,
     GD43,
     GD53,
+    rCIP,
     WB,
     XB,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "DB",
     "GD43",
     "GD53",
+    "rCIP",
     "WB",
     "XB",
     "compat",
@@ -40,6 +42,7 @@ MODULES = [
     DB,
     GD43,
     GD53,
+    rCIP,
     WB,
     XB,
 ]
