@@ -2,6 +2,7 @@ pytest
 pandas
 twine
 build
+sphinx
 setuptools
 numpy
 tqdm
