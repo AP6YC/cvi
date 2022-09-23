@@ -88,9 +88,9 @@ class rCIP(_base.CVI):
                     d_column_new[jx] = (
                         self._constant
                         * (1 / np.sqrt(np.linalg.det(sigma_q)))
-                        * np.exp(-0.5 * np.matmul(
-                            diff_m, np.matmul(np.linalg.inv(sigma_q), diff_m)
-                        ))
+                        * np.exp(
+                            -0.5 * diff_m @ np.linalg.inv(sigma_q) @ diff_m
+                        )
                     )
                 D_new[i_label, :] = d_column_new
                 D_new[:, i_label] = d_column_new
@@ -113,7 +113,7 @@ class rCIP(_base.CVI):
                 (1 - 1 / n_new) * self._v[i_label, :]
                 + (1 / n_new) * sample
             )
-            diff_x_v = sample - v_new
+            diff_x_v = sample - self._v[i_label, :]
             sigma_new = (
                 ((n_new - 2) / (n_new - 1))
                 * (self._sigma[:, :, i_label] - self._delta_term)
@@ -130,9 +130,9 @@ class rCIP(_base.CVI):
                 d_column_new[jx] = (
                     self._constant
                     * (1 / np.sqrt(np.linalg.det(sigma_q)))
-                    * np.exp(-0.5 * np.matmul(
-                        diff_m, np.matmul(np.linalg.inv(sigma_q), diff_m)
-                    ))
+                    * np.exp(
+                        -0.5 * diff_m @ np.linalg.inv(sigma_q) @ diff_m
+                    )
                 )
 
             # Update parameters
@@ -140,7 +140,6 @@ class rCIP(_base.CVI):
             self._v[i_label, :] = v_new
             self._sigma[:, :, i_label] = sigma_new
             self._D[i_label, :] = d_column_new
-            # self._D[:, i_label] = np.tranpose(d_column_new)
             self._D[:, i_label] = d_column_new
 
         # Update the parameters that do not depend on label novelty
@@ -158,6 +157,7 @@ class rCIP(_base.CVI):
         epsilon = 12.0
         delta = 10.0 ** (-epsilon / self._dim)
         self._delta_term = np.eye(self._dim) * delta
+        self._constant = 1 / np.sqrt((2 * np.pi) ** self._dim)
 
         # Take the average across all samples, but cast to 1-D vector
         u = np.unique(labels)
@@ -177,8 +177,7 @@ class rCIP(_base.CVI):
             if self._n[ix] > 1:
                 self._sigma[:, :, ix] = (
                     (1 / (self._n[ix] - 1)) * (
-                        # np.outer(subset, subset)
-                        np.matmul(np.transpose(subset), subset)
+                        np.transpose(subset) @ subset
                         - self._n[ix] * np.outer(self._v[ix, :], self._v[ix, :])
                     ) + self._delta_term
                 )
@@ -192,9 +191,9 @@ class rCIP(_base.CVI):
                 self._D[ix, jx] = (
                     self._constant
                     * (1 / np.sqrt(np.linalg.det(sigma_q)))
-                    * np.exp(-0.5 * np.matmul(
-                        diff_m, np.matmul(np.linalg.inv(sigma_q), diff_m)
-                    ))
+                    * np.exp(
+                        -0.5 * diff_m @ np.linalg.inv(sigma_q) @ diff_m
+                    )
                 )
 
         self._D = self._D + np.transpose(self._D)
