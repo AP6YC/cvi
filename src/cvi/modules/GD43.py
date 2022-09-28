@@ -85,7 +85,7 @@ class GD43(_base.CVI):
                 d_column_new = np.zeros(self._n_clusters + 1)
                 for jx in range(self._n_clusters):
                     d_column_new[jx] = (
-                        np.sum((v_new - self._v[jx, :]) ** 2)
+                        np.sqrt(np.sum((v_new - self._v[jx, :]) ** 2))
                     )
                 D_new[i_label, :] = d_column_new
                 D_new[:, i_label] = d_column_new

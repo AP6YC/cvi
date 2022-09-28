@@ -32,7 +32,7 @@ class PS(_base.CVI):
         self._D = np.zeros([0, 0])   # n_clusters x n_clusters
         self._v_bar = []
         self._beta_t = 0.0
-        self._PS_i = []
+        self._PS_i = np.zeros(0)
 
     @_base._add_docs(_base._setup_doc)
     def _setup(self, sample: np.ndarray):
@@ -103,7 +103,7 @@ class PS(_base.CVI):
                 if jx == i_label:
                     continue
                 d_column_new[jx] = (
-                    np.sqrt(np.sum((v_new - self._v[jx, :]) ** 2))
+                    np.sum((v_new - self._v[jx, :]) ** 2)
                 )
 
             # Update parameters
@@ -144,7 +144,7 @@ class PS(_base.CVI):
         for ix in range(self._n_clusters - 1):
             for jx in range(ix + 1, self._n_clusters):
                 self._D[ix, jx] = (
-                    np.sqrt(np.sum((self._v[ix, :] - self._v[jx, :]) ** 2))
+                    np.sum((self._v[ix, :] - self._v[jx, :]) ** 2)
                 )
 
         self._D = self._D + np.transpose(self._D)
@@ -158,7 +158,7 @@ class PS(_base.CVI):
         if self._n_clusters > 1:
             self._v_bar = np.mean(self._v, axis=0)
             self._beta_t = 0.0
-            self._PS_i = np.zeros(self.n_clusters)
+            self._PS_i = np.zeros(self._n_clusters)
             for ix in range(self._n_clusters):
                 delta_v = self._v[ix, :] - self._v_bar
                 self._beta_t = self._beta_t + np.inner(delta_v, delta_v)
@@ -166,10 +166,10 @@ class PS(_base.CVI):
             n_max = max(self._n)
             for ix in range(self._n_clusters):
                 d = self._D[ix, :]
-                del d[ix]
+                d = np.delete(d, ix)
                 self._PS_i[ix] = (
                     (self._n[ix] / n_max)
-                    - np.exp(-min(d) / self._beta_t)
+                    - np.exp(-np.min(d) / self._beta_t)
                 )
             self.criterion_value = np.sum(self._PS_i)
         else:
