@@ -15,6 +15,7 @@ from .cSIL import cSIL
 from .DB import DB
 from .GD43 import GD43
 from .GD53 import GD53
+from .PS import PS
 from .rCIP import rCIP
 from .WB import WB
 from .XB import XB
@@ -30,6 +31,7 @@ __all__ = [
     "DB",
     "GD43",
     "GD53",
+    "PS",
     "rCIP",
     "WB",
     "XB",
