@@ -12,7 +12,7 @@ from . import _base
 # WB object definition
 class WB(_base.CVI):
     """
-    The stateful information of the WB-Index (WB) Cluster Validity Index.
+    The WB-Index (WB) Cluster Validity Index.
 
     References
     ----------

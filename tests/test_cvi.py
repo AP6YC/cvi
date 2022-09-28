@@ -111,7 +111,6 @@ def get_sample(local_data: Dict, index: int) -> Tuple[np.ndarray, int]:
     -------
     Tuple[np.ndarray, int]
         A tuple of sample features and the integer label prescribed to the sample.
-
     """
 
     # Grab a sample and label at the index
@@ -218,8 +217,8 @@ def data() -> TestData:
     This fixture is run once for the entire pytest session.
     """
 
-    p = 0.1
-    # p = 1
+    # p = 0.1
+    p = 1
     lg.info("LOADING DATA")
 
     data_path = Path("tests", "data")
@@ -344,8 +343,10 @@ class TestCVI:
             # Test equivalence between batch and incremental results
             for i in range(len(i_cvis)):
                 # I -> B
+                a = i_cvis[i].criterion_value
+                b = b_cvis[i].criterion_value
                 assert (
-                    (i_cvis[i].criterion_value - b_cvis[i].criterion_value)
+                    (abs(a - b) / ((a + b) / 2))
                     < tolerance
                 )
                 # # I -> BI
@@ -365,6 +366,22 @@ class TestCVI:
                     # f"BI: {bi_cvis[i].criterion_value},"
                 )
 
+    def test_rCIP_batch(self):
+        """
+        This test covers and edge case where rCIP is provided only a single sample of any cluster during its batch update.
+        """
+
+        # Create data, two samples of one cluster and one sample of another
+        local_data = np.array([[0, 1], [1, 1], [1, 2]])
+        local_labels = np.array([0, 0, 1])
+
+        # Create the rCIP module and run a batch iteration
+        local_cvi = cvi.rCIP()
+        _ = local_cvi.get_cvi(local_data, local_labels)
+
+        # Check that the edge case produces the expected result
+        assert np.array_equal(local_cvi._sigma[:, :, 1], local_cvi._delta_term)
+
 
 class Test_get_cvi:
     """
@@ -378,8 +395,8 @@ class Test_get_cvi:
 
         # Create some dummy 3D data
         dim = 2
-        data = np.zeros((dim, dim, dim))
-        label = 0
+        local_data = np.zeros((dim, dim, dim))
+        local_label = 0
 
         # Create a CVI
         local_cvi = get_one_cvi()
@@ -387,7 +404,7 @@ class Test_get_cvi:
         # Test that a 3D array is invalud
         with pytest.raises(ValueError):
             # Try passing a 3D array
-            local_cvi.get_cvi(data, label)
+            local_cvi.get_cvi(local_data, local_label)
 
     def test_error_batch_to_inc(self):
         """
@@ -396,16 +413,16 @@ class Test_get_cvi:
 
         # Create some dummy 2D data
         dim = 2
-        data = np.zeros((dim, dim))
-        label = 0
+        local_data = np.zeros((dim, dim))
+        local_label = 0
 
         # Create a CVI and tell it that it is setup
         local_cvi = get_one_cvi()
-        local_cvi.is_setup = True
+        local_cvi._is_setup = True
 
         # Test that switching from batch to incremental is not supported
         with pytest.raises(ValueError):
-            local_cvi.get_cvi(data, label)
+            local_cvi.get_cvi(local_data, local_label)
 
     def test_error_batch_two(self):
         """
@@ -414,15 +431,15 @@ class Test_get_cvi:
 
         # Create some dummy data with only one unique label
         dim = 2
-        data = np.zeros((dim, dim))
-        labels = np.zeros(dim)
+        local_data = np.zeros((dim, dim))
+        local_labels = np.zeros(dim)
 
         # Create a CVI object
         local_cvi = get_one_cvi()
 
         # Test that batch mode requires more than two labels
         with pytest.raises(ValueError):
-            local_cvi.get_cvi(data, labels)
+            local_cvi.get_cvi(local_data, local_labels)
 
 
 # class TestCompat:

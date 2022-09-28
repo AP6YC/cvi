@@ -12,7 +12,7 @@ from . import _base
 # CH object definition
 class CH(_base.CVI):
     """
-    The stateful information of the Calinski-Harabasz (CH) Cluster Validity Index.
+    The Calinski-Harabasz (CH) Cluster Validity Index.
 
     References
     ----------

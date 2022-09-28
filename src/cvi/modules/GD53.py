@@ -12,7 +12,7 @@ from . import _base
 # GD53 object definition
 class GD53(_base.CVI):
     """
-    The stateful information of the Generalized Dunn's Index 53 (GD53) Cluster Validity Index.
+    The Generalized Dunn's Index 53 (GD53) Cluster Validity Index.
 
     References
     ----------
@@ -31,7 +31,7 @@ class GD53(_base.CVI):
         # Run the base initialization
         super().__init__()
 
-        # CH-specific initialization
+        # GD53-specific initialization
         self._mu = np.zeros([0])     # dim
         self._D = np.zeros([0, 0])   # n_clusters x n_clusters
         self._inter = 0.0
