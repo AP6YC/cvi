@@ -31,7 +31,7 @@ class GD53(_base.CVI):
         # Run the base initialization
         super().__init__()
 
-        # CH-specific initialization
+        # GD53-specific initialization
         self._mu = np.zeros([0])     # dim
         self._D = np.zeros([0, 0])   # n_clusters x n_clusters
         self._inter = 0.0
