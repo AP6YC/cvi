@@ -10,6 +10,7 @@ Welcome to cvi's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   background
    usage
    api
 
