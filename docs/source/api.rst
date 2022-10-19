@@ -7,6 +7,5 @@ API
    :recursive:
 
    cvi
-   cvi
-   icvi
+   compat
    lib
