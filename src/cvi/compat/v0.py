@@ -1,5 +1,9 @@
 """
 Incremental CVI variants.
+
+# Authors
+- Nik Melton
+- Sasha Petrenko <sap625@mst.ed>
 """
 
 # Custom imports

@@ -1,5 +1,11 @@
 """
-The (Renyi's) representative Cross Information Potential (rCIP) Cluster Validity Index.
+(Renyi's) representative Cross Information Potential (rCIP) Cluster Validity Index.
+
+References
+----------
+1. D. L. Davies and D. W. Bouldin, "A cluster separation measure," IEEE Transaction on Pattern Analysis and Machine Intelligence, vol. 1, no. 2, pp. 224-227, Feb. 1979.
+2. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML]. [Online].
+3. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
 """
 
 # Custom imports
@@ -12,7 +18,7 @@ from . import _base
 # rCIP object definition
 class rCIP(_base.CVI):
     """
-    The (Renyi's) representative Cross Information Potential (rCIP) Cluster Validity Index.
+    (Renyi's) representative Cross Information Potential (rCIP) Cluster Validity Index.
 
     References
     ----------

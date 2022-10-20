@@ -4,7 +4,7 @@ Background
 This page provides a theoretical overview of cluster validity indices and what this project aims to accomplish.
 
 Problem Statement
-=================
+-----------------
 
 Consider the following: say that you have an unlabeled dataset filled with vectors of features but no predefined "bins" that you could organize these sampels into.
 The desired end result is both a statement of how many bins of samples you have and a vector of labels corresponding to each sample prescribing which bin that sample belongs to.
@@ -29,7 +29,7 @@ Since we can't create a true performance metric to compare how our clustering al
 Enter cluster validity indices.
 
 What are Cluster Validity Indices?
-==================================
+----------------------------------
 
 Cluster Validity Indices (CVIs) are designed to tackle the problem of creating a metric of performance for unsupervised algorithms where the true answer is unknown.
 Clustering is a ubiquitous unsupervised learning paradigm, so the terminology and development of CVIs principally target clustering algorithms.
