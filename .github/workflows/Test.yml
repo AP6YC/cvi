@@ -1,7 +1,11 @@
 name: Test
 
-on: [push]
-
+# on: [push]
+on:
+  push:
+    branches: [main]
+    tags: ["*"]
+  pull_request:
 jobs:
   build:
     # runs-on: ubuntu-latest
@@ -10,17 +14,17 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10"]
-      os:
-        - ubuntu-latest
-        - macOS-latest
-        - windows-latest
-      arch:
-        - x64
-        - x86
-      exclude:
-        # Exclude 32-bit macOS due to Julia support
-        - os: macOS-latest
-          arch: x86
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+        arch:
+          - x64
+          - x86
+        exclude:
+          # Exclude 32-bit macOS due to Julia support
+          - os: macOS-latest
+            arch: x86
 
     steps:
       - uses: actions/checkout@v3
