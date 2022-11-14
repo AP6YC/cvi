@@ -456,7 +456,7 @@ class Test_sklearn_equivalence:
     """
 
     def test_CH(self, data: TestData):
-        # lg.info("--- TESTING ALL ICVIS ---")
+        lg.info("--- COMPARING WITH SCIKIT-LEARN ---")
 
         for key, local_data in data.datasets.items():
             lg.info(f"Testing data: {key}")
