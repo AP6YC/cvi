@@ -25,6 +25,7 @@ from typing import (
 import pytest
 import numpy as np
 import pandas as pd
+import sklearn.metrics as skm
 
 # --------------------------------------------------------------------------- #
 # LOCAL IMPORTS
@@ -167,6 +168,13 @@ def split_data_columns(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     labels = df.to_numpy(dtype=int)[:, -1] - 1
 
     return samples, labels
+
+
+def inline_test_diff(a: float, b: float, tolerance=1e3):
+    assert (
+        (abs(a - b) / ((a + b) / 2)) < tolerance
+    )
+
 
 # --------------------------------------------------------------------------- #
 # DATACLASSES
@@ -441,6 +449,37 @@ class Test_get_cvi:
         with pytest.raises(ValueError):
             local_cvi.get_cvi(local_data, local_labels)
 
+
+class Test_sklearn_equivalence:
+    """
+    Pytest class that tests for the equivalence of CVI implementations that are shared with the scikit-learn package.
+    """
+
+    def test_CH(self, data: TestData):
+        # lg.info("--- TESTING ALL ICVIS ---")
+
+        for key, local_data in data.datasets.items():
+            lg.info(f"Testing data: {key}")
+
+            cvi_pairs = {
+                "CH": {
+                    "cvi": cvi.CH(),
+                    "sklearn": skm.calinski_harabasz_score,
+                }
+            }
+
+            for index, pair in cvi_pairs.items():
+                # local_cvi = pair["cvi"]()
+                cvi_cvi = pair["cvi"].get_cvi(local_data["samples"], local_data["labels"])
+                cvi_sklearn = pair["sklearn"](local_data["samples"], local_data["labels"])
+
+                lg.info(
+                    f"CVI: {index}, "
+                    f"cvi: {cvi_cvi:.5f}, "
+                    f"sklearn: {cvi_sklearn:.5f},"
+                )
+
+                inline_test_diff(cvi_cvi, cvi_sklearn)
 
 # class TestCompat:
 #     """
