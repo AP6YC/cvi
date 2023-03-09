@@ -26,7 +26,7 @@ The purpose of this package is to provide a home for the development and use of 
    :caption: Contents:
 
    background
-   usage
+   guide
    api
 
 Indices and tables
