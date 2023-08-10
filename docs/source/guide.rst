@@ -111,3 +111,18 @@ The incremental methods are used automatically based upon the dimensions of the 
 
 .. note::
    Currently only using _either_ batch _or_ incremental methods is supported; switching from batch to incremental updates with the same is not yet implemented.
+
+Implemented CVIs
+----------------
+
+The following CVIs have been implemented as of the latest version of `cvi`:
+
+* **CH**: Calinski-Harabasz
+* **cSIL**: Centroid-based Silhouette
+* **DB**: Davies-Bouldin
+* **GD43**: Generalized Dunn's Index 43.
+* **GD53**: Generalized Dunn's Index 53.
+* **PS**: Partition Separation.
+* **rCIP**: (Renyi's) representative Cross Information Potential.
+* **WB**: WB-index.
+* **XB**: Xie-Beni.
