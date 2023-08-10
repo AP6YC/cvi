@@ -1,5 +1,10 @@
 """
-The Partition Separation (PS) Cluster Validity Index.
+Partition Separation (PS) Cluster Validity Index.
+
+References
+----------
+1. Miin-Shen Yang and Kuo-Lung Wu, "A new validity index for fuzzy clustering," 10th IEEE International Conference on Fuzzy Systems. (Cat. No.01CH37297), Melbourne, Victoria, Australia, 2001, pp. 89-92, vol.1.
+2. E. Lughofer, "Extensions of vector quantization for incremental clustering," Pattern Recognit., vol. 41, no. 3, pp. 995-1011, 2008.
 """
 
 # Custom imports
@@ -12,7 +17,7 @@ from . import _base
 # PS object definition
 class PS(_base.CVI):
     """
-    The Partition Separation (PS) Cluster Validity Index.
+    Partition Separation (PS) Cluster Validity Index.
 
     References
     ----------

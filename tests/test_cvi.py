@@ -1,7 +1,11 @@
 """
     test_cvi.py
 
+# Description
 Tests the cvi package.
+
+# Authors
+- Sasha Petrenko <sap625@mst.edu>
 """
 
 # --------------------------------------------------------------------------- #

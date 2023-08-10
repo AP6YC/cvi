@@ -1,5 +1,5 @@
 """
-Incremental CVI variants.
+An implementation of incremental CVI variants.
 """
 
 # Custom imports
