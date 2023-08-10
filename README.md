@@ -5,12 +5,11 @@ A Python package implementing both batch and incremental cluster validity indice
 | **Stable Docs**  | **Dev Docs** | **Build Status** | **Coverage** |
 |:----------------:|:------------:|:----------------:|:------------:|
 | [![Stable][docs-stable-img]][docs-stable-url] | [![Dev][docs-dev-img]][docs-dev-url]| [![Build Status][ci-img]][ci-url] | [![Codecov][codecov-img]][codecov-url] |
-| **Version** | **Issues** | **Commits** | **Commits Since Release**
-| [![version][version-img]][version-url] | [![issues][issues-img]][issues-url] | [![commits][commits-img]][commits-url] | [![compare][compare-img]][compare-url] |
+| **Version** | **Issues** | **Downloads** | **Zenodo DOI** |
+| [![version][version-img]][version-url] | [![issues][issues-img]][issues-url] | [![Downloads][downloads-img]][downloads-url] |  [![DOI][zenodo-img]][zenodo-url] |
 
-| **Zenodo DOI** |
-| :------------: |
-| [![DOI][zenodo-img]][zenodo-url] |
+[downloads-img]: https://static.pepy.tech/badge/cvi
+[downloads-url]: https://pepy.tech/project/cvi
 
 [zenodo-img]: https://zenodo.org/badge/526280198.svg
 [zenodo-url]: https://zenodo.org/badge/latestdoi/526280198
@@ -32,12 +31,6 @@ A Python package implementing both batch and incremental cluster validity indice
 
 [issues-img]: https://img.shields.io/github/issues/AP6YC/cvi?style=flat
 [issues-url]: https://github.com/AP6YC/cvi/issues
-
-[commits-img]: https://img.shields.io/github/commit-activity/m/AP6YC/cvi?style=flat
-[commits-url]: https://github.com/AP6YC/cvi/commits/main
-
-[compare-img]: https://img.shields.io/github/commits-since/AP6YC/cvi/latest/develop
-[compare-url]: https://github.com/AP6YC/cvi/compare/v0.4.0...develop
 
 ## Table of Contents
 
@@ -75,7 +68,7 @@ The `cvi` Python package contains a variety of these batch and incremental CVIs.
 
 ## Installation
 
-The `cvi` package is listed on PyPi, so you may install the latest version with
+The `cvi` package is listed on PyPI, so you may install the latest version with
 
 ```python
 pip install cvi
