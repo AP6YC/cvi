@@ -1,5 +1,8 @@
 """
 The :mod:`modules` gathers all CVI implementations.
+
+# Authors
+- Sasha Petrenko <sap625@mst.edu>
 """
 
 from ._base import (

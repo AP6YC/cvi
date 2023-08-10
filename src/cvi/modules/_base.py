@@ -1,5 +1,8 @@
 """
 Utilities that are common across all CVI objects.
+
+# Authors
+- Sasha Petrenko <sap625@mst.edu>
 """
 
 # Standard library imports
