@@ -6,7 +6,7 @@ Guide
 Installation
 ------------
 
-This project is distributed as a Python package and is hosted on the PyPi package server.
+This project is distributed as a Python package and is hosted on the PyPI package server.
 To use `cvi`, first install it using pip:
 
 .. code-block:: shell
@@ -23,12 +23,7 @@ Quickstart
 ----------
 
 This section provides a quick overview of how to use the project.
-For more detailed code usage, please see the :ref:`usage` section.
-
-.. _usage:
-
-Usage
------
+For more detailed code usage, please see the :ref:`detailed usage` section.
 
 Create a CVI object and compute the criterion value in batch with `get_cvi`:
 
@@ -55,6 +50,8 @@ or do it incrementally, also with `get_cvi`:
    # Iterate over the data
    for ix in range(n_samples):
       criterion_values = my_cvi.get_cvi(samples[ix, :], labels[ix])
+
+.. _detailed usage:
 
 Detailed Usage
 --------------

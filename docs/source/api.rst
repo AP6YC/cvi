@@ -8,4 +8,3 @@ API
 
    cvi
    compat
-   lib
