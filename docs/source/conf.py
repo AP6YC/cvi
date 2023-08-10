@@ -16,8 +16,8 @@ sys.path.insert(0, os.path.abspath('../../src/cvi'))
 project = 'cvi'
 copyright = '2022, Sasha Petrenko'
 author = 'Sasha Petrenko'
-release = '0.4.0'
-version = '0.4.0'
+release = '0.5.0'
+version = '0.5.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
