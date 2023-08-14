@@ -141,7 +141,7 @@ samples, labels = my_clustering_alg(some_data)
 > **NOTE**:
 >
 > The `cvi` package assumes the Numpy **row-major** convention where rows are individual samples and columns are features.
-> A batch dataset is then `[n_samples, n_features]` large, and their corresponding labels are '[n_samples]` large.
+> A batch dataset is then `[n_samples, n_features]` large, and their corresponding labels are `[n_samples]` large.
 
 You may compute the final criterion value with a batch update all at once with `CVI.get_cvi`
 
@@ -192,7 +192,7 @@ The following CVIs have been implemented as of the latest version of `cvi`:
 
 ### Derivation
 
-The incremental and batch CVI implementations in this package are largely derived from the following Julia language implementations:
+The incremental and batch CVI implementations in this package are largely derived from the following Julia language implementations by the same authors of this package:
 
 - [ClusterValidityIndices.jl](https://github.com/AP6YC/ClusterValidityIndices.jl)
 
