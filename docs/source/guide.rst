@@ -82,7 +82,7 @@ A batch of data is assumed to be a numpy array of samples and a numpy vector of 
 
 .. note::
    The `cvi` package assumes the Numpy **row-major** convention where rows are individual samples and columns are features.
-   A batch dataset is then `[n_samples, n_features]` large, and their corresponding labels are '[n_samples]` large.
+   A batch dataset is then `[n_samples, n_features]` large, and their corresponding labels are `[n_samples]` large.
 
 You may compute the final criterion value with a batch update all at once with `CVI.get_cvi`
 
@@ -107,7 +107,7 @@ The incremental methods are used automatically based upon the dimensions of the 
       criterion_values[ix] = my_cvi.get_cvi(sample, label)
 
 .. note::
-   Currently only using _either_ batch _or_ incremental methods is supported; switching from batch to incremental updates with the same is not yet implemented.
+   Currently only using *either* batch *or* incremental methods is supported; switching from batch to incremental updates with the same is not yet implemented.
 
 Implemented CVIs
 ----------------
@@ -123,3 +123,29 @@ The following CVIs have been implemented as of the latest version of `cvi`:
 * **rCIP**: (Renyi's) representative Cross Information Potential.
 * **WB**: WB-index.
 * **XB**: Xie-Beni.
+
+Acknowledgements
+----------------
+
+Derivation
+^^^^^^^^^^
+
+The incremental and batch CVI implementations in this package are largely derived from the following Julia language implementations by the same authors of this package:
+
+* `ClusterValidityIndices.jl <https://github.com/AP6YC/ClusterValidityIndices.jl>`_
+
+Authors
+^^^^^^^
+
+The principal authors of the `cvi` pacakge are:
+
+* Sasha Petrenko - petrenkos@mst.edu
+* Nik Melton - nmmz76@mst.edu
+
+Related Projects
+^^^^^^^^^^^^^^^^
+
+If this package is missing something that you need, feel free to check out some related Python cluster validity packages:
+
+* `validclust <https://github.com/crew102/validclust>`_
+* `clusterval <https://github.com/Nuno09/clusterval>`_
