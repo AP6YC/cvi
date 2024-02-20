@@ -1,3 +1,5 @@
+# Documentation tools
 sphinx
-sphinx-rtd-theme
-numpy
+# sphinx-rtd-theme
+furo
+# numpy

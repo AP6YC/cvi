@@ -1,0 +1,11 @@
+pytest
+pytest-cov
+coverage
+# pytest
+pandas
+# twine
+# numpy
+# tqdm
+scikit-learn
+# jupyterlab
+flake8

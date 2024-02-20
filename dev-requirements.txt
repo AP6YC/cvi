@@ -1,12 +1,10 @@
-pytest
-pandas
-twine
+# Packaging tools
 build
-sphinx
-sphinx-rtd-theme
 setuptools
-numpy
-tqdm
-scikit-learn
+twine
+
+# Added tools for development
 jupyterlab
-flake8
+
+# The package itself
+-e .

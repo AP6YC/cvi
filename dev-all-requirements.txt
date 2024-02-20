@@ -1,0 +1,8 @@
+# The package requirements
+-r requirements.txt
+
+# Development tools
+-r dev-requirements.txt
+
+# Testing requirements
+-r tests/requirements.txt
