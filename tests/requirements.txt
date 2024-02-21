@@ -1,11 +1,9 @@
 pytest
 pytest-cov
 coverage
-# pytest
 pandas
-# twine
+scikit-learn
+flake8
 # numpy
 # tqdm
-scikit-learn
 # jupyterlab
-flake8

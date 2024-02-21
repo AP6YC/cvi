@@ -1,3 +1,14 @@
+# -----------------------------------------------------------------------------
+# DEV-ALL-REQUIREMENTS.TXT
+#
+# NOTE: this file is for only package development and is not necessary for its
+# usage.
+#
+# This file installs all of the requirements for each component of the project
+# for development, including the package requirements, useful dev tools,
+# testing requirements, and tools necessary for building the documentation.
+# -----------------------------------------------------------------------------
+
 # The package requirements
 -r requirements.txt
 
@@ -6,3 +17,6 @@
 
 # Testing requirements
 -r tests/requirements.txt
+
+# Documentation requirements
+-r docs/requirements.txt
