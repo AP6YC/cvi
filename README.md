@@ -1,4 +1,4 @@
-# cvi
+[![cvi-header](https://github.com/AP6YC/FileStorage/blob/main/cvi/header.png?raw=true)][docs-dev-url]
 
 A Python package implementing both batch and incremental cluster validity indices (CVIs).
 
@@ -34,22 +34,21 @@ A Python package implementing both batch and incremental cluster validity indice
 
 ## Table of Contents
 
-- [cvi](#cvi)
-  - [Table of Contents](#table-of-contents)
-  - [Cluster Validity Indices](#cluster-validity-indices)
-  - [Installation](#installation)
-  - [Usage](#usage)
-    - [Quickstart](#quickstart)
-    - [Detailed Usage](#detailed-usage)
-  - [Implemented CVIs](#implemented-cvis)
-  - [History](#history)
-  - [Acknowledgements](#acknowledgements)
-    - [Derivation](#derivation)
-    - [Authors](#authors)
-    - [Related Projects](#related-projects)
-    - [Assets](#assets)
-      - [Fonts](#fonts)
-      - [Icons](#icons)
+- [Table of Contents](#table-of-contents)
+- [Cluster Validity Indices](#cluster-validity-indices)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Quickstart](#quickstart)
+  - [Detailed Usage](#detailed-usage)
+- [Implemented CVIs](#implemented-cvis)
+- [History](#history)
+- [Acknowledgements](#acknowledgements)
+  - [Derivation](#derivation)
+  - [Authors](#authors)
+  - [Related Projects](#related-projects)
+  - [Assets](#assets)
+    - [Fonts](#fonts)
+    - [Icons](#icons)
 
 ## Cluster Validity Indices
 
