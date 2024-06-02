@@ -1,0 +1,9 @@
+pytest
+pytest-cov
+coverage
+pandas
+scikit-learn
+flake8
+# numpy
+# tqdm
+# jupyterlab

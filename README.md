@@ -1,4 +1,4 @@
-# cvi
+[![cvi-header](https://github.com/AP6YC/FileStorage/blob/main/cvi/header.png?raw=true)][docs-dev-url]
 
 A Python package implementing both batch and incremental cluster validity indices (CVIs).
 
@@ -34,19 +34,21 @@ A Python package implementing both batch and incremental cluster validity indice
 
 ## Table of Contents
 
-- [cvi](#cvi)
-  - [Table of Contents](#table-of-contents)
-  - [Cluster Validity Indices](#cluster-validity-indices)
-  - [Installation](#installation)
-  - [Usage](#usage)
-    - [Quickstart](#quickstart)
-    - [Detailed Usage](#detailed-usage)
-  - [Implemented CVIs](#implemented-cvis)
-  - [History](#history)
-  - [Acknowledgements](#acknowledgements)
-    - [Derivation](#derivation)
-    - [Authors](#authors)
-    - [Related Projects](#related-projects)
+- [Table of Contents](#table-of-contents)
+- [Cluster Validity Indices](#cluster-validity-indices)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Quickstart](#quickstart)
+  - [Detailed Usage](#detailed-usage)
+- [Implemented CVIs](#implemented-cvis)
+- [History](#history)
+- [Acknowledgements](#acknowledgements)
+  - [Derivation](#derivation)
+  - [Authors](#authors)
+  - [Related Projects](#related-projects)
+  - [Assets](#assets)
+    - [Fonts](#fonts)
+    - [Icons](#icons)
 
 ## Cluster Validity Indices
 
@@ -187,6 +189,8 @@ The following CVIs have been implemented as of the latest version of `cvi`:
 
 - 8/18/2022: Initialize project.
 - 9/8/2022: First release on PyPi and initiate GitFlow.
+- 8/10/2023: v0.5.1 released.
+- 5/31/2024: Updated documentation.
 
 ## Acknowledgements
 
@@ -209,3 +213,17 @@ If this package is missing something that you need, feel free to check out some 
 
 - [validclust](https://github.com/crew102/validclust)
 - [clusterval](https://github.com/Nuno09/clusterval)
+
+### Assets
+
+#### Fonts
+
+The following font is used in the logo:
+
+- [Ethnocentric Font Family](https://www.1001fonts.com/ethnocentric-font.html)
+
+#### Icons
+
+The icon for the project is taken from:
+
+- [Cluster computing icons created by IconBaandar - Flaticon](https://www.flaticon.com/free-icons/cluster-computing) ([cluster-5464694](https://www.flaticon.com/free-icon/cluster_5464694))
