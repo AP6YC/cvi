@@ -103,7 +103,7 @@ classifiers = [  # Optional
 # For an analysis of this field vs pip's requirements files see:
 # https://packaging.python.org/discussions/install-requires-vs-requirements/
 dependencies = [ # Optional
-  "numpy"
+  "numpy",
 ]
 
 # List additional groups of dependencies here (e.g. development
@@ -115,8 +115,25 @@ dependencies = [ # Optional
 # Similar to `dependencies` above, these must be valid existing
 # projects.
 [project.optional-dependencies] # Optional
-dev = ["check-manifest"]
-test = ["coverage"]
+dev = [
+  "check-manifest",
+  "build",
+  "setuptools",
+  "twine",
+  "jupyterlab",
+]
+test = [
+  "pytest",
+  "pytest-cov",
+  "coverage",
+  "pandas",
+  "scikit-learn",
+  "flake8",
+]
+docs = [
+  "sphinx",
+  "furo",
+]
 
 # List URLs that are relevant to your project
 #
