@@ -13,6 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        # Test on current Python LTS versions
         python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
         os:
           - ubuntu-latest
@@ -21,10 +22,6 @@ jobs:
         arch:
           - x64
           - x86
-        # exclude:
-        #   # Exclude 32-bit macOS due to Julia support
-        #   - os: macOS-latest
-        #     arch: x86
 
     steps:
       - uses: actions/checkout@v3

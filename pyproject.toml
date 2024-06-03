@@ -133,6 +133,7 @@ test = [
 docs = [
   "sphinx",
   "furo",
+  "sphinx-multiversion",
 ]
 
 # List URLs that are relevant to your project
