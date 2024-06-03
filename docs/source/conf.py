@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath('../../src/cvi'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'cvi'
-copyright = '2022, Sasha Petrenko'
+copyright = '2024, Sasha Petrenko'
 author = 'Sasha Petrenko'
 release = '0.5.1'
 version = '0.5.1'
@@ -67,8 +67,8 @@ html_sidebars = {
         "sidebar/search.html",
         "sidebar/navigation.html",
         "sidebar/ethical-ads.html",
-        "versioning.html",
         "sidebar/scroll-end.html",
+        "versioning.html",
     ]
 }
 
@@ -78,20 +78,23 @@ epub_show_urls = 'footnote'
 
 # Whitelist pattern for tags (set to None to ignore all tags)
 # smv_tag_whitelist = r'^.*$'
-smv_tag_whitelist = None
+# smv_tag_whitelist = None
+smv_tag_whitelist = r'^v*$'
 
 # Whitelist pattern for branches (set to None to ignore all branches)
 # smv_branch_whitelist = r'^.*$
 # smv_branch_whitelist = None
 # smv_branch_whitelist = r'^(main|develop)$'
-smv_branch_whitelist = r'^self-host-docs$'
+# smv_branch_whitelist = r'^self-host-docs$'
+smv_branch_whitelist = r'^(main|develop|self-host-docs)$'
 
 # Whitelist pattern for remotes (set to None to use local branches only)
 smv_remote_whitelist = None
 
 # Pattern for released versions
 # smv_released_pattern = r'^tags/.*$'
-smv_released_pattern = r'^v*$'
+smv_released_pattern = r'^tags/v*$'
+# smv_released_pattern = None
 
 # Format for versioned output directories inside the build directory
 smv_outputdir_format = '{ref.name}'

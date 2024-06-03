@@ -10,8 +10,6 @@
 `cvi`: Cluster Validity Indices in Python
 ====================================================
 
-**THIS IS A TEST OF THE  DOCS BUILD**
-
 These pages serve as the official documentation for the `cvi` Python package, the Python implementation of the `ClusterValidityIndices.jl <https://github.com/AP6YC/ClusterValidityIndices.jl>`_ Julia package.
 
 Cluster Validity Indices (CVIs) tackle the problem of judging the performance of an unsupervised/clustering algorithm without the availability of truth or supervisory labels, resulting in metrics of under- or over-partitioning.
