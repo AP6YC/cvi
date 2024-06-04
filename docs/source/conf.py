@@ -69,8 +69,12 @@ html_sidebars = {
         "sidebar/ethical-ads.html",
         "sidebar/scroll-end.html",
         "versioning.html",
-    ]
+    ],
 }
+
+# html_css_files = [
+#     'css/rtd.css',
+# ]
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
@@ -78,8 +82,10 @@ epub_show_urls = 'footnote'
 
 # Whitelist pattern for tags (set to None to ignore all tags)
 # smv_tag_whitelist = r'^.*$'
-# smv_tag_whitelist = None
-smv_tag_whitelist = r'^v*$'
+# smv_tag_whitelist = r'v*'
+smv_tag_whitelist = None
+# smv_tag_pattern = r'^v\d*\.\d*\.\d*$'
+# smv_tag_pattern = r'^.*(?!alpha)$'
 
 # Whitelist pattern for branches (set to None to ignore all branches)
 # smv_branch_whitelist = r'^.*$
@@ -92,9 +98,9 @@ smv_branch_whitelist = r'^(main|develop|self-host-docs)$'
 smv_remote_whitelist = None
 
 # Pattern for released versions
-# smv_released_pattern = r'^tags/.*$'
-smv_released_pattern = r'^tags/v*$'
-# smv_released_pattern = None
+# smv_released_pattern = r'^v.*$'
+# smv_released_pattern = r'v\d*\.\d*\.\d*'
+smv_released_pattern = r'^tags/.*$'
 
 # Format for versioned output directories inside the build directory
 smv_outputdir_format = '{ref.name}'
