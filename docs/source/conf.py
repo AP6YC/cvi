@@ -92,7 +92,7 @@ smv_tag_whitelist = None
 # smv_branch_whitelist = None
 # smv_branch_whitelist = r'^(main|develop)$'
 # smv_branch_whitelist = r'^self-host-docs$'
-smv_branch_whitelist = r'^(main|develop|self-host-docs)$'
+smv_branch_whitelist = r'^(main|develop)$'
 
 # Whitelist pattern for remotes (set to None to use local branches only)
 smv_remote_whitelist = None
