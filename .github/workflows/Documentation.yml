@@ -30,19 +30,19 @@ jobs:
         run: |
           git fetch --all
           git pull --all
-          git checkout develop
-          cd docs
+
 
       - name: Sphinx Build Develop
         run: |
+          git checkout develop
+          cd ${{ github.workspace }}/docs
           # make html
           sphinx-multiversion source build/html
 
       - name: Sphinx Build Main
         run: |
-          cd ..
           git checkout main
-          cd docs
+          cd ${{ github.workspace }}/docs
           sphinx-multiversion source build/html
 
       - name: Make symlinks
