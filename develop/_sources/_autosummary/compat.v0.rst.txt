@@ -1,0 +1,50 @@
+compat.v0
+=========
+
+.. automodule:: compat.v0
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      CP_update
+      cluster_center_update
+      iCVI
+      norm22
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class-template.rst
+   
+      Cluster
+      Clusters
+      iCH
+      iDB
+      iGD
+      iGD43
+      iGD53
+      iPS
+      iSIL
+      iXB
+   
+   
+
+   
+   
+   
+
+
+

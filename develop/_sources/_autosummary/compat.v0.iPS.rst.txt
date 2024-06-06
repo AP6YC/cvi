@@ -1,0 +1,26 @@
+compat.v0.iPS
+=============
+
+.. currentmodule:: compat.v0
+
+.. autoclass:: iPS
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~iPS.__init__
+      ~iPS.update
+   
+   
+
+   
+   
+   

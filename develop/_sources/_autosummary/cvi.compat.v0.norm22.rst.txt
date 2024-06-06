@@ -1,0 +1,6 @@
+cvi.compat.v0.norm22
+====================
+
+.. currentmodule:: cvi.compat.v0
+
+.. autofunction:: norm22

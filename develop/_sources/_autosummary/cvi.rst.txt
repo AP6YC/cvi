@@ -1,0 +1,33 @@
+﻿cvi
+===
+
+.. automodule:: cvi
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :template: custom-module-template.rst
+   :recursive:
+
+   cvi.compat
+   cvi.modules
+

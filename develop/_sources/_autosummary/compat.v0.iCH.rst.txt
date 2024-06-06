@@ -1,0 +1,26 @@
+compat.v0.iCH
+=============
+
+.. currentmodule:: compat.v0
+
+.. autoclass:: iCH
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~iCH.__init__
+      ~iCH.update
+   
+   
+
+   
+   
+   

@@ -1,0 +1,30 @@
+compat.v0.iSIL
+==============
+
+.. currentmodule:: compat.v0
+
+.. autoclass:: iSIL
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~iSIL.__init__
+      ~iSIL.cp_update
+      ~iSIL.s_ij_new
+      ~iSIL.s_ij_new_cluster
+      ~iSIL.sci
+      ~iSIL.update
+   
+   
+
+   
+   
+   

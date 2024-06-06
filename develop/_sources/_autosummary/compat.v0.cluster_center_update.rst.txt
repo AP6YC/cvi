@@ -1,0 +1,6 @@
+compat.v0.cluster\_center\_update
+=================================
+
+.. currentmodule:: compat.v0
+
+.. autofunction:: cluster_center_update

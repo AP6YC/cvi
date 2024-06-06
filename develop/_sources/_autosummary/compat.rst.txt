@@ -1,0 +1,32 @@
+﻿compat
+======
+
+.. automodule:: compat
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :template: custom-module-template.rst
+   :recursive:
+
+   compat.v0
+

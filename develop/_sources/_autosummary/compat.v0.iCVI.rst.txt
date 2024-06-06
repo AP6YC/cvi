@@ -1,0 +1,6 @@
+compat.v0.iCVI
+==============
+
+.. currentmodule:: compat.v0
+
+.. autofunction:: iCVI
