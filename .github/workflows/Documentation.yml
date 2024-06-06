@@ -30,7 +30,8 @@ jobs:
         run: |
           git fetch --all
           # git pull --all
-          git checkout ${{ github.ref }}
+          # git checkout ${{ github.ref }}
+          git checkout develop
           cd docs
           # make html
           sphinx-multiversion source build/html
