@@ -29,7 +29,7 @@ jobs:
       - name: Sphinx build
         run: |
           git fetch --all
-          # git pull --all
+          git pull --all
           # git checkout ${{ github.ref }}
           git checkout develop
           cd docs
@@ -38,8 +38,8 @@ jobs:
 
       - name: Make symlinks
         run: |
-          ln -sf build/html/main stable
-          ln -sf build/html/develop dev
+          ln -sf build/html/main build/html/stable
+          ln -sf build/html/develop build/html/dev
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
