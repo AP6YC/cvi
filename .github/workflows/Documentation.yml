@@ -15,7 +15,10 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          lfs: 'true'
+          fetch-depth: 0
       - uses: actions/setup-python@v3
 
       - name: Install dependencies
@@ -26,7 +29,7 @@ jobs:
       - name: Sphinx build
         run: |
           git fetch --all
-          git pull --all
+          # git pull --all
           cd docs
           # make html
           sphinx-multiversion source build/html
