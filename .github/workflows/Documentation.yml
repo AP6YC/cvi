@@ -41,10 +41,10 @@ jobs:
           cd ${{ github.workspace }}/docs
           sphinx-multiversion source build/html
 
-      - name: Make symlinks
-        run: |
-          ln -sf build/html/main build/html/stable
-          ln -sf build/html/develop build/html/dev
+      # - name: Make symlinks
+      #   run: |
+      #     ln -sf ${{ github.workspace }}/build/html/main ${{ github.workspace }}/build/html/stable
+      #     ln -sf ${{ github.workspace }}/build/html/develop ${{ github.workspace }}/build/html/dev
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
