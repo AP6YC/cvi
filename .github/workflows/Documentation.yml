@@ -27,12 +27,13 @@ jobs:
         run: |
           cd docs
           # make html
+          git fetch --all
           sphinx-multiversion source build/html
 
       - name: Make symlinks
         run: |
-          ln -s build/html/main stable
-          ln -s build/html/develop dev
+          ln -sf build/html/main stable
+          ln -sf build/html/develop dev
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
