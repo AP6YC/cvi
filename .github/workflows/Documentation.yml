@@ -25,9 +25,9 @@ jobs:
 
       - name: Sphinx build
         run: |
+          git fetch --all
           cd docs
           # make html
-          git fetch --all
           sphinx-multiversion source build/html
 
       - name: Make symlinks
