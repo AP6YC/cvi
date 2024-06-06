@@ -14,11 +14,11 @@ A Python package implementing both batch and incremental cluster validity indice
 [zenodo-img]: https://zenodo.org/badge/526280198.svg
 [zenodo-url]: https://zenodo.org/badge/latestdoi/526280198
 
-[docs-stable-img]: https://readthedocs.org/projects/cluster-validity-indices/badge/?version=latest
-[docs-stable-url]: https://cluster-validity-indices.readthedocs.io/en/latest/?badge=latest
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: https://AP6YC.github.io/cvi/stable
 
-[docs-dev-img]: https://readthedocs.org/projects/cluster-validity-indices/badge/?version=develop
-[docs-dev-url]: https://cluster-validity-indices.readthedocs.io/en/develop/?badge=develop
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
+[docs-dev-url]: https://AP6YC.github.io/cvi/dev
 
 [ci-img]: https://github.com/AP6YC/cvi/actions/workflows/Test.yml/badge.svg
 [ci-url]: https://github.com/AP6YC/cvi/actions/workflows/Test.yml
