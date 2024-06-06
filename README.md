@@ -1,4 +1,4 @@
-# cvi
+[![cvi-header](https://github.com/AP6YC/FileStorage/blob/main/cvi/header.png?raw=true)][docs-dev-url]
 
 A Python package implementing both batch and incremental cluster validity indices (CVIs).
 
@@ -14,11 +14,11 @@ A Python package implementing both batch and incremental cluster validity indice
 [zenodo-img]: https://zenodo.org/badge/526280198.svg
 [zenodo-url]: https://zenodo.org/badge/latestdoi/526280198
 
-[docs-stable-img]: https://readthedocs.org/projects/cluster-validity-indices/badge/?version=latest
-[docs-stable-url]: https://cluster-validity-indices.readthedocs.io/en/latest/?badge=latest
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: https://AP6YC.github.io/cvi/stable
 
-[docs-dev-img]: https://readthedocs.org/projects/cluster-validity-indices/badge/?version=develop
-[docs-dev-url]: https://cluster-validity-indices.readthedocs.io/en/develop/?badge=develop
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
+[docs-dev-url]: https://AP6YC.github.io/cvi/dev
 
 [ci-img]: https://github.com/AP6YC/cvi/actions/workflows/Test.yml/badge.svg
 [ci-url]: https://github.com/AP6YC/cvi/actions/workflows/Test.yml
@@ -34,19 +34,21 @@ A Python package implementing both batch and incremental cluster validity indice
 
 ## Table of Contents
 
-- [cvi](#cvi)
-  - [Table of Contents](#table-of-contents)
-  - [Cluster Validity Indices](#cluster-validity-indices)
-  - [Installation](#installation)
-  - [Usage](#usage)
-    - [Quickstart](#quickstart)
-    - [Detailed Usage](#detailed-usage)
-  - [Implemented CVIs](#implemented-cvis)
-  - [History](#history)
-  - [Acknowledgements](#acknowledgements)
-    - [Derivation](#derivation)
-    - [Authors](#authors)
-    - [Related Projects](#related-projects)
+- [Table of Contents](#table-of-contents)
+- [Cluster Validity Indices](#cluster-validity-indices)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Quickstart](#quickstart)
+  - [Detailed Usage](#detailed-usage)
+- [Implemented CVIs](#implemented-cvis)
+- [History](#history)
+- [Acknowledgements](#acknowledgements)
+  - [Derivation](#derivation)
+  - [Authors](#authors)
+  - [Related Projects](#related-projects)
+  - [Assets](#assets)
+    - [Fonts](#fonts)
+    - [Icons](#icons)
 
 ## Cluster Validity Indices
 
@@ -77,7 +79,7 @@ pip install cvi
 You can also specify a version to install in the usual way with
 
 ```python
-pip install cvi==v0.5.1
+pip install cvi==v0.6.0
 ```
 
 Alternatively, you can manually install a release from the [releases page](https://github.com/AP6YC/cvi/releases) on GitHub.
@@ -141,7 +143,7 @@ samples, labels = my_clustering_alg(some_data)
 > **NOTE**:
 >
 > The `cvi` package assumes the Numpy **row-major** convention where rows are individual samples and columns are features.
-> A batch dataset is then `[n_samples, n_features]` large, and their corresponding labels are '[n_samples]` large.
+> A batch dataset is then `[n_samples, n_features]` large, and their corresponding labels are `[n_samples]` large.
 
 You may compute the final criterion value with a batch update all at once with `CVI.get_cvi`
 
@@ -187,12 +189,14 @@ The following CVIs have been implemented as of the latest version of `cvi`:
 
 - 8/18/2022: Initialize project.
 - 9/8/2022: First release on PyPi and initiate GitFlow.
+- 8/10/2023: v0.5.1 released.
+- 5/31/2024: Updated documentation.
 
 ## Acknowledgements
 
 ### Derivation
 
-The incremental and batch CVI implementations in this package are largely derived from the following Julia language implementations:
+The incremental and batch CVI implementations in this package are largely derived from the following Julia language implementations by the same authors of this package:
 
 - [ClusterValidityIndices.jl](https://github.com/AP6YC/ClusterValidityIndices.jl)
 
@@ -209,3 +213,17 @@ If this package is missing something that you need, feel free to check out some 
 
 - [validclust](https://github.com/crew102/validclust)
 - [clusterval](https://github.com/Nuno09/clusterval)
+
+### Assets
+
+#### Fonts
+
+The following font is used in the logo:
+
+- [Ethnocentric Font Family](https://www.1001fonts.com/ethnocentric-font.html)
+
+#### Icons
+
+The icon for the project is taken from:
+
+- [Cluster computing icons created by IconBaandar - Flaticon](https://www.flaticon.com/free-icons/cluster-computing) ([cluster-5464694](https://www.flaticon.com/free-icon/cluster_5464694))

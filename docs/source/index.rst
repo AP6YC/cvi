@@ -3,9 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to cvi's documentation!
-====================================================
+.. image:: https://github.com/AP6YC/FileStorage/blob/main/cvi/header.png?raw=true
+   :alt: Cluster Validity Indices
+   :align: center
 
+`cvi`: Cluster Validity Indices in Python
+====================================================
 
 These pages serve as the official documentation for the `cvi` Python package, the Python implementation of the `ClusterValidityIndices.jl <https://github.com/AP6YC/ClusterValidityIndices.jl>`_ Julia package.
 
