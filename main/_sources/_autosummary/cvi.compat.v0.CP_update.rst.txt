@@ -1,0 +1,6 @@
+cvi.compat.v0.CP\_update
+========================
+
+.. currentmodule:: cvi.compat.v0
+
+.. autofunction:: CP_update

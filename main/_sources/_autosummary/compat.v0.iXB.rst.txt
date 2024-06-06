@@ -1,0 +1,26 @@
+compat.v0.iXB
+=============
+
+.. currentmodule:: compat.v0
+
+.. autoclass:: iXB
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~iXB.__init__
+      ~iXB.update
+   
+   
+
+   
+   
+   

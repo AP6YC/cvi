@@ -1,0 +1,37 @@
+compat.v0.Clusters
+==================
+
+.. currentmodule:: compat.v0
+
+.. autoclass:: Clusters
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Clusters.__init__
+      ~Clusters.append
+      ~Clusters.clear
+      ~Clusters.copy
+      ~Clusters.count
+      ~Clusters.extend
+      ~Clusters.from_list
+      ~Clusters.index
+      ~Clusters.insert
+      ~Clusters.pop
+      ~Clusters.remove
+      ~Clusters.reverse
+      ~Clusters.sort
+   
+   
+
+   
+   
+   

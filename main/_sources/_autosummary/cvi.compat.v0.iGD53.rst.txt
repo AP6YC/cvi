@@ -1,0 +1,26 @@
+cvi.compat.v0.iGD53
+===================
+
+.. currentmodule:: cvi.compat.v0
+
+.. autoclass:: iGD53
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~iGD53.__init__
+      ~iGD53.update
+   
+   
+
+   
+   
+   

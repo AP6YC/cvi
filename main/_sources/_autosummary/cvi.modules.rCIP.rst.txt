@@ -1,0 +1,23 @@
+cvi.modules.rCIP
+================
+
+.. automodule:: cvi.modules.rCIP
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

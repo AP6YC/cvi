@@ -1,0 +1,26 @@
+cvi.compat.v0.iGD43
+===================
+
+.. currentmodule:: cvi.compat.v0
+
+.. autoclass:: iGD43
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~iGD43.__init__
+      ~iGD43.update
+   
+   
+
+   
+   
+   
