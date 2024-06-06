@@ -26,6 +26,7 @@ jobs:
       - name: Sphinx build
         run: |
           git fetch --all
+          git pull --all
           cd docs
           # make html
           sphinx-multiversion source build/html
