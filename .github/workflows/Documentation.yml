@@ -26,14 +26,23 @@ jobs:
           # pip install -r docs/requirements.txt
           pip install -e .[docs]
 
-      - name: Sphinx build
+      - name: Prep Sphinx Build
         run: |
           git fetch --all
           git pull --all
-          # git checkout ${{ github.ref }}
           git checkout develop
           cd docs
+
+      - name: Sphinx Build Develop
+        run: |
           # make html
+          sphinx-multiversion source build/html
+
+      - name: Sphinx Build Main
+        run: |
+          cd ..
+          git checkout main
+          cd docs
           sphinx-multiversion source build/html
 
       - name: Make symlinks
