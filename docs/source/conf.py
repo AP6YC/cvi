@@ -31,8 +31,6 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     "sphinx_multiversion",
-    # 'sphinx.ext.autosectionlabel',
-    # 'sphinx_autopackagesummary',
 ]
 
 autosummary_generate_overwrite = True
@@ -54,8 +52,6 @@ exclude_patterns = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-# html_theme = 'alabaster'
-# html_theme = 'sphinx_rtd_theme'
 html_theme = 'furo'
 
 html_static_path = ['_static']
@@ -72,47 +68,27 @@ html_sidebars = {
     ],
 }
 
-# html_css_files = [
-#     'css/rtd.css',
-# ]
-
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
 
 
-# Whitelist pattern for tags (set to None to ignore all tags)
-# smv_tag_whitelist = r'^.*$'
-# smv_tag_whitelist = r'v*'
+# Ignore tags for now
 smv_tag_whitelist = None
-# smv_tag_pattern = r'^v\d*\.\d*\.\d*$'
-# smv_tag_pattern = r'^.*(?!alpha)$'
 
-# Whitelist pattern for branches (set to None to ignore all branches)
-# smv_branch_whitelist = r'^.*$
-# smv_branch_whitelist = None
-# smv_branch_whitelist = r'^(main|develop)$'
-# smv_branch_whitelist = r'^self-host-docs$'
-smv_branch_whitelist = r'^(main|develop)$'
+# Build docs for main and develop, whether sphinx-multiversion sees them
+# as local branches or as remote branches.
+smv_branch_whitelist = r'^(origin/)?(main|develop)$'
 
-# Whitelist pattern for remotes (set to None to use local branches only)
-smv_remote_whitelist = None
+# Allow origin/main and origin/develop.
+smv_remote_whitelist = r'^origin$'
 
-# Pattern for released versions
-# smv_released_pattern = r'^v.*$'
-# smv_released_pattern = r'v\d*\.\d*\.\d*'
+# No tags are being built, so this does not matter much right now.
 smv_released_pattern = r'^tags/.*$'
 
-# Format for versioned output directories inside the build directory
+# Use simple output directories: main, develop.
 smv_outputdir_format = '{ref.name}'
 
-# Determines whether remote or local git branches/tags are preferred if their output dirs conflict
-smv_prefer_remote_refs = False
+# Prefer remote refs in CI, since GitHub Actions reliably has origin/main
+# and origin/develop after fetching.
+smv_prefer_remote_refs = True
 
-# # Skip param objects because of their weird rendering in docs
-# def maybe_skip_member(app, what, name, obj, skip, options):
-#     # print app, what, name, obj, skip, options
-#     # if name == ""
-#     return True
-
-# def setup(app):
-#     app.connect('autodoc-skip-member', maybe_skip_member)
