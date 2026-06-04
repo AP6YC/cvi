@@ -131,7 +131,7 @@ test = [
   "flake8",
 ]
 docs = [
-  "sphinx",
+  "sphinx<9",
   "furo",
   "sphinx-multiversion",
 ]
