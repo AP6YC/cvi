@@ -19,7 +19,9 @@ The iCONN initialization rule is handled explicitly:
 
 References
 ----------
-Add the relevant CONN / iCONN paper references here.
+1. E. Merényi, "A new cluster validity index for prototype based clustering algorithms based on inter-and intra-cluster density," 2007 International Joint Conference on Neural Networks, 2007.
+2. K. Tasdemir and E. Merényi, "A validity index for prototype-based clustering of data sets with complex cluster structures," IEEE Transactions on Systems, Man, and Cybernetics, Part B (Cybernetics), vol. 41, no. 4, pp. 1039-1053, 2011.
+3. L. E. Brito da Silva, N. M. Melton, and D. C. Wunsch II, "Incremental cluster validity indices for online learning of hard partitions: Extensions and comparative study," IEEE Access, vol. 8, pp. 22025-22047, 2020.
 """
 
 # Standard library imports
@@ -215,6 +217,12 @@ class CONN(_base.CVI):
     This CVI is ART-dependent. It internally maintains a FuzzyART/SimpleARTMAP
     model in order to obtain the first and second best matching ART categories
     needed by the CONN update.
+
+    References
+    ----------
+    1. E. Merényi, "A new cluster validity index for prototype based clustering algorithms based on inter-and intra-cluster density," 2007 International Joint Conference on Neural Networks, 2007.
+    2. K. Tasdemir and E. Merényi, "A validity index for prototype-based clustering of data sets with complex cluster structures," IEEE Transactions on Systems, Man, and Cybernetics, Part B (Cybernetics), vol. 41, no. 4, pp. 1039-1053, 2011.
+    3. L. E. Brito da Silva, N. M. Melton, and D. C. Wunsch II, "Incremental cluster validity indices for online learning of hard partitions: Extensions and comparative study," IEEE Access, vol. 8, pp. 22025-22047, 2020.
     """
 
     def __init__(
