@@ -12,6 +12,9 @@ from typing import (
 )
 from abc import abstractmethod
 
+from dataclasses import dataclass
+from typing import ClassVar
+
 # Custom imports
 import numpy as np
 
@@ -19,6 +22,13 @@ import numpy as np
 # CLASSES
 # --------------------------------------------------------------------------- #
 
+@dataclass
+class CVIInfo:
+    name: str
+    name_short: str
+    index_min: float
+    index_max: float
+    optimality: str
 
 class LabelMap():
     """
@@ -52,6 +62,8 @@ class CVI():
     """
     Superclass containing elements shared between all CVIs.
     """
+
+    info: ClassVar[CVIInfo]
 
     def __init__(self):
         """

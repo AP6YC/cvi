@@ -31,6 +31,14 @@ class WB(_base.CVI):
     5. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
     """
 
+    info = _base.CVIInfo(
+        name="Within/Between",
+        name_short="WB",
+        index_min=0.0,
+        index_max=np.inf,
+        optimality="min"
+    )
+
     def __init__(self):
         """
         WB initialization routine.

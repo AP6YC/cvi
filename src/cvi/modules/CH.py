@@ -28,6 +28,13 @@ class CH(_base.CVI):
     3. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML]. [Online].
     4. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
     """
+    info = _base.CVIInfo(
+        name="Calinski-Harabasz",
+        name_short="CH",
+        index_min=0.0,
+        index_max=np.inf,
+        optimality="max"
+    )
 
     def __init__(self):
         """

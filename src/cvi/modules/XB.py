@@ -27,6 +27,14 @@ class XB(_base.CVI):
     3. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
     """
 
+    info = _base.CVIInfo(
+        name="Xie-Beni",
+        name_short="XB",
+        index_min=0.0,
+        index_max=np.inf,
+        optimality="min"
+    )
+
     def __init__(self):
         """
         XB initialization routine.

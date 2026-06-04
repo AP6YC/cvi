@@ -25,6 +25,14 @@ class PS(_base.CVI):
     2. E. Lughofer, "Extensions of vector quantization for incremental clustering," Pattern Recognit., vol. 41, no. 3, pp. 995-1011, 2008.
     """
 
+    info = _base.CVIInfo(
+        name="Partition Separation",
+        name_short="PS",
+        index_min=0.0,
+        index_max=1.0,
+        optimality="max"
+    )
+
     def __init__(self):
         """
         Partition Separation (PS) initialization routine.
