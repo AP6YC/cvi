@@ -5,6 +5,13 @@ cvi.modules.rCIP
 
    
    
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+      :toctree:
+   
+      info
+   
    
 
    

@@ -1,0 +1,6 @@
+cvi.modules.WB.info
+===================
+
+.. currentmodule:: cvi.modules
+
+.. autoattribute:: WB.info

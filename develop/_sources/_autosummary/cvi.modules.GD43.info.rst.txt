@@ -1,0 +1,6 @@
+cvi.modules.GD43.info
+=====================
+
+.. currentmodule:: cvi.modules
+
+.. autoattribute:: GD43.info
