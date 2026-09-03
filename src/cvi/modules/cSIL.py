@@ -27,6 +27,14 @@ class cSIL(_base.CVI):
     3. M. Rawashdeh and A. Ralescu, "Center-wise intra-inter silhouettes," in Scalable Uncertainty Management, E. Hüllermeier, S. Link, T. Fober et al., Eds. Berlin, Heidelberg: Springer, 2012, pp. 406-419.
     """
 
+    info = _base.CVIInfo(
+        name="Centroid-based Silhouette",
+        name_short="cSIL",
+        index_min=-1.0,
+        index_max=1.0,
+        optimality="max"
+    )
+
     def __init__(self):
         """
         Centroid-based Silhouette (cSIL) initialization routine.

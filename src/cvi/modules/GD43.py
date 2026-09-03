@@ -31,6 +31,14 @@ class GD43(_base.CVI):
     5. J. C. Bezdek and N. R. Pal, "Some new indexes of cluster validity," IEEE Trans. Syst., Man, and Cybern., vol. 28, no. 3, pp. 301-315, Jun. 1998.
     """
 
+    info = _base.CVIInfo(
+        name="Generalized Dunn's 43",
+        name_short="GD43",
+        index_min=0.0,
+        index_max=np.inf,
+        optimality="max"
+    )
+
     def __init__(self):
         """
         Generalized Dunn's Index 43 (GD43) initialization routine.

@@ -114,6 +114,14 @@ for ix in range(n_samples):
     criterion_values = my_cvi.get_cvi(samples[ix, :], labels[ix])
 ```
 
+Users can also query the `.info` property of the CVI objects to obtain relevant 
+scaling and naming information.
+
+```
+>>> print(my_cvi.info)
+CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max')
+```
+
 ### Detailed Usage
 
 The `cvi` package contains a set of implemented CVIs with batch and incremental update methods.
