@@ -28,5 +28,5 @@ cvi.compat
    :template: custom-module-template.rst
    :recursive:
 
-   cvi.compat.v0
+   v0
 
