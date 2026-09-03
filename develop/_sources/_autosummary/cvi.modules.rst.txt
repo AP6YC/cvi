@@ -29,6 +29,7 @@ cvi.modules
    :recursive:
 
    CH
+   CONN
    DB
    GD43
    GD53

@@ -1,0 +1,26 @@
+cvi.modules.CONN.CONN
+=====================
+
+.. currentmodule:: cvi.modules.CONN
+
+.. autoclass:: CONN
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CONN.__init__
+      ~CONN.get_cvi
+   
+   
+
+   
+   
+   
