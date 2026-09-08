@@ -1,15 +1,16 @@
 """
 Connectivity-based CONN Cluster Validity Index.
 
-This implementation follows the incremental CONN-style validity index for
-ART/ARTMAP partitions. Unlike distance-only CVIs, CONN depends on the first
-and second best matching ART categories associated with each sample.
+This implementation follows the CONN-style validity index for prototype-based
+partitions. Unlike distance-only CVIs, CONN depends on the first and second
+best matching prototypes associated with each sample.
 
 Notes
 -----
-Incremental mode assumes samples are already normalized to the ART input
-domain, typically [0, 1]. Batch mode can optionally normalize the full dataset
-before processing.
+Incremental mode uses FuzzyART and assumes samples are already normalized to
+the ART input domain, typically [0, 1]. Batch mode supports FuzzyART, KMeans,
+and MiniBatchKMeans and can optionally normalize the full dataset before
+processing.
 
 The iCONN initialization rule is handled explicitly:
     1. The first sample creates the first ART category.
@@ -26,11 +27,12 @@ References
 
 # Standard library imports
 from collections import defaultdict
-from typing import Optional
+from typing import Dict, Literal, Optional, Union
 import numbers
 
 # Third-party imports
 import numpy as np
+from sklearn.cluster import KMeans, MiniBatchKMeans
 
 # ART imports
 from artlib import FuzzyART, SimpleARTMAP
@@ -212,11 +214,10 @@ class _CONNSimpleARTMAP(SimpleARTMAP):
 
 class CONN(_base.CVI):
     """
-    Incremental CONN Cluster Validity Index.
+    CONN Cluster Validity Index.
 
-    This CVI is ART-dependent. It internally maintains a FuzzyART/SimpleARTMAP
-    model in order to obtain the first and second best matching ART categories
-    needed by the CONN update.
+    Incremental mode uses a FuzzyART/SimpleARTMAP model. Batch mode can use
+    FuzzyART or fit class-owned KMeans/MiniBatchKMeans prototypes.
 
     References
     ----------
@@ -224,6 +225,14 @@ class CONN(_base.CVI):
     2. K. Tasdemir and E. Merényi, "A validity index for prototype-based clustering of data sets with complex cluster structures," IEEE Transactions on Systems, Man, and Cybernetics, Part B (Cybernetics), vol. 41, no. 4, pp. 1039-1053, 2011.
     3. L. E. Brito da Silva, N. M. Melton, and D. C. Wunsch II, "Incremental cluster validity indices for online learning of hard partitions: Extensions and comparative study," IEEE Access, vol. 8, pp. 22025-22047, 2020.
     """
+
+    info = _base.CVIInfo(
+        name="Connectivity",
+        name_short="CONN",
+        index_min=0.0,
+        index_max=1.0,
+        optimality="max",
+    )
 
     def __init__(
         self,
@@ -233,6 +242,11 @@ class CONN(_base.CVI):
         match_tracking: str = "MT+",
         normalize_batch: bool = True,
         check_incremental_normalized: bool = True,
+        model_type: Literal["Fuzzy", "KMeans", "MiniBatchKMeans"] = (
+            "MiniBatchKMeans"
+        ),
+        kmeans_k: Union[int, Dict[int, int]] = 8,
+        kmeans_kwargs: Optional[dict] = None,
     ):
         """
         CONN initialization routine.
@@ -248,11 +262,20 @@ class CONN(_base.CVI):
         match_tracking : str, default="MT+"
             Match-tracking mode passed to SimpleARTMAP.
         normalize_batch : bool, default=True
-            If True, batch data are min-max normalized before ART processing.
-            Incremental data are not normalized online.
+            If True, batch data are min-max normalized before prototype
+            fitting. Incremental data are not normalized online.
         check_incremental_normalized : bool, default=True
             If True, incremental samples are checked to ensure values lie in
             [0, 1].
+        model_type : {"Fuzzy", "KMeans", "MiniBatchKMeans"}, default="MiniBatchKMeans"
+            Prototype backend. KMeans backends support batch mode only.
+        kmeans_k : int or dict[int, int], default=8
+            Number of KMeans prototypes per input label. Dictionary values are
+            keyed by the original input labels. Counts are capped at the number
+            of samples carrying each label.
+        kmeans_kwargs : dict, optional
+            Keyword arguments forwarded to the selected scikit-learn KMeans
+            estimator. ``n_clusters`` must be configured through ``kmeans_k``.
         """
 
         super().__init__()
@@ -263,6 +286,14 @@ class CONN(_base.CVI):
         self.match_tracking = match_tracking
         self.normalize_batch = normalize_batch
         self.check_incremental_normalized = check_incremental_normalized
+        self.model_type = model_type
+        self.kmeans_k = kmeans_k
+        self.kmeans_kwargs = kmeans_kwargs
+
+        self._validate_backend_params()
+
+        if self.kmeans_kwargs is not None:
+            self.kmeans_kwargs = dict(self.kmeans_kwargs)
 
         self._data_min = None
         self._data_max = None
@@ -298,6 +329,60 @@ class CONN(_base.CVI):
         # Number of samples per internal label.
         self._cluster_cardinality = _GrowingArray1D(dtype=float)
 
+        # Batch centroid-backend state.
+        self._kmeans_models = {}
+        self._cluster_centers = np.zeros((0, self._dim), dtype=float)
+        self._prototype_label_map = {}
+
+    @staticmethod
+    def _validate_positive_int(value, name: str) -> int:
+        """Validate and return a strictly positive integer parameter."""
+
+        if isinstance(value, bool) or not isinstance(value, numbers.Integral):
+            raise ValueError(f"{name} must be a positive integer.")
+
+        value = int(value)
+
+        if value <= 0:
+            raise ValueError(f"{name} must be a positive integer.")
+
+        return value
+
+    def _validate_backend_params(self):
+        """Validate backend selection and KMeans configuration."""
+
+        valid_model_types = {"Fuzzy", "KMeans", "MiniBatchKMeans"}
+
+        if self.model_type not in valid_model_types:
+            raise ValueError(
+                "model_type must be one of "
+                "{'Fuzzy', 'KMeans', 'MiniBatchKMeans'}."
+            )
+
+        if isinstance(self.kmeans_k, dict):
+            for label, value in self.kmeans_k.items():
+                if (
+                    isinstance(label, bool)
+                    or not isinstance(label, numbers.Integral)
+                ):
+                    raise ValueError("kmeans_k dictionary keys must be integers.")
+
+                self._validate_positive_int(
+                    value,
+                    f"kmeans_k for label {int(label)}",
+                )
+        else:
+            self._validate_positive_int(self.kmeans_k, "kmeans_k")
+
+        if self.kmeans_kwargs is not None:
+            if not isinstance(self.kmeans_kwargs, dict):
+                raise ValueError("kmeans_kwargs must be a dictionary or None.")
+
+            if "n_clusters" in self.kmeans_kwargs:
+                raise ValueError(
+                    "Configure n_clusters through kmeans_k, not kmeans_kwargs."
+                )
+
     @_base._add_docs(_base._setup_doc)
     def _setup(self, sample: np.ndarray):
         """
@@ -322,6 +407,124 @@ class CONN(_base.CVI):
         denom[denom == 0.0] = 1.0
 
         return (data - self._data_min) / denom
+
+    def _get_kmeans_k(self, label: int, n_samples: int) -> int:
+        """Resolve and cap the prototype count for one external label."""
+
+        if isinstance(self.kmeans_k, dict):
+            if label not in self.kmeans_k:
+                raise ValueError(
+                    f"kmeans_k is missing a value for label {label}."
+                )
+
+            requested = self.kmeans_k[label]
+        else:
+            requested = self.kmeans_k
+
+        requested = self._validate_positive_int(
+            requested,
+            f"kmeans_k for label {label}",
+        )
+
+        return min(requested, n_samples)
+
+    def _fit_centroid_backend(
+        self,
+        data: np.ndarray,
+        labels: np.ndarray,
+    ):
+        """Fit class-owned KMeans prototypes and populate their label maps."""
+
+        estimator_type = (
+            KMeans if self.model_type == "KMeans" else MiniBatchKMeans
+        )
+        model_kwargs = self.kmeans_kwargs or {}
+        center_blocks = []
+        next_prototype = 0
+        ordered_labels = list(dict.fromkeys(int(label) for label in labels))
+
+        if isinstance(self.kmeans_k, dict):
+            missing_labels = [
+                label for label in ordered_labels if label not in self.kmeans_k
+            ]
+
+            if missing_labels:
+                raise ValueError(
+                    "kmeans_k is missing values for labels "
+                    f"{missing_labels}."
+                )
+
+        for label in ordered_labels:
+            rows = np.flatnonzero(labels == label)
+            i_label = self._label_map.get_internal_label(label)
+            n_clusters = self._get_kmeans_k(label, len(rows))
+
+            model = estimator_type(
+                n_clusters=n_clusters,
+                **model_kwargs,
+            ).fit(data[rows])
+            centers = np.asarray(model.cluster_centers_, dtype=float)
+            prototype_ids = range(
+                next_prototype,
+                next_prototype + len(centers),
+            )
+
+            self._kmeans_models[label] = model
+            self._rev_map[i_label].update(prototype_ids)
+
+            for prototype_id in prototype_ids:
+                self._prototype_label_map[prototype_id] = i_label
+
+            center_blocks.append(centers)
+            next_prototype += len(centers)
+
+        self._cluster_centers = np.vstack(center_blocks)
+
+        last_prototype = len(self._cluster_centers) - 1
+        self._CADJ._ensure_size(last_prototype, last_prototype)
+        self._CONN._ensure_size(last_prototype, last_prototype)
+
+    def _update_conn_from_centroids(
+        self,
+        data: np.ndarray,
+        labels: np.ndarray,
+    ):
+        """Compute batch CONN statistics from fixed centroid prototypes."""
+
+        self._fit_centroid_backend(data, labels)
+
+        for sample, label in zip(data, labels):
+            i_label = self._label_map.get_internal_label(int(label))
+            own_prototypes = np.asarray(
+                sorted(self._rev_map[i_label]),
+                dtype=int,
+            )
+            distances = np.sum(
+                (self._cluster_centers - sample) ** 2,
+                axis=1,
+            )
+
+            own_distances = distances[own_prototypes]
+            bmu1 = int(own_prototypes[np.argmin(own_distances)])
+
+            distances[bmu1] = np.inf
+            bmu2 = int(np.argmin(distances))
+
+            self._finish_conn_update(
+                i_label,
+                bmu1,
+                bmu2,
+                prototype_label_map=self._prototype_label_map,
+                update_metric=False,
+            )
+            self._n_samples += 1
+
+        self._sync_base_cluster_count()
+
+        # Recompute every row from the completed adjacency matrices so the
+        # fixed-prototype batch result does not depend on update order.
+        for i_label in sorted(self._rev_map):
+            self._update_metric(i_label, i_label)
 
     def _check_sample_normalized(self, sample: np.ndarray):
         """
@@ -474,10 +677,20 @@ class CONN(_base.CVI):
 
         self.criterion_value = self._intra_conn * (1.0 - self._inter_conn)
 
-    def _finish_conn_update(self, i_label: int, bmu1: int, bmu2: int):
+    def _finish_conn_update(
+        self,
+        i_label: int,
+        bmu1: int,
+        bmu2: int,
+        prototype_label_map: Optional[dict] = None,
+        update_metric: bool = True,
+    ):
         """
         Finish the CONN bookkeeping once BMU1 and BMU2 are known.
         """
+
+        if prototype_label_map is None:
+            prototype_label_map = self._artmap.map
 
         self._rev_map[i_label].add(bmu1)
         self._cluster_cardinality.increment(i_label, 1)
@@ -489,16 +702,19 @@ class CONN(_base.CVI):
         self._CONN[bmu1, bmu2] = conn_value
         self._CONN[bmu2, bmu1] = conn_value
 
-        if bmu1 not in self._artmap.map:
-            raise RuntimeError("BMU1 is missing from the ARTMAP label map.")
+        if bmu1 not in prototype_label_map:
+            raise RuntimeError("BMU1 is missing from the prototype label map.")
 
-        if int(self._artmap.map[bmu1]) != i_label:
+        if int(prototype_label_map[bmu1]) != i_label:
             raise RuntimeError(
-                "Internal ARTMAP mapping disagrees with the provided label."
+                "Internal prototype mapping disagrees with the provided label."
             )
 
-        if bmu2 in self._artmap.map:
-            y2 = int(self._artmap.map[bmu2])
+        if not update_metric:
+            return
+
+        if bmu2 in prototype_label_map:
+            y2 = int(prototype_label_map[bmu2])
         else:
             y2 = i_label
 
@@ -580,6 +796,12 @@ class CONN(_base.CVI):
         Incremental parameter update for the CONN CVI.
         """
 
+        if self.model_type != "Fuzzy":
+            raise ValueError(
+                f"model_type={self.model_type!r} supports batch mode only. "
+                "Use model_type='Fuzzy' for incremental CONN updates."
+            )
+
         self._update_conn_from_sample(sample, label)
 
     @_base._add_docs(_base._param_batch_doc)
@@ -587,12 +809,13 @@ class CONN(_base.CVI):
         """
         Batch parameter update for the CONN CVI.
 
-        Batch mode processes the samples sequentially because CONN depends on
-        the online ART category dynamics.
+        Fuzzy batch mode processes samples sequentially because CONN depends
+        on online ART category dynamics. KMeans backends first fit fixed
+        class-owned prototypes and then accumulate connectivity.
         """
 
         data = np.asarray(data, dtype=float)
-        labels = np.asarray(labels)
+        labels = np.asarray(labels, dtype=int)
 
         if self.normalize_batch:
             data = self._normalize_batch_data(data)
@@ -611,8 +834,11 @@ class CONN(_base.CVI):
 
         self._init_conn_state()
 
-        for sample, label in zip(data, labels):
-            self._update_conn_from_sample(sample, int(label))
+        if self.model_type == "Fuzzy":
+            for sample, label in zip(data, labels):
+                self._update_conn_from_sample(sample, int(label))
+        else:
+            self._update_conn_from_centroids(data, labels)
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):

@@ -4,6 +4,7 @@
 
 # IDE ignores
 .vscode/
+.idea/
 
 # Project ignores
 _dev/
