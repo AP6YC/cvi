@@ -34,6 +34,8 @@ class XB(_base.CVI):
         index_max=np.inf,
         optimality="min"
     )
+    _supports_remove_merge = True
+    _uses_compactness_stats = True
 
     def __init__(self):
         """
@@ -187,6 +189,26 @@ class XB(_base.CVI):
                 self._D[ix, jx] = (
                     np.sum((self._v[ix, :] - self._v[jx, :]) ** 2)
                 )
+
+    def _rebuild_after_operation(self):
+        """Rebuild centroid distances after a remove or merge."""
+
+        if self._n_clusters == 0:
+            self._mu = np.zeros(0)
+            self._SEP = np.zeros(0)
+            self._D = np.zeros((0, 0))
+            self._WGSS = 0.0
+            return
+
+        self._D = self._pairwise_matrix(
+            self._n_clusters,
+            lambda ix, jx: np.sum(
+                (self._v[ix, :] - self._v[jx, :]) ** 2
+            ),
+        )
+        self._WGSS = sum(self._CP)
+        if self._n_clusters < 2:
+            self._SEP = 0.0
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):

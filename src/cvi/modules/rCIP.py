@@ -34,6 +34,7 @@ class rCIP(_base.CVI):
         index_max=np.inf,
         optimality="min"
     )
+    _supports_remove_merge = True
 
     def __init__(self):
         """
@@ -211,6 +212,142 @@ class rCIP(_base.CVI):
                 )
 
         self._D = self._D + np.transpose(self._D)
+
+    @staticmethod
+    def _stabilize_covariance(covariance: np.ndarray) -> np.ndarray:
+        """Symmetrize covariance and clip insignificant negative eigenvalues."""
+
+        covariance = (covariance + covariance.T) / 2
+        eigenvalues, eigenvectors = np.linalg.eigh(covariance)
+        tolerance = 1e-10 * max(1.0, np.linalg.norm(covariance, ord=2))
+
+        if np.min(eigenvalues) < -tolerance:
+            raise ValueError(
+                "The requested operation produces invalid covariance; "
+                "check the supplied sample and cluster label"
+            )
+
+        eigenvalues = np.maximum(eigenvalues, 0.0)
+        return (eigenvectors * eigenvalues) @ eigenvectors.T
+
+    def _delete_cluster(self, label: int, i_label: int):
+        """Delete one rCIP cluster and compact its internal label."""
+
+        self._n = self._delete_vector_entry(self._n, i_label)
+        self._v = np.delete(self._v, i_label, axis=0)
+        self._sigma = np.delete(self._sigma, i_label, axis=2)
+        self._label_map.remove_label(label)
+        self._n_clusters -= 1
+
+    def _remove(self, sample: np.ndarray, label: int, i_label: int):
+        """Remove a sample from rCIP's mean and covariance statistics."""
+
+        n_old = self._n[i_label]
+        v_old = self._v[i_label, :].copy()
+        n_samples_new = self._n_samples - 1
+
+        if n_old == 1:
+            if not np.allclose(sample, v_old, rtol=1e-10, atol=1e-12):
+                raise ValueError(
+                    "The supplied sample does not match the singleton cluster"
+                )
+
+            self._delete_cluster(label, i_label)
+            self._n_samples = n_samples_new
+
+            if n_samples_new == 0:
+                self._clear_common_state()
+                self._CP = None
+                self._D = np.zeros((0, 0))
+                self._sigma = np.zeros((0, 0, 0))
+                self._delta_term = np.zeros((0, 0))
+                self._constant = 0.0
+
+            self._rebuild_after_operation()
+            return
+
+        n_new = n_old - 1
+        v_new = (n_old * v_old - sample) / n_new
+
+        if n_new == 1:
+            sigma_new = self._delta_term.copy()
+        else:
+            covariance_old = (
+                self._sigma[:, :, i_label] - self._delta_term
+            )
+            difference = sample - v_old
+            covariance_new = (
+                ((n_old - 1) / (n_old - 2)) * covariance_old
+                - (n_old / ((n_old - 1) * (n_old - 2)))
+                * np.outer(difference, difference)
+            )
+            covariance_new = self._stabilize_covariance(covariance_new)
+            sigma_new = covariance_new + self._delta_term
+
+        self._n[i_label] = n_new
+        self._v[i_label, :] = v_new
+        self._sigma[:, :, i_label] = sigma_new
+        self._n_samples = n_samples_new
+        self._rebuild_after_operation()
+
+    def _merge(
+        self,
+        target_label: int,
+        source_label: int,
+        target_i: int,
+        source_i: int,
+    ):
+        """Merge two rCIP mean and covariance summaries."""
+
+        n_target = self._n[target_i]
+        n_source = self._n[source_i]
+        n_new = n_target + n_source
+        v_target = self._v[target_i, :].copy()
+        v_source = self._v[source_i, :].copy()
+        v_new = (n_target * v_target + n_source * v_source) / n_new
+        covariance_target = self._sigma[:, :, target_i] - self._delta_term
+        covariance_source = self._sigma[:, :, source_i] - self._delta_term
+        difference = v_source - v_target
+        covariance_new = (
+            ((n_target - 1) / (n_new - 1)) * covariance_target
+            + ((n_source - 1) / (n_new - 1)) * covariance_source
+            + (n_target * n_source / (n_new * (n_new - 1)))
+            * np.outer(difference, difference)
+        )
+        covariance_new = self._stabilize_covariance(covariance_new)
+        sigma_new = covariance_new + self._delta_term
+
+        self._n[target_i] = n_new
+        self._v[target_i, :] = v_new
+        self._sigma[:, :, target_i] = sigma_new
+        self._delete_cluster(source_label, source_i)
+        self._rebuild_after_operation()
+
+    def _rebuild_after_operation(self):
+        """Rebuild pairwise representative information potentials."""
+
+        if self._n_clusters == 0:
+            self._D = np.zeros((0, 0))
+            return
+
+        def information_potential(ix, jx):
+            difference = self._v[ix, :] - self._v[jx, :]
+            sigma_q = self._sigma[:, :, ix] + self._sigma[:, :, jx]
+            return (
+                self._constant
+                * (1 / np.sqrt(np.linalg.det(sigma_q)))
+                * np.exp(
+                    -0.5
+                    * difference
+                    @ np.linalg.inv(sigma_q)
+                    @ difference
+                )
+            )
+
+        self._D = self._pairwise_matrix(
+            self._n_clusters,
+            information_potential,
+        )
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):

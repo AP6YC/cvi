@@ -34,6 +34,8 @@ class DB(_base.CVI):
         index_max=np.inf,
         optimality="min"
     )
+    _supports_remove_merge = True
+    _uses_compactness_stats = True
 
     def __init__(self):
         """
@@ -199,6 +201,28 @@ class DB(_base.CVI):
                 )
 
         self._D = self._D + np.transpose(self._D)
+
+    def _rebuild_after_operation(self):
+        """Rebuild dispersion and centroid-distance state."""
+
+        if self._n_clusters == 0:
+            self._mu = np.zeros(0)
+            self._S = []
+            self._D = np.zeros((0, 0))
+            self._R = np.zeros((0, 0))
+            return
+
+        self._S = [
+            self._CP[ix] / self._n[ix]
+            for ix in range(self._n_clusters)
+        ]
+        self._D = self._pairwise_matrix(
+            self._n_clusters,
+            lambda ix, jx: np.sum(
+                (self._v[ix, :] - self._v[jx, :]) ** 2
+            ),
+        )
+        self._R = np.zeros((self._n_clusters, self._n_clusters))
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):

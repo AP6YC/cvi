@@ -34,6 +34,7 @@ class cSIL(_base.CVI):
         index_max=1.0,
         optimality="max"
     )
+    _supports_remove_merge = True
 
     def __init__(self):
         """
@@ -89,20 +90,18 @@ class cSIL(_base.CVI):
                 S_row_new = np.zeros(self._n_clusters + 1)
                 S_col_new = np.zeros(self._n_clusters + 1)
                 for cl in range(self._n_clusters):
-                    # Column "bmu_temp - D_new"
-                    C = (
+                    # Dissimilarity of the new cluster to an old centroid.
+                    S_col_new[cl] = (
                         CP_new
                         + np.inner(self._v[cl, :], self._v[cl, :])
-                        - np.inner(G_new, self._v[cl, :])
+                        - 2 * np.inner(G_new, self._v[cl, :])
                     )
-                    S_col_new[cl] = C
-                    C = (
+                    # Dissimilarity of an old cluster to the new centroid.
+                    S_row_new[cl] = (
                         self._CP[cl]
                         + self._n[cl] * np.inner(v_new, v_new)
                         - 2 * np.inner(self._G[cl, :], v_new)
-                    )
-                    S_row_new[cl] = C / self._n[cl]
-                # Column "ind_minus" - F
+                    ) / self._n[cl]
                 S_col_new[i_label] = 0
                 S_row_new[i_label] = S_col_new[i_label]
                 S_new[i_label, :] = S_col_new
@@ -139,36 +138,25 @@ class cSIL(_base.CVI):
             S_row_new = np.zeros(self._n_clusters)
             S_col_new = np.zeros(self._n_clusters)
             for cl in range(self._n_clusters):
-                # Skip the i_label iteration
-                if cl == i_label:
-                    continue
-                # Column "bmu_temp" - D_new
-                diff_x_v = sample - self._v[cl, :]
-                C = (
-                    self._CP[i_label]
-                    + np.inner(diff_x_v, diff_x_v)
-                    + self._n[i_label] * np.inner(self._v[cl, :], self._v[cl, :])
-                    - 2 * np.inner(G_new, self._v[cl, :])
-                )
-                S_col_new[cl] = C / n_new
-                # Row "bmu_temp" - E
-                C = (
+                centroid = v_new if cl == i_label else self._v[cl, :]
+                S_col_new[cl] = (
+                    CP_new
+                    + n_new * np.inner(centroid, centroid)
+                    - 2 * np.inner(G_new, centroid)
+                ) / n_new
+                S_row_new[cl] = (
                     self._CP[cl]
                     + self._n[cl] * np.inner(v_new, v_new)
                     - 2 * np.inner(self._G[cl, :], v_new)
-                )
-                S_row_new[cl] = C / self._n[cl]
+                ) / self._n[cl]
 
-            # Column "ind_minus" - F
-            diff_x_v = sample - v_new
-            C = (
-                self._CP[i_label]
-                + np.inner(diff_x_v, diff_x_v)
-                + self._n[i_label] * np.inner(v_new, v_new)
-                - 2 * np.inner(self._G[i_label, :], v_new)
-            )
-            S_col_new[i_label] = C / n_new
-            S_row_new[i_label] = S_col_new[i_label]
+            diagonal = (
+                CP_new
+                + n_new * np.inner(v_new, v_new)
+                - 2 * np.inner(G_new, v_new)
+            ) / n_new
+            S_col_new[i_label] = diagonal
+            S_row_new[i_label] = diagonal
 
             # Update parameters
             self._n[i_label] = n_new
@@ -221,6 +209,98 @@ class cSIL(_base.CVI):
             for jx in range(self._n_clusters):
                 subset_ind = [x for x in range(len(labels)) if labels[x] == jx]
                 self._S[jx, ix] = sum(D[ix, subset_ind]) / self._n[jx]
+
+    def _delete_cluster(self, label: int, i_label: int):
+        """Delete one cSIL cluster and compact its internal label."""
+
+        self._n = self._delete_vector_entry(self._n, i_label)
+        self._CP = self._delete_vector_entry(self._CP, i_label)
+        self._v = np.delete(self._v, i_label, axis=0)
+        self._G = np.delete(self._G, i_label, axis=0)
+        self._label_map.remove_label(label)
+        self._n_clusters -= 1
+
+    def _remove(self, sample: np.ndarray, label: int, i_label: int):
+        """Remove a sample from cSIL's zero-centered raw moments."""
+
+        n_old = self._n[i_label]
+        v_old = self._v[i_label, :].copy()
+        n_samples_new = self._n_samples - 1
+
+        if n_old == 1:
+            if not np.allclose(sample, v_old, rtol=1e-10, atol=1e-12):
+                raise ValueError(
+                    "The supplied sample does not match the singleton cluster"
+                )
+
+            self._delete_cluster(label, i_label)
+            self._n_samples = n_samples_new
+
+            if n_samples_new == 0:
+                self._clear_common_state()
+
+            self._rebuild_after_operation()
+            return
+
+        n_new = n_old - 1
+        G_new = self._G[i_label, :] - sample
+        v_new = G_new / n_new
+        raw_CP_new = self._CP[i_label] - np.inner(sample, sample)
+        centered_CP_new = raw_CP_new - n_new * np.inner(v_new, v_new)
+        centered_CP_new = self._nonnegative_or_error(
+            centered_CP_new,
+            max(abs(self._CP[i_label]), abs(raw_CP_new)),
+            "cluster compactness",
+        )
+        raw_CP_new = centered_CP_new + n_new * np.inner(v_new, v_new)
+
+        self._n[i_label] = n_new
+        self._v[i_label, :] = v_new
+        self._CP[i_label] = raw_CP_new
+        self._G[i_label, :] = G_new
+        self._n_samples = n_samples_new
+        self._rebuild_after_operation()
+
+    def _merge(
+        self,
+        target_label: int,
+        source_label: int,
+        target_i: int,
+        source_i: int,
+    ):
+        """Merge two cSIL raw-moment summaries."""
+
+        n_new = self._n[target_i] + self._n[source_i]
+        G_new = self._G[target_i, :] + self._G[source_i, :]
+        CP_new = self._CP[target_i] + self._CP[source_i]
+
+        self._n[target_i] = n_new
+        self._v[target_i, :] = G_new / n_new
+        self._CP[target_i] = CP_new
+        self._G[target_i, :] = G_new
+        self._delete_cluster(source_label, source_i)
+        self._rebuild_after_operation()
+
+    def _rebuild_after_operation(self):
+        """Rebuild the centroid-to-cluster dissimilarity matrix."""
+
+        if self._n_clusters == 0:
+            self._S = np.empty((0, 0))
+            self._sil_coefs = []
+            return
+
+        self._S = np.zeros((self._n_clusters, self._n_clusters))
+        for cluster_i in range(self._n_clusters):
+            for centroid_i in range(self._n_clusters):
+                value = (
+                    self._CP[cluster_i]
+                    + self._n[cluster_i]
+                    * np.inner(self._v[centroid_i, :], self._v[centroid_i, :])
+                    - 2
+                    * np.inner(self._G[cluster_i, :], self._v[centroid_i, :])
+                ) / self._n[cluster_i]
+                self._S[cluster_i, centroid_i] = max(0.0, float(value))
+        self._sil_coefs = np.zeros(self._n_clusters)
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):

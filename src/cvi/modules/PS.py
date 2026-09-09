@@ -32,6 +32,7 @@ class PS(_base.CVI):
         index_max=1.0,
         optimality="max"
     )
+    _supports_remove_merge = True
 
     def __init__(self):
         """
@@ -161,6 +162,86 @@ class PS(_base.CVI):
                 )
 
         self._D = self._D + np.transpose(self._D)
+
+    def _delete_cluster(self, label: int, i_label: int):
+        """Delete one cluster and compact the internal label map."""
+
+        self._n = self._delete_vector_entry(self._n, i_label)
+        self._v = np.delete(self._v, i_label, axis=0)
+        self._label_map.remove_label(label)
+        self._n_clusters -= 1
+
+    def _remove(self, sample: np.ndarray, label: int, i_label: int):
+        """Remove one sample from the PS centroid statistics."""
+
+        n_old = self._n[i_label]
+        v_old = self._v[i_label, :].copy()
+        n_samples_new = self._n_samples - 1
+
+        if n_old == 1:
+            if not np.allclose(sample, v_old, rtol=1e-10, atol=1e-12):
+                raise ValueError(
+                    "The supplied sample does not match the singleton cluster"
+                )
+
+            self._delete_cluster(label, i_label)
+            self._n_samples = n_samples_new
+
+            if n_samples_new == 0:
+                self._clear_common_state()
+
+            self._rebuild_after_operation()
+            return
+
+        n_new = n_old - 1
+        v_new = (n_old * v_old - sample) / n_new
+
+        self._n[i_label] = n_new
+        self._v[i_label, :] = v_new
+        self._n_samples = n_samples_new
+        self._rebuild_after_operation()
+
+    def _merge(
+        self,
+        target_label: int,
+        source_label: int,
+        target_i: int,
+        source_i: int,
+    ):
+        """Merge two PS centroid summaries."""
+
+        n_target = self._n[target_i]
+        n_source = self._n[source_i]
+        n_new = n_target + n_source
+        v_new = (
+            n_target * self._v[target_i, :]
+            + n_source * self._v[source_i, :]
+        ) / n_new
+
+        self._n[target_i] = n_new
+        self._v[target_i, :] = v_new
+        self._delete_cluster(source_label, source_i)
+        self._rebuild_after_operation()
+
+    def _rebuild_after_operation(self):
+        """Rebuild pairwise centroid distances."""
+
+        if self._n_clusters == 0:
+            self._D = np.zeros((0, 0))
+            self._v_bar = []
+            self._beta_t = 0.0
+            self._PS_i = np.zeros(0)
+            return
+
+        self._D = self._pairwise_matrix(
+            self._n_clusters,
+            lambda ix, jx: np.sum(
+                (self._v[ix, :] - self._v[jx, :]) ** 2
+            ),
+        )
+        self._v_bar = []
+        self._beta_t = 0.0
+        self._PS_i = np.zeros(self._n_clusters)
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):
