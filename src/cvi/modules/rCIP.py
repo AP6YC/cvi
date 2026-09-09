@@ -235,11 +235,8 @@ class rCIP(_base.CVI):
     def _delete_cluster(self, label: int, i_label: int):
         """Delete one rCIP cluster and compact its internal label."""
 
-        self._n = self._delete_vector_entry(self._n, i_label)
-        self._v = np.delete(self._v, i_label, axis=0)
         self._sigma = np.delete(self._sigma, i_label, axis=2)
-        self._label_map.remove_label(label)
-        self._n_clusters -= 1
+        super()._delete_cluster(label, i_label)
 
     def _remove(self, sample: np.ndarray, label: int, i_label: int):
         """Remove a sample from rCIP's mean and covariance statistics."""
@@ -249,10 +246,7 @@ class rCIP(_base.CVI):
         n_samples_new = self._n_samples - 1
 
         if n_old == 1:
-            if not np.allclose(sample, v_old, rtol=1e-10, atol=1e-12):
-                raise ValueError(
-                    "The supplied sample does not match the singleton cluster"
-                )
+            self._validate_singleton_removal(sample, v_old)
 
             self._delete_cluster(label, i_label)
             self._n_samples = n_samples_new

@@ -164,14 +164,6 @@ class PS(_base.CVI):
 
         self._D = self._D + np.transpose(self._D)
 
-    def _delete_cluster(self, label: int, i_label: int):
-        """Delete one cluster and compact the internal label map."""
-
-        self._n = self._delete_vector_entry(self._n, i_label)
-        self._v = np.delete(self._v, i_label, axis=0)
-        self._label_map.remove_label(label)
-        self._n_clusters -= 1
-
     def _remove(self, sample: np.ndarray, label: int, i_label: int):
         """Remove one sample from the PS centroid statistics."""
 
@@ -180,10 +172,7 @@ class PS(_base.CVI):
         n_samples_new = self._n_samples - 1
 
         if n_old == 1:
-            if not np.allclose(sample, v_old, rtol=1e-10, atol=1e-12):
-                raise ValueError(
-                    "The supplied sample does not match the singleton cluster"
-                )
+            self._validate_singleton_removal(sample, v_old)
 
             self._delete_cluster(label, i_label)
             self._n_samples = n_samples_new

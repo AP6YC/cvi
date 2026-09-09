@@ -222,6 +222,18 @@ class CVI():
         return max(0.0, float(value))
 
     @staticmethod
+    def _validate_singleton_removal(
+        sample: np.ndarray,
+        centroid: np.ndarray,
+    ):
+        """Validate that a removed sample matches a singleton centroid."""
+
+        if not np.allclose(sample, centroid, rtol=1e-10, atol=1e-12):
+            raise ValueError(
+                "The supplied sample does not match the singleton cluster"
+            )
+
+    @staticmethod
     def _delete_vector_entry(values, index: int):
         """Delete one entry from either a list or a NumPy vector."""
 
@@ -244,15 +256,20 @@ class CVI():
 
         return matrix
 
+    def _delete_cluster(self, label: int, i_label: int):
+        """Delete universally shared state for one cluster."""
+
+        self._n = self._delete_vector_entry(self._n, i_label)
+        self._v = np.delete(self._v, i_label, axis=0)
+        self._label_map.remove_label(label)
+        self._n_clusters -= 1
+
     def _delete_common_cluster(self, label: int, i_label: int):
         """Delete a compactness-based cluster and compact its internal label."""
 
-        self._n = self._delete_vector_entry(self._n, i_label)
         self._CP = self._delete_vector_entry(self._CP, i_label)
-        self._v = np.delete(self._v, i_label, axis=0)
         self._G = np.delete(self._G, i_label, axis=0)
-        self._label_map.remove_label(label)
-        self._n_clusters -= 1
+        self._delete_cluster(label, i_label)
 
     def _clear_common_state(self):
         """Return the common CVI state to its pre-initialization values."""
@@ -284,10 +301,7 @@ class CVI():
         n_samples_new = self._n_samples - 1
 
         if n_old == 1:
-            if not np.allclose(sample, v_old, rtol=1e-10, atol=1e-12):
-                raise ValueError(
-                    "The supplied sample does not match the singleton cluster"
-                )
+            self._validate_singleton_removal(sample, v_old)
 
             mu_new = None
             if n_samples_new > 0:
