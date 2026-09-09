@@ -154,6 +154,19 @@ class CVI():
         self._is_setup = True
         self._mode = "batch"
 
+    def _setup_batch_labels(self, labels: np.ndarray):
+        """Populate the label map and return labels in first-seen order."""
+
+        self._label_map = LabelMap()
+        unique_labels = []
+        for label in np.asarray(labels):
+            external_label = label.item() if hasattr(label, "item") else label
+            if external_label not in self._label_map.map:
+                self._label_map.get_internal_label(external_label)
+                unique_labels.append(external_label)
+
+        return unique_labels
+
     @abstractmethod
     def _param_inc(self, sample: np.ndarray, label: int):
         raise NotImplementedError
@@ -166,7 +179,7 @@ class CVI():
     def _evaluate(self):
         raise NotImplementedError
 
-    def _require_incremental_operations(self):
+    def _require_operations(self):
         """Validate that structural operations are supported and available."""
 
         if not self._supports_remove_merge:
@@ -176,12 +189,7 @@ class CVI():
 
         if not self._is_setup or self._mode is None:
             raise ValueError(
-                "Remove and merge require an initialized incremental CVI"
-            )
-
-        if self._mode != "incremental":
-            raise ValueError(
-                "Remove and merge are not supported for batch-initialized CVIs"
+                "Remove and merge require an initialized CVI"
             )
 
     def _validate_sample(self, sample: np.ndarray) -> np.ndarray:
@@ -361,7 +369,7 @@ class CVI():
 
     def remove(self, sample: np.ndarray, label: int) -> float:
         """
-        Remove a sample from an incrementally initialized CVI.
+        Remove a sample from an initialized CVI.
 
         The caller is responsible for ensuring that the sample belongs to the
         supplied cluster label. If the sample is the cluster's final member,
@@ -380,7 +388,7 @@ class CVI():
             The updated CVI criterion value.
         """
 
-        self._require_incremental_operations()
+        self._require_operations()
         sample = self._validate_sample(sample)
         i_label = self._label_map.get_existing_label(label)
         self._remove(sample, label, i_label)
@@ -406,7 +414,7 @@ class CVI():
             The updated CVI criterion value.
         """
 
-        self._require_incremental_operations()
+        self._require_operations()
 
         if target_label == source_label:
             raise ValueError("Merge requires two different cluster labels")
@@ -438,6 +446,11 @@ class CVI():
 
         # If we got 1D data, do a quick update
         if (data.ndim == 1):
+            if self._is_setup and data.shape[0] != self._dim:
+                raise ValueError(
+                    f"Expected a sample with {self._dim} features, "
+                    f"received {data.shape[0]}"
+                )
             self._param_inc(data, label)
 
         # Otherwise, we got 2D data and do the correct update
@@ -455,17 +468,11 @@ class CVI():
                 # Do a batch update
                 self._param_batch(data, label)
 
-            # Otherwise, we are already setup
+            # Otherwise, a second batch update was requested
             else:
-
-                # Error until batch to incremental is supported
                 raise ValueError(
-                    "Switching from batch to incremental not supported"
+                    "Repeated batch updates are not supported"
                 )
-
-                # Do many incremental updates
-                # for ix in range(len(label)):
-                #     self._param_inc(data[ix, :], label[ix])
 
         # Otherwise, we got incorrectly dimensioned data
         else:

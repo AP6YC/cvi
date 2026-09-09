@@ -107,12 +107,12 @@ The incremental methods are used automatically based upon the dimensions of the 
       criterion_values[ix] = my_cvi.get_cvi(sample, label)
 
 .. note::
-   Currently only using *either* batch *or* incremental methods is supported; switching from batch to incremental updates with the same is not yet implemented.
+   After batch initialization, additional samples may be added incrementally by passing a single sample and label to ``get_cvi``.
 
-Incremental Remove and Merge
-----------------------------
+Remove and Merge
+----------------
 
-An incrementally initialized CVI can remove a previously added sample or merge two existing clusters without retaining and replaying the full dataset:
+An initialized CVI can remove a previously added sample or merge two existing clusters without retaining and replaying the full dataset:
 
 .. code-block:: python
 
@@ -124,7 +124,7 @@ An incrementally initialized CVI can remove a previously added sample or merge t
 
 Both methods update the object in place and return its new criterion value. Removing the final sample of a cluster deletes that cluster, while ``merge`` retains ``target_label`` and deletes ``source_label``. The caller is responsible for ensuring that a removed sample belongs to the supplied label.
 
-Remove and merge are supported only after incremental calls to ``get_cvi``; they are not currently supported after batch initialization.
+Add, remove, and merge are supported after either incremental or batch initialization.
 
 Implemented CVIs
 ----------------

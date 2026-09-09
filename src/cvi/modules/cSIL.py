@@ -182,32 +182,37 @@ class cSIL(_base.CVI):
         super()._setup_batch(data)
 
         # Take the average across all samples, but cast to 1-D vector
-        u = np.unique(labels)
-        self._n_clusters = u.size
-        self._n = np.zeros(self._n_clusters, dtype=int)
+        u = self._setup_batch_labels(labels)
+        self._n_clusters = len(u)
+        self._n = [0 for _ in range(self._n_clusters)]
         self._v = np.zeros((self._n_clusters, self._dim))
-        self._CP = np.zeros(self._n_clusters)
+        self._CP = [0.0 for _ in range(self._n_clusters)]
+        self._G = np.zeros((self._n_clusters, self._dim))
         self._S = np.zeros((self._n_clusters, self._n_clusters))
-        D = np.zeros((self._n_samples, self._n_samples))
-        for ix in range(self._n_clusters):
+        D = np.zeros((self._n_clusters, self._n_samples))
+        for ix, external_label in enumerate(u):
             subset_indices = (
-                [x for x in range(len(labels)) if labels[x] == ix]
+                [x for x in range(len(labels))
+                 if labels[x] == external_label]
             )
             subset = data[subset_indices, :]
             self._n[ix] = subset.shape[0]
             self._v[ix, :] = np.mean(subset, axis=0)
 
-            # Compute CP in case of switching back to incremental mode
-            diff_x_v = subset - self._v[ix, :] * np.ones((self._n[ix], 1))
-            self._CP[ix] = np.sum(diff_x_v ** 2)
+            # Retain zero-centered raw moments for subsequent updates.
+            self._CP[ix] = np.sum(subset ** 2)
+            self._G[ix, :] = np.sum(subset, axis=0)
 
             d_temp = (data - self._v[ix, :] * np.ones((self._n_samples, 1))) ** 2
             D[ix, :] = np.transpose(np.sum(d_temp, axis=1))
             # D[ix, :] = np.sum(d_temp, axis=1)
 
         for ix in range(self._n_clusters):
-            for jx in range(self._n_clusters):
-                subset_ind = [x for x in range(len(labels)) if labels[x] == jx]
+            for jx, external_label in enumerate(u):
+                subset_ind = [
+                    x for x in range(len(labels))
+                    if labels[x] == external_label
+                ]
                 self._S[jx, ix] = sum(D[ix, subset_ind]) / self._n[jx]
 
     def _delete_cluster(self, label: int, i_label: int):

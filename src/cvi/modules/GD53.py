@@ -169,18 +169,19 @@ class GD53(_base.CVI):
 
         # Take the average across all samples, but cast to 1-D vector
         self._mu = np.mean(data, axis=0)
-        u = np.unique(labels)
-        self._n_clusters = u.size
+        u = self._setup_batch_labels(labels)
+        self._n_clusters = len(u)
         self._n = [0 for _ in range(self._n_clusters)]
         self._v = np.zeros((self._n_clusters, self._dim))
         self._CP = [0.0 for _ in range(self._n_clusters)]
         self._G = np.zeros((self._n_clusters, self._dim))
         self._D = np.zeros((self._n_clusters, self._n_clusters))
 
-        for ix in range(self._n_clusters):
+        for ix, external_label in enumerate(u):
             # subset_indices = lambda x: labels[x] == ix
             subset_indices = (
-                [x for x in range(len(labels)) if labels[x] == ix]
+                [x for x in range(len(labels))
+                 if labels[x] == external_label]
             )
             subset = data[subset_indices, :]
             self._n[ix] = subset.shape[0]

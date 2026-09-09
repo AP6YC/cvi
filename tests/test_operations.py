@@ -1,4 +1,4 @@
-"""Tests for incremental CVI remove and merge operations."""
+"""Tests for CVI add, remove, and merge operations."""
 
 import copy
 
@@ -29,6 +29,14 @@ def build_incrementally(cvi_type, samples=SAMPLES, labels=LABELS):
     local_cvi = cvi_type()
     for sample, label in zip(samples, labels):
         local_cvi.get_cvi(sample, int(label))
+    return local_cvi
+
+
+def build_in_batch(cvi_type, samples=SAMPLES, labels=LABELS):
+    """Build one CVI from a batch while retaining external labels."""
+
+    local_cvi = cvi_type()
+    local_cvi.get_cvi(samples, labels)
     return local_cvi
 
 
@@ -245,22 +253,116 @@ def test_invalid_operation_arguments_are_atomic(cvi_type):
 
 
 @pytest.mark.parametrize("cvi_type", cvi.MODULES)
-def test_operations_require_incremental_state(cvi_type):
-    """Fresh and batch-initialized CVIs reject structural operations."""
+def test_operations_require_initialized_state(cvi_type):
+    """Fresh CVIs reject structural operations."""
 
     fresh = cvi_type()
-    with pytest.raises(ValueError, match="initialized incremental"):
+    with pytest.raises(ValueError, match="initialized CVI"):
         fresh.remove(SAMPLES[0], 10)
-    with pytest.raises(ValueError, match="initialized incremental"):
+    with pytest.raises(ValueError, match="initialized CVI"):
         fresh.merge(10, 20)
 
-    batch = cvi_type()
-    contiguous_labels = (LABELS // 10) - 1
-    batch.get_cvi(SAMPLES, contiguous_labels)
-    with pytest.raises(ValueError, match="batch-initialized"):
-        batch.remove(SAMPLES[0], 0)
-    with pytest.raises(ValueError, match="batch-initialized"):
-        batch.merge(0, 1)
+
+@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize(
+    ("sample", "label"),
+    [
+        (np.asarray([0.05, 0.15]), 10),
+        (np.asarray([4.0, 4.0]), 99),
+    ],
+    ids=["existing-label", "new-label"],
+)
+def test_batch_then_add_matches_incremental_replay(cvi_type, sample, label):
+    """A batch-initialized CVI can accept another scalar sample."""
+
+    actual = build_in_batch(cvi_type)
+    returned = actual.get_cvi(sample, label)
+
+    expected = build_incrementally(
+        cvi_type,
+        np.vstack((SAMPLES, sample)),
+        np.append(LABELS, label),
+    )
+
+    assert returned == actual.criterion_value
+    assert_equivalent(actual, expected)
+
+
+@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+def test_batch_then_add_rejects_wrong_dimension_atomically(cvi_type):
+    """An invalid scalar update must not create a new batch-state label."""
+
+    actual = build_in_batch(cvi_type)
+    snapshot = core_snapshot(actual)
+
+    with pytest.raises(ValueError, match="Expected a sample"):
+        actual.get_cvi(np.asarray([1.0, 2.0, 3.0]), 99)
+
+    assert_snapshot(actual, snapshot)
+
+
+@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+def test_batch_then_remove_matches_incremental_replay(cvi_type):
+    """A batch-initialized CVI can remove a sample by external label."""
+
+    remove_index = 1
+    actual = build_in_batch(cvi_type)
+    returned = actual.remove(
+        SAMPLES[remove_index],
+        int(LABELS[remove_index]),
+    )
+
+    keep = np.arange(len(SAMPLES)) != remove_index
+    expected = build_incrementally(cvi_type, SAMPLES[keep], LABELS[keep])
+
+    assert returned == actual.criterion_value
+    assert_equivalent(actual, expected)
+
+
+@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+def test_batch_then_merge_matches_incremental_replay(cvi_type):
+    """A batch-initialized CVI can merge clusters by external label."""
+
+    actual = build_in_batch(cvi_type)
+    returned = actual.merge(target_label=20, source_label=10)
+
+    merged_labels = LABELS.copy()
+    merged_labels[merged_labels == 10] = 20
+    expected = build_incrementally(cvi_type, SAMPLES, merged_labels)
+
+    assert returned == actual.criterion_value
+    assert_equivalent(actual, expected)
+
+
+@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+def test_batch_add_then_remove_restores_state(cvi_type):
+    """A scalar add/remove round trip restores batch-initialized state."""
+
+    expected = build_in_batch(cvi_type)
+    actual = build_in_batch(cvi_type)
+    sample = np.asarray([0.05, 0.15])
+
+    actual.get_cvi(sample, 10)
+    actual.remove(sample, 10)
+
+    assert_equivalent(actual, expected)
+
+
+@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+def test_batch_singleton_removal_deletes_and_reuses_label(cvi_type):
+    """Batch labels are compacted and reusable after singleton deletion."""
+
+    singleton = np.asarray([[4.0, 4.0]])
+    samples = np.vstack((SAMPLES, singleton))
+    labels = np.append(LABELS, 99)
+    actual = build_in_batch(cvi_type, samples, labels)
+
+    actual.remove(singleton[0], 99)
+    assert_equivalent(actual, build_incrementally(cvi_type))
+
+    actual.get_cvi(np.asarray([4.2, 3.9]), 99)
+    assert actual._label_map.map[99] == 3
+    assert actual._n[3] == 1
 
 
 @pytest.mark.parametrize("cvi_type", [cvi.CH, cvi.cSIL, cvi.rCIP])
