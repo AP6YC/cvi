@@ -195,7 +195,6 @@ def test_removing_final_sample_resets_object(cvi_type):
     assert local_cvi._n_clusters == 0
     assert local_cvi._label_map.map == {}
     assert local_cvi._is_setup is False
-    assert local_cvi._mode is None
     assert local_cvi.criterion_value == 0.0
 
     local_cvi.get_cvi(np.asarray([0.1, 0.2]), 42)

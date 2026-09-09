@@ -116,7 +116,6 @@ class CVI():
         self._n_clusters = 0
         self.criterion_value = 0.0
         self._is_setup = False
-        self._mode = None
 
     def _setup(self, sample: np.ndarray):
         """
@@ -137,7 +136,6 @@ class CVI():
 
         # Declare that the CVI is internally setup
         self._is_setup = True
-        self._mode = "incremental"
 
     def _setup_batch(self, data: np.ndarray):
         """
@@ -152,7 +150,6 @@ class CVI():
         # Infer the data dimension and number of samples
         self._n_samples, self._dim = data.shape
         self._is_setup = True
-        self._mode = "batch"
 
     def _setup_batch_labels(self, labels: np.ndarray):
         """Populate the label map and return labels in first-seen order."""
@@ -187,7 +184,7 @@ class CVI():
                 f"{type(self).__name__} does not support remove or merge"
             )
 
-        if not self._is_setup or self._mode is None:
+        if not self._is_setup:
             raise ValueError(
                 "Remove and merge require an initialized CVI"
             )
@@ -270,7 +267,6 @@ class CVI():
         self._n_clusters = 0
         self.criterion_value = 0.0
         self._is_setup = False
-        self._mode = None
 
     def _rebuild_after_operation(self):
         """Rebuild CVI-specific derived state after remove or merge."""
