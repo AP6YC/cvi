@@ -5,6 +5,13 @@ cvi.modules.GD53
 
    
    
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+      :toctree:
+   
+      info
+   
    
 
    

@@ -1,0 +1,6 @@
+cvi.modules.rCIP.info
+=====================
+
+.. currentmodule:: cvi.modules
+
+.. autoattribute:: rCIP.info

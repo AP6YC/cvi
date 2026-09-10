@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="API" href="api.html"><link rel="prev" title="Background" href="background.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
-        <title>Guide - cvi 0.6.0 documentation</title>
+        <title>Guide - cvi 0.7.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">cvi 0.6.0 documentation</div></a>
+      <a href="index.html"><div class="brand">cvi 0.7.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -184,7 +184,7 @@
       
       <div class="sidebar-sticky"><div class="sidebar-scroll"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">cvi 0.6.0 documentation</span>
+  <span class="sidebar-brand-text">cvi 0.7.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -220,6 +220,7 @@
 </li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="_autosummary/cvi.modules.html">cvi.modules</a><input aria-label="Toggle navigation of cvi.modules" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.CH.html">cvi.modules.CH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.CONN.html">cvi.modules.CONN</a></li>
 <li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.DB.html">cvi.modules.DB</a></li>
 <li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.GD43.html">cvi.modules.GD43</a></li>
 <li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.GD53.html">cvi.modules.GD53</a></li>
@@ -387,8 +388,21 @@ The incremental methods are used automatically based upon the dimensions of the 
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Currently only using <em>either</em> batch <em>or</em> incremental methods is supported; switching from batch to incremental updates with the same is not yet implemented.</p>
+<p>After batch initialization, additional samples may be added incrementally by passing a single sample and label to <code class="docutils literal notranslate"><span class="pre">get_cvi</span></code>.</p>
 </div>
+</section>
+<section id="remove-and-merge">
+<h2>Remove and Merge<a class="headerlink" href="#remove-and-merge" title="Link to this heading">¶</a></h2>
+<p>An initialized CVI can remove a previously added sample or merge two existing clusters without retaining and replaying the full dataset:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Remove a sample from its current cluster.</span>
+<span class="n">criterion_value</span> <span class="o">=</span> <span class="n">my_cvi</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+
+<span class="c1"># Merge every member of source_label into target_label.</span>
+<span class="n">criterion_value</span> <span class="o">=</span> <span class="n">my_cvi</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">target_label</span><span class="p">,</span> <span class="n">source_label</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Both methods update the object in place and return its new criterion value. Removing the final sample of a cluster deletes that cluster, while <code class="docutils literal notranslate"><span class="pre">merge</span></code> retains <code class="docutils literal notranslate"><span class="pre">target_label</span></code> and deletes <code class="docutils literal notranslate"><span class="pre">source_label</span></code>. The caller is responsible for ensuring that a removed sample belongs to the supplied label.</p>
+<p>Add, remove, and merge are supported after either incremental or batch initialization.</p>
 </section>
 <section id="implemented-cvis">
 <h2>Implemented CVIs<a class="headerlink" href="#implemented-cvis" title="Link to this heading">¶</a></h2>
@@ -492,6 +506,7 @@ The incremental methods are used automatically based upon the dimensions of the 
 <li><a class="reference internal" href="#installation">Installation</a></li>
 <li><a class="reference internal" href="#quickstart">Quickstart</a></li>
 <li><a class="reference internal" href="#detailed-usage">Detailed Usage</a></li>
+<li><a class="reference internal" href="#remove-and-merge">Remove and Merge</a></li>
 <li><a class="reference internal" href="#implemented-cvis">Implemented CVIs</a></li>
 <li><a class="reference internal" href="#acknowledgements">Acknowledgements</a><ul>
 <li><a class="reference internal" href="#derivation">Derivation</a></li>
@@ -511,7 +526,7 @@ The incremental methods are used automatically based upon the dimensions of the 
     </aside>
   </div>
 </div>
-<script src="_static/documentation_options.js?v=8fa8b3e9"></script>
+<script src="_static/documentation_options.js?v=fe7df9b0"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

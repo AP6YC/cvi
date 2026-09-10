@@ -1,0 +1,30 @@
+cvi.modules.CONN
+================
+
+.. automodule:: cvi.modules.CONN
+
+   
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+      :toctree:
+   
+      info
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
