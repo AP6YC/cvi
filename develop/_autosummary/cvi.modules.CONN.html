@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="cvi.modules.CONN.CONN" href="cvi.modules.CONN.CONN.html"><link rel="prev" title="cvi.modules.CH" href="cvi.modules.CH.html">
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="cvi.modules.DB" href="cvi.modules.DB.html"><link rel="prev" title="cvi.modules.CH" href="cvi.modules.CH.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
         <title>cvi.modules.CONN - cvi 0.6.0 documentation</title>
@@ -220,10 +220,7 @@
 </li>
 <li class="toctree-l3 current has-children"><a class="reference internal" href="cvi.modules.html">cvi.modules</a><input aria-label="Toggle navigation of cvi.modules" checked="" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="cvi.modules.CH.html">cvi.modules.CH</a></li>
-<li class="toctree-l4 current has-children current-page"><a class="current reference internal" href="#">cvi.modules.CONN</a><input aria-label="Toggle navigation of cvi.modules.CONN" checked="" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l5"><a class="reference internal" href="cvi.modules.CONN.CONN.html">cvi.modules.CONN.CONN</a></li>
-</ul>
-</li>
+<li class="toctree-l4 current current-page"><a class="current reference internal" href="#">cvi.modules.CONN</a></li>
 <li class="toctree-l4"><a class="reference internal" href="cvi.modules.DB.html">cvi.modules.DB</a></li>
 <li class="toctree-l4"><a class="reference internal" href="cvi.modules.GD43.html">cvi.modules.GD43</a></li>
 <li class="toctree-l4"><a class="reference internal" href="cvi.modules.GD53.html">cvi.modules.GD53</a></li>
@@ -236,8 +233,8 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="compat.html">compat</a><input aria-label="Toggle navigation of compat" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3 has-children"><a class="reference internal" href="compat.v0.html">compat.v0</a><input aria-label="Toggle navigation of compat.v0" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="compat.html">compat</a><input aria-label="Toggle navigation of compat" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="compat.v0.html">compat.v0</a><input aria-label="Toggle navigation of compat.v0" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="compat.v0.CP_update.html">compat.v0.CP_update</a></li>
 <li class="toctree-l4"><a class="reference internal" href="compat.v0.cluster_center_update.html">compat.v0.cluster_center_update</a></li>
 <li class="toctree-l4"><a class="reference internal" href="compat.v0.iCVI.html">compat.v0.iCVI</a></li>
@@ -308,13 +305,14 @@
           <section id="module-cvi.modules.CONN">
 <span id="cvi-modules-conn"></span><h1>cvi.modules.CONN<a class="headerlink" href="#module-cvi.modules.CONN" title="Link to this heading">¶</a></h1>
 <p>Connectivity-based CONN Cluster Validity Index.</p>
-<p>This implementation follows the incremental CONN-style validity index for
-ART/ARTMAP partitions. Unlike distance-only CVIs, CONN depends on the first
-and second best matching ART categories associated with each sample.</p>
+<p>This implementation follows the CONN-style validity index for prototype-based
+partitions. Unlike distance-only CVIs, CONN depends on the first and second
+best matching prototypes associated with each sample.</p>
 <p class="rubric">Notes</p>
-<p>Incremental mode assumes samples are already normalized to the ART input
-domain, typically [0, 1]. Batch mode can optionally normalize the full dataset
-before processing.</p>
+<p>Incremental mode uses FuzzyART and assumes samples are already normalized to
+the ART input domain, typically [0, 1]. Batch mode supports FuzzyART, KMeans,
+and MiniBatchKMeans and can optionally normalize the full dataset before
+processing.</p>
 <dl class="simple">
 <dt>The iCONN initialization rule is handled explicitly:</dt><dd><ol class="arabic simple">
 <li><p>The first sample creates the first ART category.</p></li>
@@ -342,13 +340,10 @@ temporarily setting ART vigilance to 1.0.</p></li>
 </ol>
 </li>
 </ol>
-<p class="rubric">Classes</p>
+<p class="rubric">Module Attributes</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="cvi.modules.CONN.CONN.html#cvi.modules.CONN.CONN" title="cvi.modules.CONN.CONN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CONN</span></code></a>([rho, alpha, beta, match_tracking, ...])</p></td>
-<td><p>Incremental CONN Cluster Validity Index.</p></td>
-</tr>
 </tbody>
 </table>
 </div>
@@ -359,12 +354,12 @@ temporarily setting ART vigilance to 1.0.</p></li>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="cvi.modules.CONN.CONN.html">
+          <a class="next-page" href="cvi.modules.DB.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">cvi.modules.CONN.CONN</div>
+                <div class="title">cvi.modules.DB</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>

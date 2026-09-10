@@ -5,21 +5,20 @@ cvi.modules.CONN
 
    
    
-   
-
-   
-   
-   
-
-   
-   
-   .. rubric:: Classes
+   .. rubric:: Module Attributes
 
    .. autosummary::
       :toctree:
-      :template: custom-class-template.rst
    
-      CONN
+      info
+   
+   
+
+   
+   
+   
+
+   
    
    
 
