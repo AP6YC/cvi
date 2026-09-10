@@ -56,8 +56,10 @@ def get_cvis() -> List[cvi.CVI]:
     """
 
     # Construct a list of CVI objects
+    # CONN has backend-specific batch/incremental behavior and is covered by
+    # focused tests instead of the generic mode-equivalence test below.
     cvis = [
-        local_cvi() for local_cvi in cvi.MODULES
+        local_cvi() for local_cvi in cvi.MODULES if local_cvi is not cvi.CONN
     ]
 
     return cvis

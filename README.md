@@ -200,15 +200,16 @@ Add, remove, and merge are supported after either incremental or batch initializ
 
 The following CVIs have been implemented as of the latest version of `cvi`:
 
-- **CH**: Calinski-Harabasz
-- **cSIL**: Centroid-based Silhouette
-- **DB**: Davies-Bouldin
+- **CH**: Calinski-Harabasz.
+- **CONN**: Prototype-based intra- and inter-cluster connectivity index.
+- **cSIL**: Centroid-based Silhouette index.
+- **DB**: Davies-Bouldin index.
 - **GD43**: Generalized Dunn's Index 43.
 - **GD53**: Generalized Dunn's Index 53.
 - **PS**: Partition Separation.
 - **rCIP**: (Renyi's) representative Cross Information Potential.
 - **WB**: WB-index.
-- **XB**: Xie-Beni.
+- **XB**: Xie-Beni index.
 
 ## History
 

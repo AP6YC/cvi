@@ -14,6 +14,7 @@ from ._base import (
 )
 
 from .CH import CH
+from .CONN import CONN
 from .cSIL import cSIL
 from .DB import DB
 from .GD43 import GD43
@@ -30,6 +31,7 @@ __all__ = [
     "_param_inc_doc",
     "_param_batch_doc",
     "CH",
+    "CONN",
     "cSIL",
     "DB",
     "GD43",
