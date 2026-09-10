@@ -420,9 +420,9 @@ class Test_get_cvi:
             # Try passing a 3D array
             local_cvi.get_cvi(local_data, local_label)
 
-    def test_error_batch_to_inc(self):
+    def test_error_repeated_batch(self):
         """
-        Tests that batch to incremental mode is not supported yet.
+        Tests that repeated batch updates are not supported.
         """
 
         # Create some dummy 2D data
@@ -434,7 +434,7 @@ class Test_get_cvi:
         local_cvi = get_one_cvi()
         local_cvi._is_setup = True
 
-        # Test that switching from batch to incremental is not supported
+        # Test that another batch update is not supported
         with pytest.raises(ValueError):
             local_cvi.get_cvi(local_data, local_label)
 
