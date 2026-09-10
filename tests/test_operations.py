@@ -22,6 +22,10 @@ SAMPLES = np.asarray([
 ])
 LABELS = np.asarray([10, 10, 10, 20, 20, 20, 30, 30, 30])
 
+# This is a patch to test every module except for CONN index that currently has
+# its own API for batch and incremental usage (due to the selected internal clustering method)
+CVIS_NOT_CONN = [m for m in cvi.MODULES if m is not cvi.CONN]
+
 
 def build_incrementally(cvi_type, samples=SAMPLES, labels=LABELS):
     """Build one CVI by replaying samples incrementally."""
@@ -97,7 +101,7 @@ def assert_snapshot(local_cvi, snapshot):
     assert local_cvi.criterion_value == snapshot["criterion_value"]
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_remove_matches_incremental_replay(cvi_type):
     """Removing a member must equal replaying all other samples."""
 
@@ -112,7 +116,7 @@ def test_remove_matches_incremental_replay(cvi_type):
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_merge_matches_relabelled_incremental_replay(cvi_type):
     """Merging labels must equal replaying with the source relabelled."""
 
@@ -127,7 +131,7 @@ def test_merge_matches_relabelled_incremental_replay(cvi_type):
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_add_then_remove_restores_state(cvi_type):
     """An add/remove round trip must restore the previous summary."""
 
@@ -141,7 +145,7 @@ def test_add_then_remove_restores_state(cvi_type):
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_merge_to_single_cluster(cvi_type):
     """Merging the final two clusters leaves the CVI undefined at zero."""
 
@@ -160,7 +164,7 @@ def test_merge_to_single_cluster(cvi_type):
     assert actual.criterion_value == 0.0
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_singleton_removal_compacts_and_reuses_label(cvi_type):
     """Deleting a singleton removes its mapping and permits label reuse."""
 
@@ -180,7 +184,7 @@ def test_singleton_removal_compacts_and_reuses_label(cvi_type):
     assert actual._n[3] == 1
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_removing_final_sample_resets_object(cvi_type):
     """Removing the final sample returns the object to fresh state."""
 
@@ -227,7 +231,7 @@ def test_rcip_merge_singletons():
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_invalid_operation_arguments_are_atomic(cvi_type):
     """Label and dimension errors must not mutate the object."""
 
@@ -251,7 +255,7 @@ def test_invalid_operation_arguments_are_atomic(cvi_type):
     assert_snapshot(local_cvi, snapshot)
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_operations_require_initialized_state(cvi_type):
     """Fresh CVIs reject structural operations."""
 
@@ -262,7 +266,7 @@ def test_operations_require_initialized_state(cvi_type):
         fresh.merge(10, 20)
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 @pytest.mark.parametrize(
     ("sample", "label"),
     [
@@ -287,7 +291,7 @@ def test_batch_then_add_matches_incremental_replay(cvi_type, sample, label):
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_batch_then_add_rejects_wrong_dimension_atomically(cvi_type):
     """An invalid scalar update must not create a new batch-state label."""
 
@@ -300,7 +304,7 @@ def test_batch_then_add_rejects_wrong_dimension_atomically(cvi_type):
     assert_snapshot(actual, snapshot)
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_batch_then_remove_matches_incremental_replay(cvi_type):
     """A batch-initialized CVI can remove a sample by external label."""
 
@@ -318,7 +322,7 @@ def test_batch_then_remove_matches_incremental_replay(cvi_type):
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_batch_then_merge_matches_incremental_replay(cvi_type):
     """A batch-initialized CVI can merge clusters by external label."""
 
@@ -333,7 +337,7 @@ def test_batch_then_merge_matches_incremental_replay(cvi_type):
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_batch_add_then_remove_restores_state(cvi_type):
     """A scalar add/remove round trip restores batch-initialized state."""
 
@@ -347,7 +351,7 @@ def test_batch_add_then_remove_restores_state(cvi_type):
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", cvi.MODULES)
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_batch_singleton_removal_deletes_and_reuses_label(cvi_type):
     """Batch labels are compacted and reusable after singleton deletion."""
 
