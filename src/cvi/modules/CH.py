@@ -28,6 +28,15 @@ class CH(_base.CVI):
     3. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, and J. Bailey, "Online Cluster Validity Indices for Streaming Data," ArXiv e-prints, 2018, arXiv:1801.02937v1 [stat.ML]. [Online].
     4. M. Moshtaghi, J. C. Bezdek, S. M. Erfani, C. Leckie, J. Bailey, "Online cluster validity indices for performance monitoring of streaming data clustering," Int. J. Intell. Syst., pp. 1-23, 2018.
     """
+    info = _base.CVIInfo(
+        name="Calinski-Harabasz",
+        name_short="CH",
+        index_min=0.0,
+        index_max=np.inf,
+        optimality="max"
+    )
+    _supports_remove_merge = True
+    _uses_compactness_stats = True
 
     def __init__(self):
         """
@@ -139,16 +148,18 @@ class CH(_base.CVI):
 
         # Take the average across all samples, but cast to 1-D vector
         self._mu = np.mean(data, axis=0)
-        u = np.unique(labels)
-        self._n_clusters = u.size
-        self._n = np.zeros(self._n_clusters, dtype=int)
+        u = self._setup_batch_labels(labels)
+        self._n_clusters = len(u)
+        self._n = [0 for _ in range(self._n_clusters)]
         self._v = np.zeros((self._n_clusters, self._dim))
-        self._CP = np.zeros(self._n_clusters)
+        self._CP = [0.0 for _ in range(self._n_clusters)]
+        self._G = np.zeros((self._n_clusters, self._dim))
         self._SEP = np.zeros(self._n_clusters)
 
-        for ix in range(self._n_clusters):
+        for ix, external_label in enumerate(u):
             subset_indices = (
-                [x for x in range(len(labels)) if labels[x] == ix]
+                [x for x in range(len(labels))
+                 if labels[x] == external_label]
             )
             subset = data[subset_indices, :]
             self._n[ix] = subset.shape[0]
@@ -156,6 +167,23 @@ class CH(_base.CVI):
             diff_x_v = subset - self._v[ix, :] * np.ones((self._n[ix], 1))
             self._CP[ix] = np.sum(diff_x_v ** 2)
             self._SEP[ix] = self._n[ix] * np.sum((self._v[ix, :] - self._mu) ** 2)
+
+    def _rebuild_after_operation(self):
+        """Rebuild separation statistics after a remove or merge."""
+
+        if self._n_clusters == 0:
+            self._mu = np.zeros(0)
+            self._SEP = np.zeros(0)
+            self._BGSS = 0.0
+            self._WGSS = 0.0
+            return
+
+        self._SEP = np.asarray([
+            self._n[ix] * np.sum((self._v[ix, :] - self._mu) ** 2)
+            for ix in range(self._n_clusters)
+        ])
+        self._WGSS = sum(self._CP)
+        self._BGSS = sum(self._SEP)
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):

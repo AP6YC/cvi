@@ -40,6 +40,7 @@ A Python package implementing both batch and incremental cluster validity indice
 - [Usage](#usage)
   - [Quickstart](#quickstart)
   - [Detailed Usage](#detailed-usage)
+  - [Remove and Merge](#remove-and-merge)
 - [Implemented CVIs](#implemented-cvis)
 - [History](#history)
 - [Acknowledgements](#acknowledgements)
@@ -79,7 +80,7 @@ pip install cvi
 You can also specify a version to install in the usual way with
 
 ```python
-pip install cvi==v0.6.0
+pip install cvi==v0.7.0
 ```
 
 Alternatively, you can manually install a release from the [releases page](https://github.com/AP6YC/cvi/releases) on GitHub.
@@ -112,6 +113,14 @@ criterion_values = np.zeros(n_samples)
 # Iterate over the data
 for ix in range(n_samples):
     criterion_values = my_cvi.get_cvi(samples[ix, :], labels[ix])
+```
+
+Users can also query the `.info` property of the CVI objects to obtain relevant
+scaling and naming information.
+
+```
+>>> print(my_cvi.info)
+CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max')
 ```
 
 ### Detailed Usage
@@ -169,21 +178,38 @@ for ix in range(n_samples):
 
 > **NOTE**:
 >
-> Currently only using _either_ batch _or_ incremental methods is supported; switching from batch to incremental updates with the same is not yet implemented.
+> After batch initialization, additional samples may be added incrementally by passing a single sample and label to `get_cvi`.
+
+### Remove and Merge
+
+An initialized CVI can remove a previously added sample or merge two existing clusters without retaining and replaying the full dataset:
+
+```python
+# Remove a sample from its current cluster.
+criterion_value = my_cvi.remove(sample, label)
+
+# Merge every member of source_label into target_label.
+criterion_value = my_cvi.merge(target_label, source_label)
+```
+
+Both methods update the object in place and return its new criterion value. Removing the final sample of a cluster deletes that cluster, while `merge` retains `target_label` and deletes `source_label`. The caller is responsible for ensuring that a removed sample belongs to the supplied label.
+
+Add, remove, and merge are supported after either incremental or batch initialization.
 
 ## Implemented CVIs
 
 The following CVIs have been implemented as of the latest version of `cvi`:
 
-- **CH**: Calinski-Harabasz
-- **cSIL**: Centroid-based Silhouette
-- **DB**: Davies-Bouldin
+- **CH**: Calinski-Harabasz.
+- **CONN**: Prototype-based intra- and inter-cluster connectivity index.
+- **cSIL**: Centroid-based Silhouette index.
+- **DB**: Davies-Bouldin index.
 - **GD43**: Generalized Dunn's Index 43.
 - **GD53**: Generalized Dunn's Index 53.
 - **PS**: Partition Separation.
 - **rCIP**: (Renyi's) representative Cross Information Potential.
 - **WB**: WB-index.
-- **XB**: Xie-Beni.
+- **XB**: Xie-Beni index.
 
 ## History
 

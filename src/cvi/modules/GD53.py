@@ -31,6 +31,16 @@ class GD53(_base.CVI):
     5. J. C. Bezdek and N. R. Pal, "Some new indexes of cluster validity," IEEE Trans. Syst., Man, and Cybern., vol. 28, no. 3, pp. 301-315, Jun. 1998.
     """
 
+    info = _base.CVIInfo(
+        name="Generalized Dunn's 53",
+        name_short="GD53",
+        index_min=0.0,
+        index_max=np.inf,
+        optimality="max"
+    )
+    _supports_remove_merge = True
+    _uses_compactness_stats = True
+
     def __init__(self):
         """
         Generalized Dunn's Index 53 (GD53) initialization routine.
@@ -159,18 +169,19 @@ class GD53(_base.CVI):
 
         # Take the average across all samples, but cast to 1-D vector
         self._mu = np.mean(data, axis=0)
-        u = np.unique(labels)
-        self._n_clusters = u.size
+        u = self._setup_batch_labels(labels)
+        self._n_clusters = len(u)
         self._n = [0 for _ in range(self._n_clusters)]
         self._v = np.zeros((self._n_clusters, self._dim))
         self._CP = [0.0 for _ in range(self._n_clusters)]
         self._G = np.zeros((self._n_clusters, self._dim))
         self._D = np.zeros((self._n_clusters, self._n_clusters))
 
-        for ix in range(self._n_clusters):
+        for ix, external_label in enumerate(u):
             # subset_indices = lambda x: labels[x] == ix
             subset_indices = (
-                [x for x in range(len(labels)) if labels[x] == ix]
+                [x for x in range(len(labels))
+                 if labels[x] == external_label]
             )
             subset = data[subset_indices, :]
             self._n[ix] = subset.shape[0]
@@ -185,6 +196,27 @@ class GD53(_base.CVI):
                 )
 
         self._D = self._D + np.transpose(self._D)
+
+    def _rebuild_after_operation(self):
+        """Rebuild pairwise dispersion after a remove or merge."""
+
+        if self._n_clusters == 0:
+            self._mu = np.zeros(0)
+            self._D = np.zeros((0, 0))
+            self._inter = 0.0
+            self._intra = 0.0
+            return
+
+        self._D = self._pairwise_matrix(
+            self._n_clusters,
+            lambda ix, jx: (
+                (self._CP[ix] + self._CP[jx])
+                / (self._n[ix] + self._n[jx])
+            ),
+        )
+        if self._n_clusters < 2:
+            self._inter = 0.0
+            self._intra = 0.0
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):

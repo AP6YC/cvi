@@ -3,12 +3,13 @@ cvi - A Python library for both incremental and batch cluster validity indices.
 """
 
 # Set the version variable of the package
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 # Import CVI modules to the top level
 from .modules import (
     CVI,
     CH,
+    CONN,
     cSIL,
     DB,
     GD43,
@@ -26,6 +27,7 @@ from . import compat
 __all__ = [
     "CVI",
     "CH",
+    "CONN",
     "cSIL",
     "DB",
     "GD43",
@@ -40,6 +42,7 @@ __all__ = [
 # Convenience variable containing all implemented modules
 MODULES = [
     CH,
+    CONN,
     cSIL,
     DB,
     GD43,
