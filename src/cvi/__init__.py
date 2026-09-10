@@ -9,6 +9,7 @@ __version__ = "0.6.0"
 from .modules import (
     CVI,
     CH,
+    CONN,
     cSIL,
     DB,
     GD43,
@@ -26,6 +27,7 @@ from . import compat
 __all__ = [
     "CVI",
     "CH",
+    "CONN",
     "cSIL",
     "DB",
     "GD43",
@@ -40,6 +42,7 @@ __all__ = [
 # Convenience variable containing all implemented modules
 MODULES = [
     CH,
+    CONN,
     cSIL,
     DB,
     GD43,
