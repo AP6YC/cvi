@@ -1,6 +1,0 @@
-compat.v0.CP\_update
-====================
-
-.. currentmodule:: compat.v0
-
-.. autofunction:: CP_update

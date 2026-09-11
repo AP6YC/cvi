@@ -1,6 +1,0 @@
-cvi.modules.GD53.info
-=====================
-
-.. currentmodule:: cvi.modules
-
-.. autoattribute:: GD53.info

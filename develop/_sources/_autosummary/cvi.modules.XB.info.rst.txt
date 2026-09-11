@@ -1,6 +1,0 @@
-cvi.modules.XB.info
-===================
-
-.. currentmodule:: cvi.modules
-
-.. autoattribute:: XB.info

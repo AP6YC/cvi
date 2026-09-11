@@ -1,6 +1,0 @@
-cvi.modules.cSIL.info
-=====================
-
-.. currentmodule:: cvi.modules
-
-.. autoattribute:: cSIL.info

@@ -1,6 +1,0 @@
-cvi.modules.CONN.info
-=====================
-
-.. currentmodule:: cvi.modules
-
-.. autoattribute:: CONN.info

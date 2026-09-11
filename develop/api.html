@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="cvi" href="_autosummary/cvi.html"><link rel="prev" title="Guide" href="guide.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="cvi.CVI" href="_autosummary/cvi.CVI.html"><link rel="prev" title="Using CONN" href="conn.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
-        <title>API - cvi 0.7.0 documentation</title>
+        <title>API Reference - cvi 0.7.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -174,7 +174,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
       </label>
     </div>
@@ -195,66 +195,24 @@
   <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="background.html">Background</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guide.html">Guide</a></li>
-<li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">API</a><input aria-label="Toggle navigation of API" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/cvi.html">cvi</a><input aria-label="Toggle navigation of cvi" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3 has-children"><a class="reference internal" href="_autosummary/cvi.compat.html">cvi.compat</a><input aria-label="Toggle navigation of cvi.compat" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l4 has-children"><a class="reference internal" href="_autosummary/cvi.compat.v0.html">cvi.compat.v0</a><input aria-label="Toggle navigation of cvi.compat.v0" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.CP_update.html">cvi.compat.v0.CP_update</a></li>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.cluster_center_update.html">cvi.compat.v0.cluster_center_update</a></li>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.iCVI.html">cvi.compat.v0.iCVI</a></li>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.norm22.html">cvi.compat.v0.norm22</a></li>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.Cluster.html">cvi.compat.v0.Cluster</a></li>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.Clusters.html">cvi.compat.v0.Clusters</a></li>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.iCH.html">cvi.compat.v0.iCH</a></li>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.iDB.html">cvi.compat.v0.iDB</a></li>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.iGD.html">cvi.compat.v0.iGD</a></li>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.iGD43.html">cvi.compat.v0.iGD43</a></li>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.iGD53.html">cvi.compat.v0.iGD53</a></li>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.iPS.html">cvi.compat.v0.iPS</a></li>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.iSIL.html">cvi.compat.v0.iSIL</a></li>
-<li class="toctree-l5"><a class="reference internal" href="_autosummary/cvi.compat.v0.iXB.html">cvi.compat.v0.iXB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="choosing.html">Choosing an Index</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conn.html">Using CONN</a></li>
+<li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">API Reference</a><input aria-label="Toggle navigation of API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/cvi.CVI.html">cvi.CVI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/cvi.CH.html">cvi.CH</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/cvi.CONN.html">cvi.CONN</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/cvi.cSIL.html">cvi.cSIL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/cvi.DB.html">cvi.DB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/cvi.GD43.html">cvi.GD43</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/cvi.GD53.html">cvi.GD53</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/cvi.PS.html">cvi.PS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/cvi.rCIP.html">cvi.rCIP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/cvi.WB.html">cvi.WB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/cvi.XB.html">cvi.XB</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li class="toctree-l3 has-children"><a class="reference internal" href="_autosummary/cvi.modules.html">cvi.modules</a><input aria-label="Toggle navigation of cvi.modules" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.CH.html">cvi.modules.CH</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.CONN.html">cvi.modules.CONN</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.DB.html">cvi.modules.DB</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.GD43.html">cvi.modules.GD43</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.GD53.html">cvi.modules.GD53</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.PS.html">cvi.modules.PS</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.WB.html">cvi.modules.WB</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.XB.html">cvi.modules.XB</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.cSIL.html">cvi.modules.cSIL</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/cvi.modules.rCIP.html">cvi.modules.rCIP</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/compat.html">compat</a><input aria-label="Toggle navigation of compat" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3 has-children"><a class="reference internal" href="_autosummary/compat.v0.html">compat.v0</a><input aria-label="Toggle navigation of compat.v0" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.CP_update.html">compat.v0.CP_update</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.cluster_center_update.html">compat.v0.cluster_center_update</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.iCVI.html">compat.v0.iCVI</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.norm22.html">compat.v0.norm22</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.Cluster.html">compat.v0.Cluster</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.Clusters.html">compat.v0.Clusters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.iCH.html">compat.v0.iCH</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.iDB.html">compat.v0.iDB</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.iGD.html">compat.v0.iGD</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.iGD43.html">compat.v0.iGD43</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.iGD53.html">compat.v0.iGD53</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.iPS.html">compat.v0.iPS</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.iSIL.html">compat.v0.iSIL</a></li>
-<li class="toctree-l4"><a class="reference internal" href="_autosummary/compat.v0.iXB.html">compat.v0.iXB</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="legacy.html">Legacy v0 API</a></li>
 </ul>
 
 </div>
@@ -297,25 +255,86 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="api">
-<h1>API<a class="headerlink" href="#api" title="Link to this heading">¶</a></h1>
+          <section id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h1>
+<p>The classes below are the supported top-level interface. Import them directly
+from <code class="docutils literal notranslate"><span class="pre">cvi</span></code> rather than from their implementation modules.</p>
+<section id="base-class">
+<h2>Base class<a class="headerlink" href="#base-class" title="Link to this heading">¶</a></h2>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.html#module-cvi" title="cvi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi</span></code></a></p></td>
-<td><p>cvi - A Python library for both incremental and batch cluster validity indices.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/compat.html#module-compat" title="compat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compat</span></code></a></p></td>
-<td><p>Compatability module for previous CVI versions.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI" title="cvi.CVI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI</span></code></a>()</p></td>
+<td><p>Superclass containing elements shared between all CVIs.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+</section>
+<section id="indices">
+<h2>Indices<a class="headerlink" href="#indices" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.CH.html#cvi.CH" title="cvi.CH"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CH</span></code></a>()</p></td>
+<td><p>Calinski-Harabasz (CH) Cluster Validity Index.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.CONN.html#cvi.CONN" title="cvi.CONN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CONN</span></code></a>([rho, alpha, beta, match_tracking, ...])</p></td>
+<td><p>CONN Cluster Validity Index.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.cSIL.html#cvi.cSIL" title="cvi.cSIL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.cSIL</span></code></a>()</p></td>
+<td><p>Centroid-based Silhouette (cSIL) Cluster Validity Index.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.DB.html#cvi.DB" title="cvi.DB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.DB</span></code></a>()</p></td>
+<td><p>Davies-Bouldin (DB) Cluster Validity Index.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.GD43.html#cvi.GD43" title="cvi.GD43"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.GD43</span></code></a>()</p></td>
+<td><p>Generalized Dunn's Index 43 (GD43) Cluster Validity Index.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.GD53.html#cvi.GD53" title="cvi.GD53"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.GD53</span></code></a>()</p></td>
+<td><p>Generalized Dunn's Index 53 (GD53) Cluster Validity Index.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.PS.html#cvi.PS" title="cvi.PS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.PS</span></code></a>()</p></td>
+<td><p>Partition Separation (PS) Cluster Validity Index.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.rCIP.html#cvi.rCIP" title="cvi.rCIP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.rCIP</span></code></a>()</p></td>
+<td><p>(Renyi's) representative Cross Information Potential (rCIP) Cluster Validity Index.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.WB.html#cvi.WB" title="cvi.WB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.WB</span></code></a>()</p></td>
+<td><p>WB-Index (WB) Cluster Validity Index.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.XB.html#cvi.XB" title="cvi.XB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.XB</span></code></a>()</p></td>
+<td><p>Xie-Beni (XB) Cluster Validity Index.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="common-methods">
+<h2>Common methods<a class="headerlink" href="#common-methods" title="Link to this heading">¶</a></h2>
+<p>All indices inherit the common update interface from <a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI" title="cvi.CVI"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvi.CVI</span></code></a>.
+<code class="docutils literal notranslate"><span class="pre">CONN</span></code> does not currently implement <code class="docutils literal notranslate"><span class="pre">remove</span></code> or <code class="docutils literal notranslate"><span class="pre">merge</span></code>.</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI.get_cvi" title="cvi.CVI.get_cvi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI.get_cvi</span></code></a>(data, label)</p></td>
+<td><p>Update the CVI and return its criterion value.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI.remove" title="cvi.CVI.remove"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI.remove</span></code></a>(sample, label)</p></td>
+<td><p>Remove a sample from an initialized CVI.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI.merge" title="cvi.CVI.merge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI.merge</span></code></a>(target_label, source_label)</p></td>
+<td><p>Merge a source cluster into a target cluster.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 </section>
 
         </article>
@@ -323,23 +342,23 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="_autosummary/cvi.html">
+          <a class="next-page" href="_autosummary/cvi.CVI.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">cvi</div>
+                <div class="title">cvi.CVI</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="guide.html">
+          <a class="prev-page" href="conn.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Guide</div>
+                <div class="title">Using CONN</div>
                 
               </div>
             </a>
@@ -347,7 +366,7 @@
         <div class="bottom-of-page">
           <div class="left-details">
             <div class="copyright">
-                Copyright &#169; 2024, Sasha Petrenko
+                Copyright &#169; 2026, Sasha Petrenko
             </div>
             Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
             
@@ -361,8 +380,29 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">API Reference</a><ul>
+<li><a class="reference internal" href="#base-class">Base class</a></li>
+<li><a class="reference internal" href="#indices">Indices</a></li>
+<li><a class="reference internal" href="#common-methods">Common methods</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
