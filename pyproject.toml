@@ -149,7 +149,7 @@ docs = [
 [project.urls]  # Optional
 "Homepage" = "https://github.com/AP6YC/cvi"
 "Bug Reports" = "https://github.com/AP6YC/cvi/issues"
-"Documentation" = "https://cluster-validity-indices.readthedocs.io/"
+"Documentation" = "https://AP6YC.github.io/cvi/main/"
 "Source" = "https://github.com/AP6YC/cvi/"
 # "Funding" = "https://donate.pypi.org"
 # "Say Thanks!" = "http://saythanks.io/to/example"
