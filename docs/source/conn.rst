@@ -41,14 +41,12 @@ Incremental updates require the FuzzyART backend:
        value = index.get_cvi(sample, int(label))
 
 Incremental samples are not normalized by the class because future feature
-bounds are unknown. They must normally already lie in ``[0, 1]``. The default
-``check_incremental_normalized=True`` validates that assumption; disabling the
+bounds are unknown. They must normally already lie in ``[0, 1]``.
+The default ``check_incremental_normalized=True`` validates that assumption; disabling the
 check does not normalize the samples.
 
-The FuzzyART parameters ``rho``, ``alpha``, ``beta``, and ``match_tracking``
-control prototype formation and are passed to the underlying ART model. Stream
-order and those parameters can therefore affect the learned prototypes and the
-resulting criterion trajectory.
+The FuzzyART parameters ``rho``, ``alpha``, ``beta``, and ``match_tracking`` control prototype formation and are passed to the underlying ART model.
+Streamorder and those parameters can therefore affect the learned prototypes and the resulting criterion trajectory.
 
 Limitations
 -----------
@@ -57,4 +55,3 @@ Limitations
 :meth:`cvi.CVI.merge`.
 A KMeans-backed object also rejects incremental samples.
 Use a new object when changing backend or evaluating another independent partition.
-

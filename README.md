@@ -1,7 +1,6 @@
 [![cvi-header](https://github.com/AP6YC/FileStorage/blob/main/cvi/header.png?raw=true)][docs-dev-url]
 
-A Python package implementing batch and incremental cluster validity indices
-(CVIs) for hard partitions.
+A Python package implementing batch and incremental cluster validity indices (CVIs) for hard partitions.
 
 | **Stable Docs** | **Dev Docs** | **Build Status** | **Coverage** |
 |:---------------:|:------------:|:----------------:|:------------:|
@@ -26,10 +25,8 @@ A Python package implementing batch and incremental cluster validity indices
 [issues-img]: https://img.shields.io/github/issues/AP6YC/cvi?style=flat
 [issues-url]: https://github.com/AP6YC/cvi/issues
 
-Cluster validity indices measure properties such as compactness, separation,
-and connectivity when ground-truth labels are unavailable. This package uses a
-shared, stateful interface for evaluating a complete labeled partition or
-tracking its criterion value as samples arrive.
+Cluster validity indices measure properties such as compactness, separation, and connectivity when ground-truth labels are unavailable.
+This package uses a shared, stateful interface for evaluating a complete labeled partition or tracking its criterion value as samples arrive.
 
 Please see the [documentation][docs-stable-url] for detailed usage.
 
@@ -106,18 +103,15 @@ for i, (sample, label) in enumerate(zip(samples, labels)):
     values[i] = incremental_index.get_cvi(sample, int(label))
 ```
 
-CVI objects accumulate state. Use a fresh object for each independent dataset
-or partition.
-A batch call may be followed by incremental samples, but the same
-object cannot be initialized with a second batch.
+CVI objects accumulate state.
+Use a fresh object for each independent dataset or partition.
+A batch call may be followed by incremental samples, but the same object cannot be initialized with a second batch.
 
-> **NOTE**:
->
+> [!NOTE] NOTE
 > The `cvi` package assumes the Numpy **row-major** convention where rows are individual samples and columns are features.
 > A batch dataset is then `[n_samples, n_features]` large, and their corresponding labels are `[n_samples]` large.
 
-Users can also query the `.info` property of the CVI objects to obtain relevant
-scaling and naming information.
+Users can also query the `.info` property of the CVI objects to obtain relevant scaling and naming information.
 
 ```
 >>> print(my_cvi.info)
@@ -139,13 +133,12 @@ CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf,
 | `WB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
 | `XB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
 
-`CONN` uses prototype connectivity and has additional backend and normalization
-requirements. See the [CONN guide][conn-guide] before using it.
+`CONN` uses prototype connectivity and has additional backend and normalization requirements.
+See the [CONN guide][conn-guide] before using it.
 
 ## Updating an Existing Partition
 
-Except for `CONN`, initialized indices support adding samples, removing samples,
-and merging clusters without replaying the full dataset via `remove` and `merge`:
+Except for `CONN`, initialized indices support adding samples, removing samples, and merging clusters without replaying the full dataset via `remove` and `merge`:
 
 ```python
 value = index.get_cvi(new_sample, new_label)
@@ -153,10 +146,11 @@ value = index.remove(existing_sample, existing_label)
 value = index.merge(target_label=20, source_label=10)
 ```
 
-Both methods update the object in place and return its new criterion value. Removing the final sample of a cluster deletes that cluster, while `merge` retains `target_label` and deletes `source_label`. The caller is responsible for ensuring that a removed sample belongs to the supplied label.
+Both methods update the object in place and return its new criterion value.
+Removing the final sample of a cluster deletes that cluster, while `merge` retains `target_label` and deletes `source_label`.
+The caller is responsible for ensuring that a removed sample belongs to the supplied label.
 
-For input rules, index-selection guidance, references, legacy API information,
-and the complete API, see the [documentation][docs-stable-url].
+For input rules, index-selection guidance, references, legacy API information, and the complete API, see the [documentation][docs-stable-url].
 
 [conn-guide]: https://AP6YC.github.io/cvi/main/conn.html
 
