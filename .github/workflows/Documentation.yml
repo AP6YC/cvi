@@ -37,7 +37,23 @@ jobs:
           python --version
           python -m pip show sphinx sphinx-multiversion
 
-      - name: Build docs
+      - name: Build current docs strictly
+        run: |
+          cd docs
+          sphinx-build -b html source build/current -W --keep-going
+
+      - name: Test documentation examples
+        run: |
+          cd docs
+          sphinx-build -b doctest source build/doctest -W --keep-going
+
+      - name: Check documentation links
+        run: |
+          cd docs
+          sphinx-build -b linkcheck source build/linkcheck -W --keep-going
+
+      - name: Build versioned docs for deployment
+        if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
         run: |
           cd docs
           sphinx-multiversion source build/html

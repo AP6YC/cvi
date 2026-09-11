@@ -396,6 +396,15 @@ class CVI():
         -------
         float
             The updated CVI criterion value.
+
+        Raises
+        ------
+        NotImplementedError
+            If this index does not implement removal.
+        ValueError
+            If the index is uninitialized, the label is unknown, the sample
+            has the wrong shape, or the sample is inconsistent with the
+            stored sufficient statistics.
         """
 
         self._require_operations()
@@ -422,6 +431,14 @@ class CVI():
         -------
         float
             The updated CVI criterion value.
+
+        Raises
+        ------
+        NotImplementedError
+            If this index does not implement cluster merging.
+        ValueError
+            If the index is uninitialized, either label is unknown, or the
+            two labels are equal.
         """
 
         self._require_operations()
@@ -437,9 +454,13 @@ class CVI():
 
     def get_cvi(self, data: np.ndarray, label: Union[int, np.ndarray]) -> float:
         """
-        Updates the CVI parameters and then evaluates and returns the criterion value.
+        Update the CVI and return its criterion value.
 
-        This method accepts _either_ a single vector of data with an integer label (incremental mode) _or_ a batch of samples with a vector of integer labels (batch mode).
+        Pass a one-dimensional sample and scalar integer label for an
+        incremental update, or a two-dimensional batch and label vector for
+        batch initialization. The object is mutated in both modes. A batch may
+        be followed by incremental updates, but a second batch is not
+        supported.
 
         Parameters
         ----------
@@ -452,6 +473,13 @@ class CVI():
         -------
         float
             The CVI's criterion value.
+
+        Raises
+        ------
+        ValueError
+            If the input dimensionality is invalid, feature dimensionality
+            changes after initialization, batch labels contain fewer than two
+            distinct values, or a second batch update is requested.
         """
 
         # If we got 1D data, do a quick update
@@ -489,7 +517,7 @@ class CVI():
 
             # Error until some intelligent data sanitization is implemented
             raise ValueError(
-                f"Please provide 1D or 2D numpy array, recieved ndim={data.ndim}"
+                f"Please provide 1D or 2D numpy array, received ndim={data.ndim}"
             )
 
         # Regardless of path, evaluate and extract the criterion value
@@ -546,7 +574,8 @@ _param_inc_doc = (
     sample : numpy.ndarray
         A sample row vector of features.
     label : int
-        An integer label for the cluster, zero-indexed.
+        An integer identifier for the cluster. Labels need not be consecutive
+        or zero-indexed.
     """
 )
 
@@ -558,7 +587,8 @@ _param_batch_doc = (
     sample : numpy.ndarray
         A batch of samples; each row is a new sample of features.
     label : numpy.ndarray
-        A vector of integer labels, zero-indexed.
+        A vector of integer cluster identifiers. Labels need not be
+        consecutive or zero-indexed.
     """
 )
 
