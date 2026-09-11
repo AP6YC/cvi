@@ -158,8 +158,8 @@ Authors
 
 The principal authors of the `cvi` pacakge are:
 
-* Sasha Petrenko - petrenkos@mst.edu
-* Nik Melton - nmmz76@mst.edu
+* Sasha Petrenko - petrenkos@mst.edu - `github.com/AP6YC <https://github.com/AP6YC>`_
+* Nik Melton - nmmz76@mst.edu - `github.com/NiklasMelton <https://github.com/NiklasMelton>`_
 
 Related Projects
 ^^^^^^^^^^^^^^^^
