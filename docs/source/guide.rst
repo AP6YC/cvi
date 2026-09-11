@@ -33,7 +33,7 @@ Labels are a one-dimensional array with one integer label per sample.
        [2.8, 3.0],
        [3.1, 2.9],
    ])
-   labels = np.array([10, 10, 20, 20])
+   labels = np.array([0, 1, 2, 2])
 
    index = cvi.CH()
    value = index.get_cvi(samples, labels)
