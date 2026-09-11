@@ -23,7 +23,7 @@ Quickstart
 ----------
 
 This section provides a quick overview of how to use the project.
-For more detailed code usage, please see the :ref:`detailed usage` section.
+For more detailed code usage, please see the :ref:`detailed-usage` section.
 
 Create a CVI object and compute the criterion value in batch with `get_cvi`:
 
@@ -51,7 +51,7 @@ or do it incrementally, also with `get_cvi`:
    for ix in range(n_samples):
       criterion_values = my_cvi.get_cvi(samples[ix, :], labels[ix])
 
-.. _detailed usage:
+.. _detailed-usage:
 
 Detailed Usage
 --------------
@@ -71,7 +71,7 @@ Instantiate a CVI of you choice with the default constructor:
    # Instantiate a Calinski-Harabasz (CH) CVI object
    my_cvi = cvi.CH()
 
-CVIs are instantiated with their acronyms, with a list of all implemented CVIS being found in the [Implemented CVIs](#implemented-cvis) section.
+CVIs are instantiated with their acronyms, with a list of all implemented CVIs being found in the :ref:`implemented-cvis` section.
 
 A batch of data is assumed to be a numpy array of samples and a numpy vector of integer labels.
 
@@ -125,6 +125,8 @@ An initialized CVI can remove a previously added sample or merge two existing cl
 Both methods update the object in place and return its new criterion value. Removing the final sample of a cluster deletes that cluster, while ``merge`` retains ``target_label`` and deletes ``source_label``. The caller is responsible for ensuring that a removed sample belongs to the supplied label.
 
 Add, remove, and merge are supported after either incremental or batch initialization.
+
+.. _implemented-cvis:
 
 Implemented CVIs
 ----------------
