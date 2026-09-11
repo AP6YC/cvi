@@ -80,7 +80,7 @@ pip install cvi
 You can also specify a version to install in the usual way with
 
 ```python
-pip install cvi==v0.6.0
+pip install cvi==v0.7.0
 ```
 
 Alternatively, you can manually install a release from the [releases page](https://github.com/AP6YC/cvi/releases) on GitHub.
@@ -115,7 +115,7 @@ for ix in range(n_samples):
     criterion_values = my_cvi.get_cvi(samples[ix, :], labels[ix])
 ```
 
-Users can also query the `.info` property of the CVI objects to obtain relevant 
+Users can also query the `.info` property of the CVI objects to obtain relevant
 scaling and naming information.
 
 ```
