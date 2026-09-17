@@ -18,6 +18,8 @@ from typing import ClassVar
 # Custom imports
 import numpy as np
 
+from . import _kernels
+
 # --------------------------------------------------------------------------- #
 # CLASSES
 # --------------------------------------------------------------------------- #
@@ -163,6 +165,26 @@ class CVI():
                 unique_labels.append(external_label)
 
         return unique_labels
+
+    def _setup_batch_statistics(self, data, labels, compactness=True):
+        """Initialize shared batch state and return stable cluster grouping."""
+        self._setup_batch(data)
+        self._n_clusters = len(self._setup_batch_labels(labels))
+        dense_labels = np.fromiter(
+            (self._label_map.map[label] for label in labels),
+            dtype=np.intp,
+            count=len(labels),
+        )
+        order, offsets = _kernels.grouped_rows(dense_labels, self._n_clusters)
+        counts, self._v, squared_errors = _kernels.batch_statistics(
+            data, order, offsets, compactness=compactness,
+        )
+        # Lists remain appendable by the existing incremental implementation.
+        self._n = counts.tolist()
+        if compactness:
+            self._CP = list(squared_errors)
+            self._G = np.zeros_like(self._v)
+        return order, offsets
 
     @abstractmethod
     def _param_inc(self, sample: np.ndarray, label: int):

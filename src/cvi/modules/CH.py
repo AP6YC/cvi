@@ -13,7 +13,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base
+from . import _base, _kernels
 
 
 # CH object definition
@@ -143,30 +143,11 @@ class CH(_base.CVI):
         Batch parameter update for the Calinski-Harabasz (CH) CVI.
         """
 
-        # Setup the CVI for batch mode
-        super()._setup_batch(data)
-
-        # Take the average across all samples, but cast to 1-D vector
+        self._setup_batch_statistics(data, labels)
         self._mu = np.mean(data, axis=0)
-        u = self._setup_batch_labels(labels)
-        self._n_clusters = len(u)
-        self._n = [0 for _ in range(self._n_clusters)]
-        self._v = np.zeros((self._n_clusters, self._dim))
-        self._CP = [0.0 for _ in range(self._n_clusters)]
-        self._G = np.zeros((self._n_clusters, self._dim))
-        self._SEP = np.zeros(self._n_clusters)
-
-        for ix, external_label in enumerate(u):
-            subset_indices = (
-                [x for x in range(len(labels))
-                 if labels[x] == external_label]
-            )
-            subset = data[subset_indices, :]
-            self._n[ix] = subset.shape[0]
-            self._v[ix, :] = np.mean(subset, axis=0)
-            diff_x_v = subset - self._v[ix, :] * np.ones((self._n[ix], 1))
-            self._CP[ix] = np.sum(diff_x_v ** 2)
-            self._SEP[ix] = self._n[ix] * np.sum((self._v[ix, :] - self._mu) ** 2)
+        self._SEP = np.asarray(self._n) * _kernels.centroid_distances(
+            self._v, self._mu,
+        )
 
     def _rebuild_after_operation(self):
         """Rebuild separation statistics after a remove or merge."""

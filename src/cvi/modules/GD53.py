@@ -164,38 +164,14 @@ class GD53(_base.CVI):
         Batch parameter update for the Generalized Dunn's Index 53 (GD53) CVI.
         """
 
-        # Setup the CVI for batch mode
-        super()._setup_batch(data)
-
-        # Take the average across all samples, but cast to 1-D vector
+        self._setup_batch_statistics(data, labels)
         self._mu = np.mean(data, axis=0)
-        u = self._setup_batch_labels(labels)
-        self._n_clusters = len(u)
-        self._n = [0 for _ in range(self._n_clusters)]
-        self._v = np.zeros((self._n_clusters, self._dim))
-        self._CP = [0.0 for _ in range(self._n_clusters)]
-        self._G = np.zeros((self._n_clusters, self._dim))
-        self._D = np.zeros((self._n_clusters, self._n_clusters))
-
-        for ix, external_label in enumerate(u):
-            # subset_indices = lambda x: labels[x] == ix
-            subset_indices = (
-                [x for x in range(len(labels))
-                 if labels[x] == external_label]
-            )
-            subset = data[subset_indices, :]
-            self._n[ix] = subset.shape[0]
-            self._v[ix, :] = np.mean(subset, axis=0)
-            diff_x_v = subset - self._v[ix, :] * np.ones((self._n[ix], 1))
-            self._CP[ix] = np.sum(diff_x_v ** 2)
-
-        for ix in range(self._n_clusters - 1):
-            for jx in range(ix + 1, self._n_clusters):
-                self._D[ix, jx] = (
-                    (self._CP[ix] + self._CP[jx]) / (self._n[ix] + self._n[jx])
-                )
-
-        self._D = self._D + np.transpose(self._D)
+        self._D = self._pairwise_matrix(
+            self._n_clusters,
+            lambda ix, jx: (
+                (self._CP[ix] + self._CP[jx]) / (self._n[ix] + self._n[jx])
+            ),
+        )
 
     def _rebuild_after_operation(self):
         """Rebuild pairwise dispersion after a remove or merge."""

@@ -11,7 +11,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base
+from . import _base, _kernels
 
 
 # PS object definition
@@ -89,10 +89,9 @@ class PS(_base.CVI):
                 D_new = np.zeros((self._n_clusters + 1, self._n_clusters + 1))
                 D_new[0:self._n_clusters, 0:self._n_clusters] = self._D
                 d_column_new = np.zeros(self._n_clusters + 1)
-                for jx in range(self._n_clusters):
-                    d_column_new[jx] = (
-                        np.sum((v_new - self._v[jx, :]) ** 2)
-                    )
+                d_column_new[:-1] = _kernels.centroid_distances(
+                    self._v, v_new,
+                )
                 D_new[i_label, :] = d_column_new
                 D_new[:, i_label] = d_column_new
 
@@ -111,14 +110,10 @@ class PS(_base.CVI):
                 (1 - 1 / n_new) * self._v[i_label, :]
                 + (1 / n_new) * sample
             )
-            d_column_new = np.zeros(self._n_clusters)
-            for jx in range(self._n_clusters):
-                # Skip the current i_label index
-                if jx == i_label:
-                    continue
-                d_column_new[jx] = (
-                    np.sum((v_new - self._v[jx, :]) ** 2)
-                )
+            d_column_new = _kernels.centroid_distances(
+                self._v, v_new,
+            )
+            d_column_new[i_label] = 0.0
 
             # Update parameters
             self._n[i_label] = n_new
@@ -135,34 +130,11 @@ class PS(_base.CVI):
         Batch parameter update for the Partition Separation (PS) CVI.
         """
 
-        # Setup the CVI for batch mode
-        super()._setup_batch(data)
-
-        # Take the average across all samples, but cast to 1-D vector
+        self._setup_batch_statistics(data, labels, compactness=False)
         self._mu = np.mean(data, axis=0)
-        u = self._setup_batch_labels(labels)
-        self._n_clusters = len(u)
-        self._n = [0 for _ in range(self._n_clusters)]
-        self._v = np.zeros((self._n_clusters, self._dim))
-        self._D = np.zeros((self._n_clusters, self._n_clusters))
-
-        for ix, external_label in enumerate(u):
-            subset_indices = (
-                [x for x in range(len(labels))
-                 if labels[x] == external_label]
-            )
-            subset = data[subset_indices, :]
-            self._n[ix] = subset.shape[0]
-            self._v[ix, :] = np.mean(subset, axis=0)
-            # diff_x_v = subset - self._v[ix, :] * np.ones((self._n[ix], 1))
-
-        for ix in range(self._n_clusters - 1):
-            for jx in range(ix + 1, self._n_clusters):
-                self._D[ix, jx] = (
-                    np.sum((self._v[ix, :] - self._v[jx, :]) ** 2)
-                )
-
-        self._D = self._D + np.transpose(self._D)
+        self._D = _kernels.pairwise_centroid_distances(
+            self._v,
+        )
 
     def _remove(self, sample: np.ndarray, label: int, i_label: int):
         """Remove one sample from the PS centroid statistics."""
@@ -223,11 +195,8 @@ class PS(_base.CVI):
             self._PS_i = np.zeros(0)
             return
 
-        self._D = self._pairwise_matrix(
-            self._n_clusters,
-            lambda ix, jx: np.sum(
-                (self._v[ix, :] - self._v[jx, :]) ** 2
-            ),
+        self._D = _kernels.pairwise_centroid_distances(
+            self._v,
         )
         self._v_bar = []
         self._beta_t = 0.0
