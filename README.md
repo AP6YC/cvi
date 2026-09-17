@@ -73,7 +73,7 @@ python -m pip install cvi
 You can also specify a version to install in the usual way with
 
 ```console
-pip install cvi==0.7.0
+pip install cvi==0.7.1
 ```
 
 Alternatively, you can manually install a release from any of the builds on the [releases page](https://github.com/AP6YC/cvi/releases) on GitHub.
