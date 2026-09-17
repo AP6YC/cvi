@@ -5,19 +5,20 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))
+from datetime import date
+from importlib.metadata import version as package_version
+
 sys.path.insert(0, os.path.abspath('../../src'))
-sys.path.insert(0, os.path.abspath('../../src/cvi'))
 
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'cvi'
-copyright = '2024, Sasha Petrenko'
+copyright = f'{date.today().year}, Sasha Petrenko'
 author = 'Sasha Petrenko'
-release = '0.7.0'
-version = '0.7.0'
+release = package_version('cvi')
+version = release
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -72,8 +73,8 @@ html_sidebars = {
 epub_show_urls = 'footnote'
 
 
-# Ignore tags for now
-smv_tag_whitelist = None
+# Ignore tags for now. sphinx-multiversion expects a regular expression.
+smv_tag_whitelist = r'^$'
 
 # Build docs for main and develop, whether sphinx-multiversion sees them
 # as local branches or as remote branches.
@@ -91,4 +92,3 @@ smv_outputdir_format = '{ref.name}'
 # Prefer remote refs in CI, since GitHub Actions reliably has origin/main
 # and origin/develop after fetching.
 smv_prefer_remote_refs = True
-

@@ -1,145 +1,115 @@
-Guide
-=====
-
-.. _installation:
+Getting Started
+===============
 
 Installation
 ------------
 
-This project is distributed as a Python package and is hosted on the PyPI package server.
-To use `cvi`, first install it using pip:
+Install the latest release from PyPI:
 
-.. code-block:: shell
+.. code-block:: console
 
-   pip install cvi
+   python -m pip install cvi
 
-You can also add the package directly from GitHub to get the latest changes between releases (or from a specific branch) with:
+To install the current development version directly from GitHub:
 
-.. code-block:: shell
+.. code-block:: console
 
-   pip install git+https://github.com/AP6YC/cvi
+   python -m pip install git+https://github.com/AP6YC/cvi.git
 
-Quickstart
-----------
+Batch evaluation
+----------------
 
-This section provides a quick overview of how to use the project.
-For more detailed code usage, please see the :ref:`detailed usage` section.
-
-Create a CVI object and compute the criterion value in batch with `get_cvi`:
+A batch is a two-dimensional NumPy array with one sample per row and one feature per column.
+Labels are a one-dimensional array with one integer label per sample.
 
 .. code-block:: python
 
-   # Import the library
-   import cvi
-   # Create a Calinski-Harabasz (CH) CVI object
-   my_cvi = cvi.CH()
-   # Load some data from some clustering algorithm
-   samples, labels = load_some_clustering_data()
-   # Compute the final criterion value in batch
-   criterion_value = my_cvi.get_cvi(samples, labels)
-
-or do it incrementally, also with `get_cvi`:
-
-.. code-block:: python
-
-   # Datasets are numpy arrays
    import numpy as np
-   # Create a container for criterion values
-   n_samples = len(labels)
-   criterion_values = np.zeros(n_samples)
-   # Iterate over the data
-   for ix in range(n_samples):
-      criterion_values = my_cvi.get_cvi(samples[ix, :], labels[ix])
+   import cvi
 
-.. _detailed usage:
+   samples = np.array([
+       [0.0, 0.1],
+       [0.2, 0.0],
+       [2.8, 3.0],
+       [3.1, 2.9],
+   ])
+   labels = np.array([0, 1, 2, 2])
 
-Detailed Usage
+   index = cvi.CH()
+   value = index.get_cvi(samples, labels)
+
+The call updates ``index`` in place and returns the resulting criterion value.
+A CVI object accepts only one batch initialization.
+Create a new object to evaluate an independent partition.
+
+Streaming evaluation
+--------------------
+
+Pass a one-dimensional sample and a scalar label to update an index
+incrementally:
+
+.. code-block:: python
+
+   index = cvi.CH()
+   values = np.empty(len(labels))
+
+   for i, (sample, label) in enumerate(zip(samples, labels)):
+       values[i] = index.get_cvi(sample, int(label))
+
+The same object may also receive incremental samples after its initial batch
+call. Feature dimensionality must remain constant throughout the object's
+lifetime.
+
+State and Input Rules
+---------------------
+
+All CVI implementations are stateful accumulators.
+Keep the following rules in mind:
+
+* Batch data have shape ``(n_samples, n_features)`` and incremental samples have shape ``(n_features,)``.
+* Labels are arbitrary integer identifiers.
+   They need not be consecutive or start at zero.
+* Batch initialization requires at least two distinct labels, and a second
+  batch call on the same object is rejected.
+* Criterion values are ``0.0`` while an index is not defined, such as before enough clusters have been observed.
+   Do not interpret that sentinel as an optimal clustering result.
+* Use a fresh instance when comparing independent datasets or partitions.
+
+See :doc:`choosing` for differences between indices.
+In particular, ``CONN`` has additional preprocessing and backend requirements described in :doc:`conn`.
+
+Updating a partition
+--------------------
+
+After batch or incremental initialization, a sample can be added with ``get_cvi`` and (except for ``CONN``) an existing sample can be removed or two clusters can be merged:
+
+.. code-block:: python
+
+   value = index.get_cvi(new_sample, new_label)
+   value = index.remove(existing_sample, existing_label)
+   value = index.merge(target_label=20, source_label=10)
+
+These operations update the object in place and return its new criterion value.
+``merge`` retains the target label and deletes the source label.
+Removing a cluster's final sample deletes that label; removing the final sample in the whole index returns the object to its initial empty state.
+
+The package stores sufficient statistics rather than the original dataset.
+Consequently, the caller must ensure that a sample passed to ``remove`` really belongs to the supplied label.
+Invalid labels, inconsistent samples, changed feature dimensions, and attempts to merge a label with itself raise an error.
+
+Index metadata
 --------------
 
-The `cvi` package contains a set of implemented CVIs with batch and incremental update methods.
-Each CVI is a standalone stateful object inheriting from a base class `CVI`, and all `CVI` functions are object methods, such as those that update parameters and return the criterion value.
+Every implementation exposes an ``info`` class attribute describing its name,
+range, and optimization direction:
 
-Instantiate a CVI of you choice with the default constructor:
+.. doctest::
 
-.. code-block:: python
+   >>> import cvi
+   >>> cvi.CH.info
+   CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max')
 
-   # Import the package
-   import cvi
-   # Import numpy for some data handling
-   import numpy as np
-
-   # Instantiate a Calinski-Harabasz (CH) CVI object
-   my_cvi = cvi.CH()
-
-CVIs are instantiated with their acronyms, with a list of all implemented CVIS being found in the [Implemented CVIs](#implemented-cvis) section.
-
-A batch of data is assumed to be a numpy array of samples and a numpy vector of integer labels.
-
-.. code-block:: python
-
-   # Load some data
-   samples, labels = my_clustering_alg(some_data)
-
-.. note::
-   The `cvi` package assumes the Numpy **row-major** convention where rows are individual samples and columns are features.
-   A batch dataset is then `[n_samples, n_features]` large, and their corresponding labels are `[n_samples]` large.
-
-You may compute the final criterion value with a batch update all at once with `CVI.get_cvi`
-
-.. code-block:: python
-
-   # Get the final criterion value in batch mode
-   criterion_value = my_cvi.get_cvi(samples, labels)
-
-or you may get them incrementally with the same method, where you pass instead just a single numpy vector of features and a single integer label.
-The incremental methods are used automatically based upon the dimensions of the data that is passed.
-
-.. code-block:: python
-
-   # Create a container for the criterion value after each sample
-   n_samples = len(labels)
-   criterion_values = np.zeros(n_samples)
-
-   # Iterate across the data and store the criterion value over time
-   for ix in range(n_samples):
-      sample = samples[ix, :]
-      label = labels[ix]
-      criterion_values[ix] = my_cvi.get_cvi(sample, label)
-
-.. note::
-   After batch initialization, additional samples may be added incrementally by passing a single sample and label to ``get_cvi``.
-
-Remove and Merge
-----------------
-
-An initialized CVI can remove a previously added sample or merge two existing clusters without retaining and replaying the full dataset:
-
-.. code-block:: python
-
-   # Remove a sample from its current cluster.
-   criterion_value = my_cvi.remove(sample, label)
-
-   # Merge every member of source_label into target_label.
-   criterion_value = my_cvi.merge(target_label, source_label)
-
-Both methods update the object in place and return its new criterion value. Removing the final sample of a cluster deletes that cluster, while ``merge`` retains ``target_label`` and deletes ``source_label``. The caller is responsible for ensuring that a removed sample belongs to the supplied label.
-
-Add, remove, and merge are supported after either incremental or batch initialization.
-
-Implemented CVIs
-----------------
-
-The following CVIs have been implemented as of the latest version of `cvi`:
-
-* **CH**: Calinski-Harabasz
-* **cSIL**: Centroid-based Silhouette
-* **DB**: Davies-Bouldin
-* **GD43**: Generalized Dunn's Index 43.
-* **GD53**: Generalized Dunn's Index 53.
-* **PS**: Partition Separation.
-* **rCIP**: (Renyi's) representative Cross Information Potential.
-* **WB**: WB-index.
-* **XB**: Xie-Beni.
+Use ``optimality`` rather than assuming that a larger value is always better.
 
 Acknowledgements
 ----------------
@@ -156,8 +126,8 @@ Authors
 
 The principal authors of the `cvi` pacakge are:
 
-* Sasha Petrenko - petrenkos@mst.edu
-* Nik Melton - nmmz76@mst.edu
+* Sasha Petrenko - petrenkos@mst.edu - `github.com/AP6YC <https://github.com/AP6YC>`_
+* Nik Melton - nmmz76@mst.edu - `github.com/NiklasMelton <https://github.com/NiklasMelton>`_
 
 Related Projects
 ^^^^^^^^^^^^^^^^

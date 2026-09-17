@@ -1,5 +1,5 @@
 """
-Compatability module for previous CVI versions.
+Compatibility module for previous CVI versions.
 
 # Authors
 - Sasha Petrenko <sap625@mst.edu>

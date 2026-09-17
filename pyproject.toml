@@ -13,7 +13,7 @@ authors = [
 #
 # For a discussion on single-sourcing the version, see
 # https://packaging.python.org/guides/single-sourcing-package-version/
-version = "0.7.0"
+version = "0.7.1"
 
 # This is a one-line description or tagline of what your project does. This
 # corresponds to the "Summary" metadata field:
@@ -149,7 +149,7 @@ docs = [
 [project.urls]  # Optional
 "Homepage" = "https://github.com/AP6YC/cvi"
 "Bug Reports" = "https://github.com/AP6YC/cvi/issues"
-"Documentation" = "https://cluster-validity-indices.readthedocs.io/"
+"Documentation" = "https://AP6YC.github.io/cvi/main/"
 "Source" = "https://github.com/AP6YC/cvi/"
 # "Funding" = "https://donate.pypi.org"
 # "Say Thanks!" = "http://saythanks.io/to/example"
