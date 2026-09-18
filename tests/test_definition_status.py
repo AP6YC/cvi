@@ -82,17 +82,17 @@ def test_incremental_status_becomes_true_when_formula_is_defined(cvi_type):
     ],
     ids=["CH", "WB", "DB", "XB", "GD43", "GD53", "PS"],
 )
-def test_zero_denominator_is_undefined_without_warning(
+def test_undefined_batch_returns_sentinel_with_warning(
     cvi_type,
     samples,
     labels,
 ):
-    """Formula-specific zero denominators use the quiet sentinel."""
+    """Formula-specific undefined batches warn and use the sentinel."""
 
     local_cvi = cvi_type()
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
+    message = f"{cvi_type.__name__} is undefined for the supplied batch"
+    with pytest.warns(RuntimeWarning, match=message):
         result = local_cvi.get_cvi(samples, labels)
 
     assert result == 0.0

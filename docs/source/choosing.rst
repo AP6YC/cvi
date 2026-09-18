@@ -90,9 +90,11 @@ after enough clusters and samples have been observed.
 
 Every index provides a read-only ``is_defined`` property. It is ``False``
 before evaluation and is updated after batch or incremental evaluation and
-after remove, merge, or split operations. Undefined states return ``0.0``
-silently. A computed score of ``0.0`` can still have ``is_defined == True``;
-the score alone does not identify an undefined state.
+after remove, merge, or split operations. Undefined states return ``0.0``.
+An undefined batch evaluation also emits a ``RuntimeWarning``; incremental
+startup and structural operations remain silent. A computed score of ``0.0``
+can still have ``is_defined == True``; the score alone does not identify an
+undefined state.
 
 The conditions for a defined value are:
 

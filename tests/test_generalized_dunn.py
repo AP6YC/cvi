@@ -27,13 +27,13 @@ GENERALIZED_DUNN_INDICES = [cvi.GD43, cvi.GD53]
     ids=["singleton-clusters", "identical-members"],
 )
 def test_batch_zero_dispersion_returns_default(cvi_type, samples, labels):
-    """Zero dispersion returns the undefined fallback without a warning."""
+    """Zero dispersion warns and returns the undefined fallback."""
 
     local_cvi = cvi_type()
     assert local_cvi.is_defined is False
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
+    message = f"{cvi_type.__name__} is undefined for the supplied batch"
+    with pytest.warns(RuntimeWarning, match=message):
         result = local_cvi.get_cvi(samples, labels)
 
     assert result == 0.0

@@ -5,16 +5,15 @@ Utilities that are common across all CVI objects.
 - Sasha Petrenko <sap625@mst.edu>
 """
 
-# Standard library imports
+import warnings
+from abc import abstractmethod
+from dataclasses import dataclass
 from typing import (
     Callable,
+    ClassVar,
     Optional,
-    Union
+    Union,
 )
-from abc import abstractmethod
-
-from dataclasses import dataclass
-from typing import ClassVar
 
 # Custom imports
 import numpy as np
@@ -732,6 +731,12 @@ class CVI():
             If the input dimensionality is invalid, feature dimensionality
             changes after initialization, batch labels contain fewer than two
             distinct values, or a second batch update is requested.
+
+        Warns
+        -----
+        RuntimeWarning
+            If the criterion is undefined after a batch evaluation. The
+            returned value is still the undefined ``0.0`` sentinel.
         """
 
         # If we got 1D data, do a quick update
@@ -775,6 +780,14 @@ class CVI():
         # Regardless of path, evaluate and extract the criterion value
         self._evaluate()
         criterion_value = self.criterion_value
+
+        if data.ndim == 2 and not self.is_defined:
+            warnings.warn(
+                f"{type(self).__name__} is undefined for the supplied batch; "
+                "returning 0.0. Check is_defined before using the result.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
 
         # Return the criterion value
         return criterion_value
