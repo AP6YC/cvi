@@ -35,16 +35,27 @@ class CH(_base.CVI):
         index_max=np.inf,
         optimality="max"
     )
+    _supports_numba = True
+    _supports_jax = True
     _supports_remove_merge = True
     _uses_compactness_stats = True
 
-    def __init__(self):
+    def __init__(self, *, backend="numpy", capacity=None):
         """
         CH initialization routine.
+
+        Parameters
+        ----------
+        backend : {"numpy", "numba", "jax"}, default="numpy"
+            Select the numerical backend. Optional backends load on demand.
+            JAX requires x64.
+        capacity : int or None, default=None
+            Opt into JAX streaming with this maximum number of clusters.
+            Only available with backend="jax". No limit on sample count.
         """
 
         # Run the base initialization
-        super().__init__()
+        super().__init__(backend=backend, capacity=capacity)
 
         # CH-specific initialization
         self._mu = np.zeros([0])     # dim
@@ -143,30 +154,11 @@ class CH(_base.CVI):
         Batch parameter update for the Calinski-Harabasz (CH) CVI.
         """
 
-        # Setup the CVI for batch mode
-        super()._setup_batch(data)
-
-        # Take the average across all samples, but cast to 1-D vector
+        self._setup_batch_statistics(data, labels)
         self._mu = np.mean(data, axis=0)
-        u = self._setup_batch_labels(labels)
-        self._n_clusters = len(u)
-        self._n = [0 for _ in range(self._n_clusters)]
-        self._v = np.zeros((self._n_clusters, self._dim))
-        self._CP = [0.0 for _ in range(self._n_clusters)]
-        self._G = np.zeros((self._n_clusters, self._dim))
-        self._SEP = np.zeros(self._n_clusters)
-
-        for ix, external_label in enumerate(u):
-            subset_indices = (
-                [x for x in range(len(labels))
-                 if labels[x] == external_label]
-            )
-            subset = data[subset_indices, :]
-            self._n[ix] = subset.shape[0]
-            self._v[ix, :] = np.mean(subset, axis=0)
-            diff_x_v = subset - self._v[ix, :] * np.ones((self._n[ix], 1))
-            self._CP[ix] = np.sum(diff_x_v ** 2)
-            self._SEP[ix] = self._n[ix] * np.sum((self._v[ix, :] - self._mu) ** 2)
+        self._SEP = np.asarray(self._n) * self._backend.centroid_distances(
+            self._v, self._mu,
+        )
 
     def _rebuild_after_operation(self):
         """Rebuild separation statistics after a structural operation."""

@@ -34,15 +34,21 @@ class cSIL(_base.CVI):
         index_max=1.0,
         optimality="max"
     )
+    _supports_numba = True
     _supports_remove_merge = True
 
-    def __init__(self):
+    def __init__(self, *, backend="numpy"):
         """
         Centroid-based Silhouette (cSIL) initialization routine.
+
+        Parameters
+        ----------
+        backend : {"numpy", "numba"}, default="numpy"
+            Select the numerical backend. Numba is loaded on demand.
         """
 
         # Run the base initialization
-        super().__init__()
+        super().__init__(backend=backend)
 
         # cSIL-specific initialization
         self._S = np.empty([0, 0])   # n_clusters x dim
@@ -178,42 +184,10 @@ class cSIL(_base.CVI):
         Batch parameter update for the Centroid-based Silhouette (cSIL) CVI.
         """
 
-        # Setup the CVI for batch mode
-        super()._setup_batch(data)
-
-        # Take the average across all samples, but cast to 1-D vector
-        u = self._setup_batch_labels(labels)
-        self._n_clusters = len(u)
-        self._n = [0 for _ in range(self._n_clusters)]
-        self._v = np.zeros((self._n_clusters, self._dim))
-        self._CP = [0.0 for _ in range(self._n_clusters)]
-        self._G = np.zeros((self._n_clusters, self._dim))
-        self._S = np.zeros((self._n_clusters, self._n_clusters))
-        D = np.zeros((self._n_clusters, self._n_samples))
-        for ix, external_label in enumerate(u):
-            subset_indices = (
-                [x for x in range(len(labels))
-                 if labels[x] == external_label]
-            )
-            subset = data[subset_indices, :]
-            self._n[ix] = subset.shape[0]
-            self._v[ix, :] = np.mean(subset, axis=0)
-
-            # Retain zero-centered raw moments for subsequent updates.
-            self._CP[ix] = np.sum(subset ** 2)
-            self._G[ix, :] = np.sum(subset, axis=0)
-
-            d_temp = (data - self._v[ix, :] * np.ones((self._n_samples, 1))) ** 2
-            D[ix, :] = np.transpose(np.sum(d_temp, axis=1))
-            # D[ix, :] = np.sum(d_temp, axis=1)
-
-        for ix in range(self._n_clusters):
-            for jx, external_label in enumerate(u):
-                subset_ind = [
-                    x for x in range(len(labels))
-                    if labels[x] == external_label
-                ]
-                self._S[jx, ix] = sum(D[ix, subset_ind]) / self._n[jx]
+        order, offsets = self._setup_batch_statistics(data, labels)
+        self._CP, self._G, self._S = self._backend.silhouette_batch_statistics(
+            data, order, offsets, self._v, self._CP,
+        )
 
     def _delete_cluster(self, label: int, i_label: int):
         """Delete one cSIL cluster and compact its internal label."""

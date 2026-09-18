@@ -18,6 +18,8 @@ from typing import (
 # Custom imports
 import numpy as np
 
+from ..backends import get_backend
+
 # --------------------------------------------------------------------------- #
 # CLASSES
 # --------------------------------------------------------------------------- #
@@ -100,12 +102,38 @@ class CVI():
     info: ClassVar[CVIInfo]
     _supports_remove_merge: ClassVar[bool] = False
     _uses_compactness_stats: ClassVar[bool] = False
+    _supports_numba: ClassVar[bool] = False
+    _supports_jax: ClassVar[bool] = False
 
-    def __init__(self):
+    def __init__(self, *, backend="numpy", capacity=None):
         """
         CVI base class initialization method.
+
+        Parameters
+        ----------
+        backend : {"numpy", "numba", "jax"}, default="numpy"
+            Numerical implementation. Numba is optional and must be supported
+            by the concrete index. The choice remains fixed through resets.
+        capacity : int or None, default=None
+            Maximum distinct clusters for optional fixed-capacity JAX streaming.
         """
 
+        if backend == "numba" and not self._supports_numba:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not support the numba backend"
+            )
+        if backend == "jax" and not self._supports_jax:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not support the jax backend"
+            )
+        if capacity is not None:
+            if backend != "jax":
+                raise ValueError("capacity is available only with backend='jax'")
+            if isinstance(capacity, bool) or not isinstance(capacity, int) or capacity < 1:
+                raise ValueError("capacity must be a positive integer")
+        self._capacity = capacity
+        self._stream_state = None
+        self._backend = get_backend(backend)
         self._label_map = LabelMap()
         self._dim = 0
         self._n_samples = 0
@@ -116,6 +144,46 @@ class CVI():
         self._n_clusters = 0
         self.criterion_value = np.nan
         self._is_setup = False
+
+    @property
+    def backend(self):
+        """Selected numerical backend (fixed for this object's lifetime)."""
+        return self._backend.name
+
+    @property
+    def capacity(self):
+        """Maximum distinct clusters for JAX streaming, or None for batch only."""
+        return self._capacity
+
+    @property
+    def stream_state(self):
+        """Immutable device state for JAX streaming; None until initialized."""
+        return self._stream_state
+
+    def update_many(self, data, labels, *, return_history=True):
+        """Add a chunk to a fixed-capacity JAX stream, atomically on input errors.
+
+        Return a NumPy score history, or a Python final score when
+        return_history=False. Empty chunks are no-ops, including on new objects.
+        The entire chunk must fit the remaining cluster capacity. This is an
+        incremental scan, distinct from the one-time batch get_cvi operation.
+        """
+        if self.backend != "jax" or self.capacity is None:
+            raise NotImplementedError("update_many requires JAX with capacity")
+        mapping, updates, output = self._backend.advance(
+            self, data, labels, return_history=return_history,
+        )
+        self.__dict__.update(updates)
+        self._label_map.map = mapping
+        return output
+
+    def __setstate__(self, state):
+        """Treat objects serialized before backend selection as NumPy objects."""
+        self.__dict__.update(state)
+        self.__dict__.setdefault("_capacity", None)
+        self.__dict__.setdefault("_stream_state", None)
+        if "_backend" not in state:
+            self._backend = get_backend("numpy")
 
     def _setup(self, sample: np.ndarray):
         """
@@ -164,6 +232,26 @@ class CVI():
 
         return unique_labels
 
+    def _setup_batch_statistics(self, data, labels, compactness=True):
+        """Initialize shared batch state and return stable cluster grouping."""
+        self._setup_batch(data)
+        self._n_clusters = len(self._setup_batch_labels(labels))
+        dense_labels = np.fromiter(
+            (self._label_map.map[label] for label in labels),
+            dtype=np.intp,
+            count=len(labels),
+        )
+        order, offsets = self._backend.grouped_rows(dense_labels, self._n_clusters)
+        counts, self._v, squared_errors = self._backend.batch_statistics(
+            data, order, offsets, compactness=compactness,
+        )
+        # Lists remain appendable by the existing incremental implementation.
+        self._n = counts.tolist()
+        if compactness:
+            self._CP = list(squared_errors)
+            self._G = np.zeros_like(self._v)
+        return order, offsets
+
     @abstractmethod
     def _param_inc(self, sample: np.ndarray, label: int):
         raise NotImplementedError
@@ -178,6 +266,11 @@ class CVI():
 
     def _require_operations(self):
         """Validate that structural operations are supported and available."""
+
+        if self.backend == "jax":
+            if self.capacity is not None:
+                raise NotImplementedError("JAX streaming does not support remove or merge")
+            raise NotImplementedError("The jax backend currently supports batch only")
 
         if not self._supports_remove_merge:
             raise NotImplementedError(
@@ -697,7 +790,8 @@ class CVI():
         incremental update, or a two-dimensional batch and label vector for
         batch initialization. The object is mutated in both modes. A batch may
         be followed by incremental updates, but a second batch is not
-        supported.
+        supported. JAX supports incremental additions when capacity is provided;
+        it rejects remove and merge.
 
         Parameters
         ----------
@@ -724,6 +818,34 @@ class CVI():
             If the criterion is undefined after a batch evaluation. The
             returned value is still ``numpy.nan``.
         """
+
+        if self.backend == "jax":
+            data = np.asarray(data)
+            if data.ndim == 1 and self.capacity is not None:
+                labels = np.asarray(label)
+                if labels.ndim != 0:
+                    raise ValueError("Expected a scalar integer label")
+                mapping, updates, output = self._backend.advance(
+                    self, data[None, :], labels[None], return_history=False,
+                    single=True,
+                )
+                self.__dict__.update(updates)
+                self._label_map.map = mapping
+                return output
+            if data.ndim == 1:
+                raise NotImplementedError(
+                    "The jax backend currently supports batch only"
+                )
+            if self._is_setup:
+                raise ValueError("Repeated batch updates are not supported")
+            mapping, state = self._backend.initialize(
+                data, label, self.info.name_short, capacity=self.capacity,
+            )
+            label_map = LabelMap()
+            label_map.map = mapping
+            self.__dict__.update(state)
+            self._label_map = label_map
+            return self.criterion_value
 
         # If we got 1D data, do a quick update
         if (data.ndim == 1):
