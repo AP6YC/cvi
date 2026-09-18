@@ -34,16 +34,27 @@ class XB(_base.CVI):
         index_max=np.inf,
         optimality="min"
     )
+    _supports_numba = True
+    _supports_jax = True
     _supports_remove_merge = True
     _uses_compactness_stats = True
 
-    def __init__(self):
+    def __init__(self, *, backend="numpy", capacity=None):
         """
         XB initialization routine.
+
+        Parameters
+        ----------
+        backend : {"numpy", "numba", "jax"}, default="numpy"
+            Select the numerical backend. Optional backends load on demand.
+            JAX requires x64.
+        capacity : int or None, default=None
+            Opt into JAX streaming with this maximum number of clusters.
+            Only available with backend="jax". No limit on sample count.
         """
 
         # Run the base initialization
-        super().__init__()
+        super().__init__(backend=backend, capacity=capacity)
 
         # XB-specific initialization
         self._mu = np.zeros([0])     # dim
@@ -99,10 +110,9 @@ class XB(_base.CVI):
                 D_new = np.zeros((self._n_clusters + 1, self._n_clusters + 1))
                 D_new[0:self._n_clusters, 0:self._n_clusters] = self._D
                 d_column_new = np.zeros(self._n_clusters + 1)
-                for jx in range(self._n_clusters):
-                    d_column_new[jx] = (
-                        np.sum((v_new - self._v[jx, :]) ** 2)
-                    )
+                d_column_new[:-1] = self._backend.centroid_distances(
+                    self._v, v_new,
+                )
                 D_new[i_label, :] = d_column_new
                 D_new[:, i_label] = d_column_new
 
@@ -136,14 +146,10 @@ class XB(_base.CVI):
                 + diff_x_v
                 + self._n[i_label] * delta_v
             )
-            d_column_new = np.zeros(self._n_clusters)
-            for jx in range(self._n_clusters):
-                # Skip the current i_label index
-                if jx == i_label:
-                    continue
-                d_column_new[jx] = (
-                    np.sum((v_new - self._v[jx, :]) ** 2)
-                )
+            d_column_new = self._backend.centroid_distances(
+                self._v, v_new,
+            )
+            d_column_new[i_label] = 0.0
 
             # Update parameters
             self._n[i_label] = n_new
@@ -162,37 +168,11 @@ class XB(_base.CVI):
         Batch parameter update for the Xie-Beni (XB) CVI.
         """
 
-        # Setup the CVI for batch mode
-        super()._setup_batch(data)
-
-        # Take the average across all samples, but cast to 1-D vector
+        self._setup_batch_statistics(data, labels)
         self._mu = np.mean(data, axis=0)
-        u = self._setup_batch_labels(labels)
-        self._n_clusters = len(u)
-        self._n = [0 for _ in range(self._n_clusters)]
-        self._v = np.zeros((self._n_clusters, self._dim))
-        self._CP = [0.0 for _ in range(self._n_clusters)]
-        self._G = np.zeros((self._n_clusters, self._dim))
-        self._D = np.zeros((self._n_clusters, self._n_clusters))
-
-        for ix, external_label in enumerate(u):
-            subset_indices = (
-                [x for x in range(len(labels))
-                 if labels[x] == external_label]
-            )
-            subset = data[subset_indices, :]
-            self._n[ix] = subset.shape[0]
-            self._v[ix, :] = np.mean(subset, axis=0)
-            diff_x_v = subset - self._v[ix, :] * np.ones((self._n[ix], 1))
-            self._CP[ix] = np.sum(diff_x_v ** 2)
-
-        for ix in range(self._n_clusters - 1):
-            for jx in range(ix + 1, self._n_clusters):
-                self._D[ix, jx] = (
-                    np.sum((self._v[ix, :] - self._v[jx, :]) ** 2)
-                )
-
-        self._D = self._D + np.transpose(self._D)
+        self._D = self._backend.pairwise_centroid_distances(
+            self._v,
+        )
 
     def _rebuild_after_operation(self):
         """Rebuild centroid distances after a structural operation."""
@@ -204,11 +184,8 @@ class XB(_base.CVI):
             self._WGSS = 0.0
             return
 
-        self._D = self._pairwise_matrix(
-            self._n_clusters,
-            lambda ix, jx: np.sum(
-                (self._v[ix, :] - self._v[jx, :]) ** 2
-            ),
+        self._D = self._backend.pairwise_centroid_distances(
+            self._v,
         )
         self._WGSS = sum(self._CP)
         if self._n_clusters < 2:

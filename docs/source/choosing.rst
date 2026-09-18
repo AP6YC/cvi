@@ -6,6 +6,9 @@ Values from different index families are not on a common scale, so compare
 candidate partitions with the same index rather than comparing one index's
 number directly with another's.
 
+The following operation support describes the default NumPy backend. Every
+listed index supports batch evaluation.
+
 .. list-table:: Implemented indices
    :header-rows: 1
    :widths: 12 25 13 13 14 23
@@ -26,7 +29,7 @@ number directly with another's.
      - Connectivity
      - Larger
      - ``[0, 1]``
-     - Fuzzy backend
+     - FuzzyART Backend Only
      - No
    * - ``cSIL``
      - Centroid-based Silhouette
@@ -76,6 +79,11 @@ number directly with another's.
      - ``[0, inf)``
      - Yes
      - Yes
+
+.. include:: _backend_coverage.rstinc
+
+See :doc:`backends` for installation, accelerated kernels, precision rules,
+and compilation costs. Backend availability does not guarantee a speedup.
 
 ``CH``, ``DB``, ``GD43``, ``GD53``, ``WB``, and ``XB`` summarize variants of
 within-cluster compactness and between-cluster separation. ``cSIL`` offers a

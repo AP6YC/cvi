@@ -36,8 +36,12 @@ Please see the [documentation][docs-stable-url] for detailed usage.
 - [What Are Cluster Validity Indices?](#what-are-cluster-validity-indices)
 - [Installation](#installation)
 - [Quickstart](#quickstart)
-- [Implemented Indices](#implemented-indices)
-- [Updating an Existing Partition](#updating-an-existing-partition)
+  - [Updating an Existing Partition](#updating-an-existing-partition)
+  - [Implemented Indices](#implemented-indices)
+- [Optimizations](#optimizations)
+  - [Optional Numba Acceleration](#optional-numba-acceleration)
+  - [Optional JAX Batch Backend](#optional-jax-batch-backend)
+  - [Fixed-capacity JAX Streaming](#fixed-capacity-jax-streaming)
 - [Acknowledgements](#acknowledgements)
   - [Derivation](#derivation)
   - [Authors](#authors)
@@ -118,12 +122,33 @@ Users can also query the `.info` property of the CVI objects to obtain relevant 
 CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max')
 ```
 
-## Implemented Indices
+### Updating an Existing Partition
+
+Except for `CONN`, initialized indices support adding samples, removing samples, and merging clusters without replaying the full dataset via `remove` and `merge`:
+
+```python
+value = index.get_cvi(new_sample, new_label)
+value = index.remove(existing_sample, existing_label)
+value = index.merge(target_label=20, source_label=10)
+```
+
+Both methods update the object in place and return its new criterion value.
+Removing the final sample of a cluster deletes that cluster, while `merge` retains `target_label` and deletes `source_label`.
+The caller is responsible for ensuring that a removed sample belongs to the supplied label.
+
+For input rules, index-selection guidance, references, legacy API information, and the complete API, see the [documentation][docs-stable-url].
+
+[conn-guide]: https://AP6YC.github.io/cvi/main/conn.html
+
+### Implemented Indices
+
+The operation support below describes the default NumPy backend. Optional
+backend coverage is listed separately.
 
 | Index | Prefer | Range | Batch | Incremental | Remove/merge/split |
 |---|---|---|---|---|---|
 | `CH` | Larger | `[0, ∞)` | Yes | Yes | Yes |
-| `CONN` | Larger | `[0, 1]` | Yes | Fuzzy backend only | No |
+| `CONN` | Larger | `[0, 1]` | Yes | FuzzyART backend only | No |
 | `cSIL` | Larger | `[-1, 1]` | Yes | Yes | Yes |
 | `DB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
 | `GD43` | Larger | `[0, ∞)` | Yes | Yes | Yes |
@@ -133,10 +158,39 @@ CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf,
 | `WB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
 | `XB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
 
+**Optional optimization coverage**
+
+|Index | Numba batch | Numba sample updates | Numba remove/merge | JAX batch | JAX streaming |
+|---|---|---|---|---|---|
+| `CH` | Yes | Unchanged | Unchanged | Yes | Capacity |
+| `CONN` | Unavailable | Unavailable | Unavailable | Unavailable | Unavailable |
+| `cSIL` | Yes | Unchanged | Unchanged | Unavailable | Unavailable |
+| `DB` | Yes | Distances | Distances | Unavailable | Unavailable |
+| `GD43` | Yes | Distances | Distances | Unavailable | Unavailable |
+| `GD53` | Yes | Unchanged | Unchanged | Unavailable | Unavailable |
+| `PS` | Yes | Distances | Distances | Unavailable | Unavailable |
+| `rCIP` | Unavailable | Unavailable | Unavailable | Unavailable | Unavailable |
+| `WB` | Yes | Unchanged | Unchanged | Yes | Capacity |
+| `XB` | Yes | Distances | Distances | Yes | Capacity |
+
+**Yes** means compiled batch kernels are available, not that every operation is
+compiled. **Distances** means centroid-distance kernels are compiled; other
+update logic remains in Python/NumPy. **Unchanged** means the operation is
+supported with `backend="numba"` but uses its existing NumPy implementation.
+**Unavailable** means that index rejects the selected numerical backend.
+
+**Capacity** means JAX sample updates and `update_many` chunks require a positive
+`capacity` at construction. CH, WB, and XB also expose functional JAX batch and
+streaming APIs. All JAX modes require x64; JAX remove/merge is unsupported.
+Numba retains remove/merge support for all eight supported indices, including
+operations marked **Unchanged**. Backend selection does not guarantee a speedup;
+see [Numba](#optional-numba-acceleration) and [JAX](#optional-jax-batch-backend)
+for compilation, precision, and fallback details.
+
 `CONN` uses prototype connectivity and has additional backend and normalization requirements.
 See the [CONN guide][conn-guide] before using it.
 
-## Updating an Existing Partition
+## Optimizations
 
 Except for `CONN`, initialized indices support adding samples, removing samples, merging clusters, and splitting clusters from tracked sufficient statistics without replaying the full dataset:
 
@@ -158,10 +212,111 @@ These methods update the object in place and return its new criterion value.
 Removing the final sample of a cluster deletes that cluster, while `merge` retains `target_label` and deletes `source_label`.
 `split` retains `retained_label` for the residual cluster and assigns the split-off statistics to the unused `new_label`.
 The caller is responsible for ensuring that a removed sample belongs to the supplied label.
+`cvi` comes with some optimizations in the form of various backends that you can switch between for faster performance depending on your use-case.
 
-For input rules, index-selection guidance, references, legacy API information, and the complete API, see the [documentation][docs-stable-url].
+### Optional Numba Acceleration
 
-[conn-guide]: https://AP6YC.github.io/cvi/main/conn.html
+Install the extra and select the backend per index:
+
+```console
+python -m pip install "cvi[numba]"
+```
+
+```python
+import cvi
+
+index = cvi.XB(backend="numba")
+value = index.get_cvi(samples, labels)
+```
+
+For a development checkout, install with `python -m pip install -e ".[numba]"`.
+`backend="numpy"` remains the default. Numba acceleration is available for
+`CH`, `WB`, `DB`, `XB`, `GD43`, `GD53`, `PS`, and `cSIL`, with the same batch,
+incremental, remove, and merge API. `CONN` and `rCIP` currently support only the
+NumPy numerical backend. CONN's `model_type` separately selects its clustering
+algorithm.
+
+The backend compiles grouping, compactness, centroid distances, and cSIL batch
+distance assembly on the CPU. It retains NumPy's dtype-sensitive means and raw
+moments. Float16, non-native byte-order arrays, and other unsupported array types
+use NumPy for the affected operations. Results agree within floating-point
+tolerances, rather than necessarily bit for bit. Unchanged operations, such as
+CH/WB streaming updates, are not accelerated by this selection.
+
+The first use of a kernel for an input type/layout incurs compilation; subsequent
+calls reuse compiled code, with a disk cache across processes. Measure warmed
+performance for your workload; small workloads may not repay compilation cost.
+Numba is imported by the numerical backend only when selected. The existing
+ART dependency may also install/use Numba independently when using CONN.
+See [backend benchmarks](benchmarks/README.md) for timings and reproduction steps.
+
+### Optional JAX Batch Backend
+
+Install `cvi[jax]` (or `python -m pip install -e ".[jax]"` in a checkout), then
+enable JAX's 64-bit mode explicitly:
+
+```python
+import jax
+import cvi
+
+jax.config.update("jax_enable_x64", True)
+index = cvi.XB(backend="jax")
+value = index.get_cvi(samples, labels)
+```
+
+JAX supports **batch CH, WB, and XB**, plus optional fixed-capacity streaming
+for these indices. Remove and merge remain unsupported. Other indices
+continue to support their existing backends. Importing CVI does not import JAX
+or change its configuration.
+
+The batch object interface returns a Python float and retains host-side state. It
+preserves NumPy's input-dtype mean reductions, including float32 behavior, then
+uses JAX for compactness, separation, and evaluation. For device-resident work
+and composition with `jit`, `vmap`, or `grad`, use the functional interface:
+
+```python
+from functools import partial
+from cvi.jax import batch_cvi
+
+# Dense labels must be integers 0..2, with every cluster represented.
+score = jax.jit(partial(batch_cvi, n_clusters=3, index="XB"))
+device_value = score(device_samples, dense_labels)
+```
+
+The functional API evaluates real input data in float64 and uses shifted means
+for numerical stability. `batch_state(...)` returns an immutable pytree that
+`evaluate(state, index="CH")` can reuse for another supported index. Results
+agree mathematically, with floating-point reduction differences. Cluster count
+and index name are static under JIT; new input shapes can require recompilation.
+Small CPU workloads and the compatibility object may be slower than NumPy.
+See [benchmarks](benchmarks/README.md) for synchronized timing instructions.
+
+### Fixed-capacity JAX Streaming
+
+Reserve space for the maximum number of distinct clusters to enable streaming:
+
+```python
+index = cvi.XB(backend="jax", capacity=32)
+value = index.get_cvi(sample, label)
+history = index.update_many(next_samples, next_labels)
+value = index.update_many(more_samples, more_labels, return_history=False)
+```
+
+`capacity` limits clusters, not samples. Arbitrary integer labels map to slots
+in first-seen order. Exceeding capacity raises before any part of the call is
+applied. An initial batch can also be followed by samples or chunks. Without
+`capacity`, JAX objects retain their batch-only behavior.
+
+Statistics stay on-device as a fixed-shape `index.stream_state`; scalar calls
+return a Python float and chunks return NumPy histories (or a final float).
+New clusters within capacity do not change array shapes. Streaming uses float64
+and the existing incremental formulas, with unused slots excluded from scores.
+The functional `empty_stream`, `stream_update`, `stream_chunk`, and
+`evaluate_stream` functions support device-resident use inside JIT; see the
+[guide](docs/source/guide.rst) for their slot and validation contracts.
+Choose capacity near the expected maximum: XB reserves a capacity-by-capacity
+distance matrix. Chunk processing amortizes Python and device synchronization
+costs; per-sample JAX calls can be slower than NumPy.
 
 ## Acknowledgements
 

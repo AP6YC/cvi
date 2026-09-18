@@ -34,12 +34,16 @@ import numbers
 import numpy as np
 from sklearn.cluster import KMeans, MiniBatchKMeans
 
-# ART imports
-from artlib import FuzzyART, SimpleARTMAP
-from artlib.common.utils import complement_code
-
 # Local imports
 from . import _base
+
+
+def __getattr__(name):
+    """Resolve legacy ART adapter paths lazily, including existing pickles."""
+    if name in ("_CONNFuzzyART", "_CONNSimpleARTMAP"):
+        from . import _conn_art
+        return getattr(_conn_art, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class _GrowingSquareArray:
@@ -130,88 +134,6 @@ class _GrowingArray1D:
         return repr(self.array)
 
 
-class _CONNFuzzyART(FuzzyART):
-    """
-    FuzzyART extension that exposes the first and second best matching
-    categories for CONN updates.
-    """
-
-    def step_pred_first_and_second(self, sample: np.ndarray):
-        """
-        Return the first and second best matching ART categories.
-
-        Parameters
-        ----------
-        sample : np.ndarray
-            Complement-coded sample.
-
-        Returns
-        -------
-        tuple[int, int]
-            First and second category indices.
-
-        Raises
-        ------
-        RuntimeError
-            If fewer than two ART categories exist.
-        """
-
-        if len(self.W) < 2:
-            raise RuntimeError(
-                "CONN requires at least two ART categories. "
-                "The second ART category should be forced during the "
-                "second-sample initialization step."
-            )
-
-        choices = [
-            self.category_choice(sample, w, params=self.params)[0]
-            for w in self.W
-        ]
-
-        choices = np.asarray(choices, dtype=float)
-
-        first = int(np.argmax(choices))
-        choices[first] = -np.inf
-        second = int(np.argmax(choices))
-
-        return first, second
-
-
-class _CONNSimpleARTMAP(SimpleARTMAP):
-    """
-    SimpleARTMAP extension with CONN-specific match reset behavior.
-    """
-
-    def match_reset_func(
-        self,
-        i: np.ndarray,
-        w: np.ndarray,
-        cluster_a,
-        params: dict,
-        extra: dict,
-        cache: Optional[dict] = None,
-    ) -> bool:
-        """
-        CONN-specific match reset.
-        """
-
-        cluster_b = extra["cluster_b"]
-
-        b_samples = sum(
-            self.module_a.weight_sample_counter_[a]
-            for a, b in self.map.items()
-            if b == cluster_b
-        )
-
-        if b_samples == 1:
-            return False
-
-        if cluster_a in self.map and self.map[cluster_a] != cluster_b:
-            return False
-
-        return True
-
-
 class CONN(_base.CVI):
     """
     CONN Cluster Validity Index.
@@ -247,6 +169,8 @@ class CONN(_base.CVI):
         ),
         kmeans_k: Union[int, Dict[int, int]] = 8,
         kmeans_kwargs: Optional[dict] = None,
+        *,
+        backend: str = "numpy",
     ):
         """
         CONN initialization routine.
@@ -276,9 +200,12 @@ class CONN(_base.CVI):
         kmeans_kwargs : dict, optional
             Keyword arguments forwarded to the selected scikit-learn KMeans
             estimator. ``n_clusters`` must be configured through ``kmeans_k``.
+        backend : {"numpy"}, default="numpy"
+            Numerical backend. CONN currently supports NumPy only; this is
+            separate from the prototype algorithm selected by ``model_type``.
         """
 
-        super().__init__()
+        super().__init__(backend=backend)
 
         self.rho = rho
         self.alpha = alpha
@@ -304,6 +231,8 @@ class CONN(_base.CVI):
         """
         Initialize or reset all CONN-specific state.
         """
+
+        from ._conn_art import _CONNFuzzyART, _CONNSimpleARTMAP
 
         module_a = _CONNFuzzyART(
             rho=self.rho,
@@ -732,6 +661,8 @@ class CONN(_base.CVI):
             self._setup(sample)
 
         self._check_sample_normalized(sample)
+
+        from artlib.common.utils import complement_code
 
         # ART operates on complement-coded samples.
         sample_cc = complement_code(np.asarray([sample]))[0]
