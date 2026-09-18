@@ -845,7 +845,15 @@ class CVI():
             label_map.map = mapping
             self.__dict__.update(state)
             self._label_map = label_map
-            return self.criterion_value
+            criterion_value = self.criterion_value
+            if data.ndim == 2 and np.isnan(criterion_value):
+                warnings.warn(
+                    f"{type(self).__name__} is undefined for the supplied batch; "
+                    "returning nan.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+            return criterion_value
 
         # If we got 1D data, do a quick update
         if (data.ndim == 1):
