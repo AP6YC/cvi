@@ -20,6 +20,7 @@
       ~GD43.get_cvi
       ~GD43.merge
       ~GD43.remove
+      ~GD43.split
    
    
 

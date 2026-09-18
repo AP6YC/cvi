@@ -20,6 +20,7 @@
       ~CONN.get_cvi
       ~CONN.merge
       ~CONN.remove
+      ~CONN.split
    
    
 

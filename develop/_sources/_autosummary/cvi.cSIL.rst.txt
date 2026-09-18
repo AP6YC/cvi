@@ -20,6 +20,7 @@
       ~cSIL.get_cvi
       ~cSIL.merge
       ~cSIL.remove
+      ~cSIL.split
    
    
 

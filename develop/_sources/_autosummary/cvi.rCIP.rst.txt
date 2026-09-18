@@ -20,6 +20,7 @@
       ~rCIP.get_cvi
       ~rCIP.merge
       ~rCIP.remove
+      ~rCIP.split
    
    
 

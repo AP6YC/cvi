@@ -318,7 +318,7 @@ from <code class="docutils literal notranslate"><span class="pre">cvi</span></co
 <section id="common-methods">
 <h2>Common methods<a class="headerlink" href="#common-methods" title="Link to this heading">¶</a></h2>
 <p>All indices inherit the common update interface from <a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI" title="cvi.CVI"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvi.CVI</span></code></a>.
-<code class="docutils literal notranslate"><span class="pre">CONN</span></code> does not currently implement <code class="docutils literal notranslate"><span class="pre">remove</span></code> or <code class="docutils literal notranslate"><span class="pre">merge</span></code>.</p>
+<code class="docutils literal notranslate"><span class="pre">CONN</span></code> does not currently implement <code class="docutils literal notranslate"><span class="pre">remove</span></code>, <code class="docutils literal notranslate"><span class="pre">merge</span></code>, or <code class="docutils literal notranslate"><span class="pre">split</span></code>.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
@@ -330,6 +330,9 @@ from <code class="docutils literal notranslate"><span class="pre">cvi</span></co
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI.merge" title="cvi.CVI.merge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI.merge</span></code></a>(target_label, source_label)</p></td>
 <td><p>Merge a source cluster into a target cluster.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI.split" title="cvi.CVI.split"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI.split</span></code></a>(retained_label, new_label, ...)</p></td>
+<td><p>Split a tracked subset from an existing cluster.</p></td>
 </tr>
 </tbody>
 </table>

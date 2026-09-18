@@ -20,6 +20,7 @@
       ~CVI.get_cvi
       ~CVI.merge
       ~CVI.remove
+      ~CVI.split
    
    
 

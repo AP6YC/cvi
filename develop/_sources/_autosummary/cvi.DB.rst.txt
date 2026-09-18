@@ -20,6 +20,7 @@
       ~DB.get_cvi
       ~DB.merge
       ~DB.remove
+      ~DB.split
    
    
 

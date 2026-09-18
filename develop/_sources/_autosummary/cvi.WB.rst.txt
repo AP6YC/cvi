@@ -20,6 +20,7 @@
       ~WB.get_cvi
       ~WB.merge
       ~WB.remove
+      ~WB.split
    
    
 

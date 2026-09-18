@@ -318,6 +318,9 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#cvi.GD43.remove" title="cvi.GD43.remove"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove</span></code></a>(sample, label)</p></td>
 <td><p>Remove a sample from an initialized CVI.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#cvi.GD43.split" title="cvi.GD43.split"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split</span></code></a>(retained_label, new_label, count, ...)</p></td>
+<td><p>Split a tracked subset from an existing cluster.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -333,7 +336,7 @@
 </div>
 <dl class="py method">
 <dt class="sig sig-object py" id="cvi.GD43.get_cvi">
-<span class="sig-name descname"><span class="pre">get_cvi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></span><a class="headerlink" href="#cvi.GD43.get_cvi" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_cvi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></span><a class="headerlink" href="#cvi.GD43.get_cvi" title="Link to this definition">¶</a></dt>
 <dd><p>Update the CVI and return its criterion value.</p>
 <p>Pass a one-dimensional sample and scalar integer label for an
 incremental update, or a two-dimensional batch and label vector for
@@ -344,17 +347,17 @@ supported.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> (<em>np.ndarray</em>) – The sample(s) of features used for clustering.</p></li>
-<li><p><strong>label</strong> (<em>Union</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>np.ndarray</em><em>]</em>) – The label(s) prescribed to the sample(s) by the clustering algorithm.</p></li>
+<li><p><strong>label</strong> (<em>Union</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>np.ndarray</em><em>]</em>) – The label(s) prescribed to the sample(s) by the clustering algorithm.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The CVI’s criterion value.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)">float</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the input dimensionality is invalid, feature dimensionality
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the input dimensionality is invalid, feature dimensionality
     changes after initialization, batch labels contain fewer than two
     distinct values, or a second batch update is requested.</p>
 </dd>
@@ -363,26 +366,26 @@ supported.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="cvi.GD43.merge">
-<span class="sig-name descname"><span class="pre">merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></span><a class="headerlink" href="#cvi.GD43.merge" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></span><a class="headerlink" href="#cvi.GD43.merge" title="Link to this definition">¶</a></dt>
 <dd><p>Merge a source cluster into a target cluster.</p>
 <p>The target external label is retained and the source label is removed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>target_label</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – External label of the cluster that remains after the merge.</p></li>
-<li><p><strong>source_label</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – External label of the cluster merged into the target.</p></li>
+<li><p><strong>target_label</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – External label of the cluster that remains after the merge.</p></li>
+<li><p><strong>source_label</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – External label of the cluster merged into the target.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The updated CVI criterion value.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)">float</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#NotImplementedError" title="(in Python v3.14)"><strong>NotImplementedError</strong></a> – If this index does not implement cluster merging.</p></li>
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the index is uninitialized, either label is unknown, or the
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#NotImplementedError" title="(in Python v3.14)"><strong>NotImplementedError</strong></a> – If this index does not implement cluster merging.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the index is uninitialized, either label is unknown, or the
     two labels are equal.</p></li>
 </ul>
 </dd>
@@ -391,7 +394,7 @@ supported.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="cvi.GD43.remove">
-<span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></span><a class="headerlink" href="#cvi.GD43.remove" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></span><a class="headerlink" href="#cvi.GD43.remove" title="Link to this definition">¶</a></dt>
 <dd><p>Remove a sample from an initialized CVI.</p>
 <p>The caller is responsible for ensuring that the sample belongs to the
 supplied cluster label. If the sample is the cluster’s final member,
@@ -400,21 +403,57 @@ the empty cluster and its label are removed.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>sample</strong> (<em>numpy.ndarray</em>) – One sample vector of features.</p></li>
-<li><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – External label of the cluster containing the sample.</p></li>
+<li><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – External label of the cluster containing the sample.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The updated CVI criterion value.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)">float</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#NotImplementedError" title="(in Python v3.14)"><strong>NotImplementedError</strong></a> – If this index does not implement removal.</p></li>
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the index is uninitialized, the label is unknown, the sample
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#NotImplementedError" title="(in Python v3.14)"><strong>NotImplementedError</strong></a> – If this index does not implement removal.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the index is uninitialized, the label is unknown, the sample
     has the wrong shape, or the sample is inconsistent with the
     stored sufficient statistics.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cvi.GD43.split">
+<span class="sig-name descname"><span class="pre">split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">retained_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">compactness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covariance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></span><a class="headerlink" href="#cvi.GD43.split" title="Link to this definition">¶</a></dt>
+<dd><p>Split a tracked subset from an existing cluster.</p>
+<p>The existing external label is retained by the residual cluster. The
+supplied sufficient statistics are assigned to a new cluster with
+<code class="docutils literal notranslate"><span class="pre">new_label</span></code>. The total sample count and global mean do not change.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>retained_label</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – External label of the cluster retaining the residual statistics.</p></li>
+<li><p><strong>new_label</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Unused external label assigned to the split-off subset.</p></li>
+<li><p><strong>count</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of samples in the split-off subset.</p></li>
+<li><p><strong>centroid</strong> (<em>numpy.ndarray</em>) – Mean vector of the split-off subset.</p></li>
+<li><p><strong>compactness</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Sum of squared distances from the subset centroid. Required by
+compactness-based indices when <code class="docutils literal notranslate"><span class="pre">count</span></code> is greater than one.</p></li>
+<li><p><strong>covariance</strong> (<em>numpy.ndarray</em><em>, </em><em>optional</em>) – Unregularized unbiased sample covariance of the subset. Required
+by rCIP when <code class="docutils literal notranslate"><span class="pre">count</span></code> is greater than one.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The updated CVI criterion value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#NotImplementedError" title="(in Python v3.14)"><strong>NotImplementedError</strong></a> – If this index does not implement cluster splitting.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the index is uninitialized, labels or statistics are invalid,
+    or the supplied subset is inconsistent with the retained cluster.</p></li>
 </ul>
 </dd>
 </dl>
@@ -485,6 +524,7 @@ the empty cluster and its label are removed.</p>
 <li><a class="reference internal" href="#cvi.GD43.get_cvi"><code class="docutils literal notranslate"><span class="pre">GD43.get_cvi()</span></code></a></li>
 <li><a class="reference internal" href="#cvi.GD43.merge"><code class="docutils literal notranslate"><span class="pre">GD43.merge()</span></code></a></li>
 <li><a class="reference internal" href="#cvi.GD43.remove"><code class="docutils literal notranslate"><span class="pre">GD43.remove()</span></code></a></li>
+<li><a class="reference internal" href="#cvi.GD43.split"><code class="docutils literal notranslate"><span class="pre">GD43.split()</span></code></a></li>
 </ul>
 </li>
 </ul>

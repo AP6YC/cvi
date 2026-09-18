@@ -20,6 +20,7 @@
       ~XB.get_cvi
       ~XB.merge
       ~XB.remove
+      ~XB.split
    
    
 

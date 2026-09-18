@@ -20,6 +20,7 @@
       ~PS.get_cvi
       ~PS.merge
       ~PS.remove
+      ~PS.split
    
    
 
