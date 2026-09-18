@@ -1,4 +1,4 @@
-"""Tests for the common CVI definition-status contract."""
+"""Tests for the common CVI undefined-value contract."""
 
 import warnings
 
@@ -12,34 +12,30 @@ CVIS_NOT_CONN = [cvi_type for cvi_type in cvi.MODULES if cvi_type is not cvi.CON
 
 
 @pytest.mark.parametrize("cvi_type", cvi.MODULES)
-def test_is_defined_starts_false_and_is_read_only(cvi_type):
-    """Every current CVI inherits the same read-only status property."""
+def test_criterion_value_starts_as_nan(cvi_type):
+    """Every current CVI starts with an undefined NaN result."""
 
     local_cvi = cvi_type()
 
-    assert local_cvi.is_defined is False
     assert np.isnan(local_cvi.criterion_value)
-    with pytest.raises(AttributeError):
-        local_cvi.is_defined = True
+    assert not hasattr(local_cvi, "is_defined")
 
 
 @pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
-def test_incremental_status_becomes_true_when_formula_is_defined(cvi_type):
+def test_incremental_result_becomes_finite_when_formula_is_defined(cvi_type):
     """A normal stream remains undefined until its second cluster appears."""
 
     local_cvi = cvi_type()
 
     assert np.isnan(local_cvi.get_cvi(np.asarray([0.0]), 10))
-    assert local_cvi.is_defined is False
 
     assert np.isnan(local_cvi.get_cvi(np.asarray([1.0]), 10))
-    assert local_cvi.is_defined is False
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        local_cvi.get_cvi(np.asarray([3.0]), 20)
+        result = local_cvi.get_cvi(np.asarray([3.0]), 20)
 
-    assert local_cvi.is_defined is True
+    assert np.isfinite(result)
 
 
 @pytest.mark.parametrize(
@@ -98,7 +94,6 @@ def test_undefined_batch_returns_nan_with_warning(
 
     assert np.isnan(result)
     assert np.isnan(local_cvi.criterion_value)
-    assert local_cvi.is_defined is False
 
 
 @pytest.mark.parametrize(
@@ -138,7 +133,7 @@ def test_undefined_batch_returns_nan_with_warning(
     ids=["CH", "WB", "DB", "XB", "GD43", "GD53"],
 )
 def test_computed_zero_can_be_defined(cvi_type, samples, labels):
-    """The status property distinguishes a valid zero from undefined NaN."""
+    """A valid computed zero remains distinct from undefined NaN."""
 
     local_cvi = cvi_type()
 
@@ -147,7 +142,6 @@ def test_computed_zero_can_be_defined(cvi_type, samples, labels):
         result = local_cvi.get_cvi(samples, labels)
 
     assert result == 0.0
-    assert local_cvi.is_defined is True
 
 
 def test_csil_zero_ties_are_defined_neutral_terms():
@@ -162,11 +156,10 @@ def test_csil_zero_ties_are_defined_neutral_terms():
         result = local_cvi.get_cvi(samples, labels)
 
     assert result == 0.0
-    assert local_cvi.is_defined is True
     np.testing.assert_array_equal(local_cvi._sil_coefs, [0.0, 0.0])
 
 
-def test_rcip_is_defined_with_two_coincident_clusters():
+def test_rcip_is_finite_with_two_coincident_clusters():
     """rCIP's covariance regularization keeps this state defined."""
 
     local_cvi = cvi.rCIP()
@@ -178,7 +171,6 @@ def test_rcip_is_defined_with_two_coincident_clusters():
         result = local_cvi.get_cvi(samples, labels)
 
     assert np.isfinite(result)
-    assert local_cvi.is_defined is True
 
 
 def test_conn_becomes_defined_after_second_art_category():
@@ -187,8 +179,7 @@ def test_conn_becomes_defined_after_second_art_category():
     local_cvi = cvi.CONN(model_type="Fuzzy", normalize_batch=False)
 
     assert np.isnan(local_cvi.get_cvi(np.asarray([0.0]), 10))
-    assert local_cvi.is_defined is False
 
-    local_cvi.get_cvi(np.asarray([1.0]), 20)
+    result = local_cvi.get_cvi(np.asarray([1.0]), 20)
     assert len(local_cvi._artmap.module_a.W) == 2
-    assert local_cvi.is_defined is True
+    assert np.isfinite(result)

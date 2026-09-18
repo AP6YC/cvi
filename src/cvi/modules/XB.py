@@ -220,8 +220,6 @@ class XB(_base.CVI):
         Criterion value evaluation method for the Xie-Beni (XB) CVI.
         """
 
-        self._is_defined = False
-
         if self._n_clusters > 1:
             # Within group sum of scatters
             self._WGSS = sum(self._CP)
@@ -234,9 +232,7 @@ class XB(_base.CVI):
             # )
             values = self._D[np.triu_indices(dim, k=1)]
             self._SEP = np.min(values)
-            self._is_defined = bool(self._SEP > 0.0)
-
-            if self._is_defined:
+            if self._SEP > 0.0:
                 # XB index value
                 self.criterion_value = (
                     self._WGSS / (self._n_samples * self._SEP)

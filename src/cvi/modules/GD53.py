@@ -224,8 +224,6 @@ class GD53(_base.CVI):
         Criterion value evaluation method for the Generalized Dunn's Index 53 (GD53) CVI.
         """
 
-        self._is_defined = False
-
         if self._n_clusters > 1:
             self._intra = 2 * np.max(np.divide(self._CP, self._n))
             # Between-group measure of separation/isolation
@@ -236,9 +234,8 @@ class GD53(_base.CVI):
                     ),
                 ])
             )
-            self._is_defined = bool(self._intra > 0.0)
             # GD53 index value
-            if self.is_defined:
+            if self._intra > 0.0:
                 self.criterion_value = self._inter / self._intra
             else:
                 self.criterion_value = np.nan

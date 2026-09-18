@@ -39,15 +39,13 @@ All indices inherit the common update interface from :class:`cvi.CVI`.
 
 .. autosummary::
 
-   cvi.CVI.is_defined
    cvi.CVI.get_cvi
    cvi.CVI.remove
    cvi.CVI.merge
    cvi.CVI.split
 
-Evaluation status
+Undefined results
 -----------------
 
-Every index exposes the read-only :attr:`cvi.CVI.is_defined` property to
-distinguish a computed score from the ``numpy.nan`` result for undefined states.
-An undefined batch evaluation emits a ``RuntimeWarning``.
+Every index returns ``numpy.nan`` when its criterion is not mathematically
+defined. An undefined batch evaluation also emits a ``RuntimeWarning``.

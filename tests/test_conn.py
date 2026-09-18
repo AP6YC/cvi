@@ -42,7 +42,6 @@ def test_centroid_backends_compute_expected_connectivity(model_type):
         ]
     )
     assert value == pytest.approx(1.0)
-    assert conn.is_defined is True
     np.testing.assert_array_equal(conn._CADJ.asarray(), expected_cadj)
     np.testing.assert_array_equal(
         conn._CONN.asarray(),
@@ -70,7 +69,6 @@ def test_centroid_backends_detect_cross_label_connectivity(model_type):
     )
 
     assert conn.get_cvi(data, labels) == pytest.approx(0.0)
-    assert conn.is_defined is True
     np.testing.assert_array_equal(conn._INTRA.asarray(), [0.0, 0.0])
     np.testing.assert_array_equal(
         conn._INTER.asarray(),

@@ -86,16 +86,10 @@ see :doc:`conn` before using it.
 
 The value ``numpy.nan`` is used when an index is not yet defined, including
 many one-cluster states. When monitoring a stream, consider the trajectory
-only after enough clusters and samples have been observed.
-
-Every index provides a read-only ``is_defined`` property. It is ``False``
-before evaluation and is updated after batch or incremental evaluation and
-after remove, merge, or split operations. Undefined states return
-``numpy.nan``.
-An undefined batch evaluation also emits a ``RuntimeWarning``; incremental
-startup and structural operations remain silent. A computed score of ``0.0``
-can still have ``is_defined == True``. Use the property when an explicit
-status check is clearer than testing the value with ``numpy.isnan``.
+only after enough clusters and samples have been observed. An undefined batch
+evaluation also emits a ``RuntimeWarning``; incremental startup and structural
+operations remain silent. Use ``numpy.isnan`` to test whether a result is
+undefined. A computed score of ``0.0`` remains a valid result.
 
 The conditions for a defined value are:
 
@@ -103,7 +97,7 @@ The conditions for a defined value are:
    :header-rows: 1
 
    * - Index
-     - ``is_defined`` is ``True`` when
+     - The score is defined when
    * - ``CH``
      - There are at least two clusters and within-cluster sum of squares is positive.
    * - ``CONN``
@@ -127,14 +121,15 @@ The checks use exact zero comparisons. No small value is added to a
 denominator, so a very small nonzero denominator remains part of the metric's
 result.
 
-For example, check the property before consuming a streaming score:
+For example, exclude undefined values when consuming a streaming score:
 
 .. code-block:: python
 
    import cvi
+   import numpy as np
 
    index = cvi.CH()
    for sample, label in zip(samples, labels):
        value = index.get_cvi(sample, label)
-       if index.is_defined:
+       if not np.isnan(value):
            print(value)

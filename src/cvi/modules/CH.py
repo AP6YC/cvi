@@ -191,16 +191,12 @@ class CH(_base.CVI):
         Criterion value evaluation method for the Calinski-Harabasz (CH) CVI.
         """
 
-        self._is_defined = False
-
         if self._n_clusters > 1:
             # Within group sum of scatters
             self._WGSS = sum(self._CP)
             # Between groups sum of scatters
             self._BGSS = sum(self._SEP)
-            self._is_defined = bool(self._WGSS > 0.0)
-
-            if self._is_defined:
+            if self._WGSS > 0.0:
                 # CH index value
                 self.criterion_value = (
                     (self._BGSS / self._WGSS)

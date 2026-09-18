@@ -231,16 +231,12 @@ class DB(_base.CVI):
         Criterion value evaluation method for the Davies-Bouldin (DB) CVI.
         """
 
-        self._is_defined = False
-
         if self._n_clusters > 1:
             self._R = np.zeros((self._n_clusters, self._n_clusters))
             separations = self._D[
                 np.triu_indices(self._n_clusters, k=1)
             ]
-            self._is_defined = bool(np.all(separations > 0.0))
-
-            if self._is_defined:
+            if np.all(separations > 0.0):
                 for ix in range(self._n_clusters - 1):
                     for jx in range(ix + 1, self._n_clusters):
                         self._R[jx, ix] = (

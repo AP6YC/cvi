@@ -30,7 +30,6 @@ def test_batch_zero_dispersion_returns_nan(cvi_type, samples, labels):
     """Zero dispersion warns and returns NaN."""
 
     local_cvi = cvi_type()
-    assert local_cvi.is_defined is False
 
     message = f"{cvi_type.__name__} is undefined for the supplied batch"
     with pytest.warns(RuntimeWarning, match=message):
@@ -39,7 +38,6 @@ def test_batch_zero_dispersion_returns_nan(cvi_type, samples, labels):
     assert np.isnan(result)
     assert np.isnan(local_cvi.criterion_value)
     assert local_cvi._intra == 0.0
-    assert local_cvi.is_defined is False
 
 
 @pytest.mark.parametrize("cvi_type", GENERALIZED_DUNN_INDICES)
@@ -48,7 +46,6 @@ def test_incremental_zero_dispersion_returns_nan(cvi_type):
 
     local_cvi = cvi_type()
     assert np.isnan(local_cvi.get_cvi(np.asarray([0.0]), 10))
-    assert local_cvi.is_defined is False
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
@@ -56,21 +53,19 @@ def test_incremental_zero_dispersion_returns_nan(cvi_type):
 
     assert np.isnan(result)
     assert local_cvi._intra == 0.0
-    assert local_cvi.is_defined is False
 
-    local_cvi.get_cvi(np.asarray([1.0]), 10)
-    assert local_cvi.is_defined is True
+    result = local_cvi.get_cvi(np.asarray([1.0]), 10)
+    assert np.isfinite(result)
 
 
 @pytest.mark.parametrize("cvi_type", GENERALIZED_DUNN_INDICES)
 def test_remove_to_zero_dispersion_returns_nan(cvi_type):
-    """The property updates when an operation makes the index undefined."""
+    """An operation returns NaN when it makes the index undefined."""
 
     samples = np.asarray([[0.0], [1.0], [3.0]])
     labels = np.asarray([10, 10, 20])
     local_cvi = cvi_type()
-    local_cvi.get_cvi(samples, labels)
-    assert local_cvi.is_defined is True
+    assert np.isfinite(local_cvi.get_cvi(samples, labels))
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
@@ -78,7 +73,6 @@ def test_remove_to_zero_dispersion_returns_nan(cvi_type):
 
     assert np.isnan(result)
     assert local_cvi._intra == 0.0
-    assert local_cvi.is_defined is False
 
 
 @pytest.mark.parametrize(
@@ -102,13 +96,3 @@ def test_zero_score_can_be_defined(cvi_type, samples, labels):
     local_cvi = cvi_type()
     assert local_cvi.get_cvi(samples, labels) == 0.0
     assert local_cvi._intra > 0.0
-    assert local_cvi.is_defined is True
-
-
-@pytest.mark.parametrize("cvi_type", GENERALIZED_DUNN_INDICES)
-def test_is_defined_is_read_only(cvi_type):
-    """Callers can inspect but cannot overwrite evaluation status."""
-
-    local_cvi = cvi_type()
-    with pytest.raises(AttributeError):
-        local_cvi.is_defined = True

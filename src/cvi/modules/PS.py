@@ -268,8 +268,6 @@ class PS(_base.CVI):
         Criterion value evaluation method for the Partition Separation (PS) CVI.
         """
 
-        self._is_defined = False
-
         if self._n_clusters > 1:
             self._v_bar = np.mean(self._v, axis=0)
             self._beta_t = 0.0
@@ -278,9 +276,7 @@ class PS(_base.CVI):
                 delta_v = self._v[ix, :] - self._v_bar
                 self._beta_t = self._beta_t + np.inner(delta_v, delta_v)
             self._beta_t /= self._n_clusters
-            self._is_defined = bool(self._beta_t > 0.0)
-
-            if self._is_defined:
+            if self._beta_t > 0.0:
                 n_max = max(self._n)
                 for ix in range(self._n_clusters):
                     d = self._D[ix, :]

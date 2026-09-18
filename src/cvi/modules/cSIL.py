@@ -360,11 +360,9 @@ class cSIL(_base.CVI):
         Criterion value evaluation method for the Centroid-based Silhouette (cSIL) CVI.
         """
 
-        self._is_defined = False
         self._sil_coefs = np.zeros(self._n_clusters)
 
         if self._n_clusters > 1:
-            self._is_defined = True
             for ix in range(self._n_clusters):
                 # Same cluster
                 a = self._S[ix, ix]
