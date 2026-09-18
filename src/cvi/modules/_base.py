@@ -103,6 +103,7 @@ class CVI():
     _supports_remove_merge: ClassVar[bool] = False
     _uses_compactness_stats: ClassVar[bool] = False
     _supports_numba: ClassVar[bool] = False
+    _supports_jax: ClassVar[bool] = False
 
     def __init__(self, *, backend="numpy"):
         """
@@ -110,7 +111,7 @@ class CVI():
 
         Parameters
         ----------
-        backend : {"numpy", "numba"}, default="numpy"
+        backend : {"numpy", "numba", "jax"}, default="numpy"
             Numerical implementation. Numba is optional and must be supported
             by the concrete index. The choice remains fixed through resets.
         """
@@ -118,6 +119,10 @@ class CVI():
         if backend == "numba" and not self._supports_numba:
             raise NotImplementedError(
                 f"{type(self).__name__} does not support the numba backend"
+            )
+        if backend == "jax" and not self._supports_jax:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not support the jax backend"
             )
         self._backend = get_backend(backend)
         self._label_map = LabelMap()
@@ -223,6 +228,9 @@ class CVI():
 
     def _require_operations(self):
         """Validate that structural operations are supported and available."""
+
+        if self.backend == "jax":
+            raise NotImplementedError("The jax backend currently supports batch only")
 
         if not self._supports_remove_merge:
             raise NotImplementedError(
@@ -505,7 +513,8 @@ class CVI():
         incremental update, or a two-dimensional batch and label vector for
         batch initialization. The object is mutated in both modes. A batch may
         be followed by incremental updates, but a second batch is not
-        supported.
+        supported. The optional JAX backend currently supports batch
+        initialization only; it rejects incremental updates, remove, and merge.
 
         Parameters
         ----------
@@ -526,6 +535,20 @@ class CVI():
             changes after initialization, batch labels contain fewer than two
             distinct values, or a second batch update is requested.
         """
+
+        if self.backend == "jax":
+            if data.ndim == 1:
+                raise NotImplementedError(
+                    "The jax backend currently supports batch only"
+                )
+            if self._is_setup:
+                raise ValueError("Repeated batch updates are not supported")
+            mapping, state = self._backend.initialize(data, label, self.info.name_short)
+            label_map = LabelMap()
+            label_map.map = mapping
+            self.__dict__.update(state)
+            self._label_map = label_map
+            return self.criterion_value
 
         # If we got 1D data, do a quick update
         if (data.ndim == 1):

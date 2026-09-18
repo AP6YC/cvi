@@ -35,6 +35,7 @@ class XB(_base.CVI):
         optimality="min"
     )
     _supports_numba = True
+    _supports_jax = True
     _supports_remove_merge = True
     _uses_compactness_stats = True
 
@@ -44,8 +45,9 @@ class XB(_base.CVI):
 
         Parameters
         ----------
-        backend : {"numpy", "numba"}, default="numpy"
-            Select the numerical backend. Numba is loaded on demand.
+        backend : {"numpy", "numba", "jax"}, default="numpy"
+            Select the numerical backend. Optional backends load on demand.
+            JAX currently supports batch initialization only and requires x64.
         """
 
         # Run the base initialization

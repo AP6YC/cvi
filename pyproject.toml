@@ -116,6 +116,9 @@ dependencies = [ # Optional
 # Similar to `dependencies` above, these must be valid existing
 # projects.
 [project.optional-dependencies] # Optional
+jax = [
+  "jax>=0.4.26",
+]
 numba = [
   "numba>=0.60",
 ]

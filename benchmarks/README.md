@@ -123,5 +123,58 @@ Numba kernels use `fastmath=False` and serial loops. Grouping is a stable
 counting pass; compactness and distances avoid large intermediate arrays. NumPy
 still computes means and raw moments to preserve input-dtype reduction behavior.
 For unsupported array types, the affected operation uses the NumPy reference.
-No performance thresholds are imposed by the test suite. JAX remains a separate
-implementation step.
+No performance thresholds are imposed by the test suite.
+
+## JAX batch support
+
+The first JAX implementation covers CH, WB, and XB batch initialization. Install
+with `python -m pip install -e ".[jax]"` and enable x64 explicitly:
+
+```sh
+JAX_ENABLE_X64=1 python -m benchmarks.benchmark_jax --samples 2000 --clusters 24 --features 8 --repeats 7
+JAX_ENABLE_X64=1 python -m benchmarks.benchmark_jax --samples 20000 --clusters 64 --features 16 --repeats 7
+```
+
+Measured on the local macOS arm64 CPU with JAX/jaxlib 0.11.2, Python 3.14.7,
+and NumPy 2.5.2. Warm columns are medians of seven synchronized calls, in ms:
+
+| Index | N / K / d | Functional, resident | Functional, host input | JAX object | NumPy object |
+| --- | --- | ---: | ---: | ---: | ---: |
+| CH | 2000 / 24 / 8 | 0.046 | 0.040 | 0.476 | 0.647 |
+| WB | 2000 / 24 / 8 | 0.049 | 0.051 | 0.438 | 0.633 |
+| XB | 2000 / 24 / 8 | 0.056 | 0.060 | 0.449 | 0.709 |
+| CH | 20000 / 64 / 16 | 0.352 | 0.383 | 2.982 | 6.040 |
+| WB | 20000 / 64 / 16 | 0.376 | 0.375 | 2.943 | 6.035 |
+| XB | 20000 / 64 / 16 | 0.335 | 0.327 | 2.991 | 6.332 |
+
+The first functional call took approximately 40–68 ms including compilation,
+but excluding imports and initial device placement. Those are single first-call
+measurements, not medians. Each workload command ran in a fresh process. CPU
+timings do not establish GPU performance; differences of a few microseconds
+between host and resident inputs are measurement noise.
+
+The functional resident timing includes computing statistics and the score,
+with inputs already on the device and `block_until_ready()` on every result.
+Host-input timings pass NumPy arrays to the compiled function. The functional
+path returns a JAX scalar and allows compiler optimization across the complete
+calculation. The object paths also construct an object and retain its summary
+state; the JAX object additionally encodes external labels and preserves NumPy's
+mean reductions on the host, then copies the JAX results back. These are distinct
+interfaces, not interchangeable performance claims. The object adapter is useful
+for compatibility; the functional interface is intended for JAX applications.
+
+For the object-only comparison, including a fresh-process first batch with an
+empty compilation cache, use:
+
+```sh
+JAX_ENABLE_X64=1 python -m benchmarks.benchmark_kernels --backend jax --compare-backend numpy --cold
+```
+
+This defaults to supported batch indices and rejects unsupported operations.
+`cvi.jax.batch_state` and `evaluate` can reuse an immutable device-resident
+summary for several supported indices. They require dense labels and static
+cluster counts under JIT. Neither functional nor object APIs currently implement
+JAX streaming, remove, or merge. The regression suite checks NumPy equivalence,
+degenerate scores, float32 compatibility, large offsets, `jit`, `vmap`, gradients,
+dependency isolation, and failure atomicity. No global JAX settings are modified
+by library imports or constructors.

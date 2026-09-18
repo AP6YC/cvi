@@ -74,9 +74,10 @@ def measure(cvi_type, mode, data, labels, repeats):
 
 
 def cold_batch(name, args):
-    """Measure the first batch in a new process with an empty Numba cache."""
+    """Measure the first batch in a new process with empty compiler caches."""
     with tempfile.TemporaryDirectory(prefix="cvi-numba-benchmark-") as cache:
-        environment = dict(os.environ, NUMBA_CACHE_DIR=cache)
+        environment = dict(os.environ, NUMBA_CACHE_DIR=cache,
+                           JAX_COMPILATION_CACHE_DIR=cache)
         environment.pop("NUMBA_DISABLE_JIT", None)
         result = subprocess.run(
             [sys.executable, "-m", "benchmarks.benchmark_kernels",
@@ -91,9 +92,9 @@ def cold_batch(name, args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", type=Path)
-    parser.add_argument("--backend", choices=("numpy", "numba"), default="numpy")
-    parser.add_argument("--compare-backend", choices=("numpy", "numba"))
-    parser.add_argument("--indices", nargs="+", choices=INDICES, default=INDICES)
+    parser.add_argument("--backend", choices=("numpy", "numba", "jax"), default="numpy")
+    parser.add_argument("--compare-backend", choices=("numpy", "numba", "jax"))
+    parser.add_argument("--indices", nargs="+", choices=INDICES)
     parser.add_argument("--cold", action="store_true",
                         help="Also measure uncached first-batch latency")
     parser.add_argument("--cold-worker", choices=INDICES, help=argparse.SUPPRESS)
@@ -101,8 +102,14 @@ def main():
     parser.add_argument("--clusters", type=int, default=24)
     parser.add_argument("--features", type=int, default=8)
     parser.add_argument("--repeats", type=int, default=5)
-    parser.add_argument("--modes", nargs="+", choices=MODES, default=MODES)
+    parser.add_argument("--modes", nargs="+", choices=MODES)
     args = parser.parse_args()
+    uses_jax = "jax" in (args.backend, args.compare_backend)
+    args.indices = args.indices or (("CH", "WB", "XB") if uses_jax else INDICES)
+    args.modes = args.modes or (("batch",) if uses_jax else MODES)
+    if uses_jax and (set(args.indices) - {"CH", "WB", "XB"}
+                     or set(args.modes) != {"batch"}):
+        parser.error("JAX currently supports batch CH, WB, and XB only")
     if args.baseline and args.compare_backend:
         parser.error("Choose either --baseline or --compare-backend")
     if (args.clusters < 2 or args.samples < 2 * args.clusters

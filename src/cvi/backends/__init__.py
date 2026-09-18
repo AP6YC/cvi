@@ -18,4 +18,15 @@ def get_backend(name):
                 'install it with pip install "cvi[numba]".'
             ) from error
         return NumbaBackend()
-    raise ValueError("backend must be 'numpy' or 'numba'")
+    if name == "jax":
+        try:
+            from .jax import JaxBackend
+        except ModuleNotFoundError as error:
+            if error.name not in ("jax", "jaxlib"):
+                raise
+            raise ImportError(
+                "The jax backend requires the optional dependency; "
+                'install it with pip install "cvi[jax]".'
+            ) from error
+        return JaxBackend()
+    raise ValueError("backend must be 'numpy', 'numba', or 'jax'")

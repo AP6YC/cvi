@@ -82,6 +82,65 @@ selected; CONN's existing ART dependency can independently install and use it.
 Selecting Numba without the dependency installed raises an installation hint
 rather than silently selecting another backend.
 
+JAX batch evaluation
+--------------------
+
+Install ``cvi[jax]`` or, from a checkout, ``python -m pip install -e ".[jax]"``.
+The initial JAX implementation supports batch CH, WB, and XB:
+
+.. code-block:: python
+
+   import jax
+
+   jax.config.update("jax_enable_x64", True)
+   index = cvi.XB(backend="jax")
+   value = index.get_cvi(samples, labels)
+
+Alternatively, set ``JAX_ENABLE_X64=1`` before starting Python. CVI never changes
+JAX's global configuration and reports an error if 64-bit mode is disabled.
+NumPy remains the default and does not load JAX. The class adapter accepts real
+integer/float inputs up to 64 bits and arbitrary integer labels. It validates
+the batch before changing state and retains first-seen label ordering.
+
+The adapter computes input-dtype means with NumPy to preserve existing float32
+and large-offset behavior. Compactness, separation, and scores are computed by
+JAX, then transferred back to the object's NumPy state and Python scalar result.
+This adapter synchronizes with the device; it is not intended for use inside
+``jax.jit``. Incremental updates, remove, and merge raise ``NotImplementedError``
+without mutation. Other indices do not yet support ``backend="jax"``.
+
+For device-resident calculations, use the functional interface:
+
+.. code-block:: python
+
+   from functools import partial
+   import jax.numpy as jnp
+   from cvi.jax import batch_cvi, batch_state, evaluate
+
+   x = jnp.array([[0., 0.], [1., 1.], [4., 4.], [5., 5.]])
+   dense_labels = jnp.array([0, 0, 1, 1])
+   score = jax.jit(partial(batch_cvi, n_clusters=2, index="XB"))
+   device_value = score(x, dense_labels)
+   state = batch_state(x, dense_labels, n_clusters=2)
+   ch_value = evaluate(state, index="CH")
+
+Functional labels must be dense integers in ``[0, n_clusters)`` with every
+cluster represented. Unlike the class adapter, this interface leaves
+value-dependent label validation to the caller so it can run under JAX
+transformations. Invalid partitions produce undefined scores. ``n_clusters``
+and ``index`` must be static under JIT, and new array shapes can recompile.
+``BatchState`` is an immutable pytree of counts, centroids, centered compactness,
+global mean, and sample count. It contains JAX arrays and remains on-device.
+
+The functional interface computes in float64, using shifted means to reduce
+cancellation for large offsets. Reduction order differs from NumPy and may vary
+by device; bitwise identity is not promised. It supports ``vmap`` across batches
+with compatible shapes and ``grad`` with respect to data for fixed labels where
+the score is differentiable. Degenerate NaN/inf scores retain the index formulas.
+Time JAX results with ``block_until_ready()`` and separate first-use compilation
+from warmed execution. Host transfers and small CPU workloads can outweigh the
+benefit of compilation.
+
 Streaming evaluation
 --------------------
 

@@ -115,6 +115,47 @@ Numba is imported by the numerical backend only when selected. The existing
 ART dependency may also install/use Numba independently when using CONN.
 See [backend benchmarks](benchmarks/README.md) for timings and reproduction steps.
 
+### Optional JAX batch backend
+
+Install `cvi[jax]` (or `python -m pip install -e ".[jax]"` in a checkout), then
+enable JAX's 64-bit mode explicitly:
+
+```python
+import jax
+import cvi
+
+jax.config.update("jax_enable_x64", True)
+index = cvi.XB(backend="jax")
+value = index.get_cvi(samples, labels)
+```
+
+This first JAX implementation supports **batch CH, WB, and XB**. It rejects
+incremental updates, remove, and merge before changing state. Other indices
+continue to support their existing backends. Importing CVI does not import JAX
+or change its configuration.
+
+The object interface returns a Python float and retains host-side state. It
+preserves NumPy's input-dtype mean reductions, including float32 behavior, then
+uses JAX for compactness, separation, and evaluation. For device-resident work
+and composition with `jit`, `vmap`, or `grad`, use the functional interface:
+
+```python
+from functools import partial
+from cvi.jax import batch_cvi
+
+# Dense labels must be integers 0..2, with every cluster represented.
+score = jax.jit(partial(batch_cvi, n_clusters=3, index="XB"))
+device_value = score(device_samples, dense_labels)
+```
+
+The functional API evaluates real input data in float64 and uses shifted means
+for numerical stability. `batch_state(...)` returns an immutable pytree that
+`evaluate(state, index="CH")` can reuse for another supported index. Results
+agree mathematically, with floating-point reduction differences. Cluster count
+and index name are static under JIT; new input shapes can require recompilation.
+Small CPU workloads and the compatibility object may be slower than NumPy.
+See [benchmarks](benchmarks/README.md) for synchronized timing instructions.
+
 ## Quickstart
 
 ```python
