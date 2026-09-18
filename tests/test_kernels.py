@@ -1,5 +1,7 @@
 """Regression oracles for shared statistics and centroid-distance kernels."""
 
+import warnings
+
 import numpy as np
 import pytest
 
@@ -117,11 +119,20 @@ def batch_case(case, dtype):
 def test_batch_matches_direct_sample_definitions(cvi_type, dtype, case, backend):
     data, labels = batch_case(case, dtype)
     original_data, original_labels = data.copy(), labels.copy()
-    # Undefined scores (e.g. coincident centroids) must retain NaN/inf behavior.
+    # Undefined scores (e.g. coincident centroids) are NaN and warn on batches.
     with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
         expected = reference_batch(cvi_type, data, labels)
-        actual = cvi_type(backend=backend)
-        actual.get_cvi(data, labels)
+    actual = cvi_type(backend=backend)
+    if np.isnan(expected.criterion_value):
+        with pytest.warns(
+            RuntimeWarning,
+            match=f"{cvi_type.__name__} is undefined for the supplied batch",
+        ):
+            actual.get_cvi(data, labels)
+    else:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            actual.get_cvi(data, labels)
     assert_state_equal(actual, expected)
     np.testing.assert_array_equal(data, original_data)
     np.testing.assert_array_equal(labels, original_labels)

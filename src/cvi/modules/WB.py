@@ -191,10 +191,13 @@ class WB(_base.CVI):
             self._WGSS = sum(self._CP)
             # Between groups sum of scatters
             self._BGSS = sum(self._SEP)
-            # WB index value
-            self.criterion_value = (
-                (self._WGSS / self._BGSS) * self._n_clusters
-            )
+            if self._BGSS > 0.0:
+                # WB index value
+                self.criterion_value = (
+                    (self._WGSS / self._BGSS) * self._n_clusters
+                )
+            else:
+                self.criterion_value = np.nan
         else:
             self._BGSS = 0.0
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

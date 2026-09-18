@@ -2,6 +2,7 @@
 
 import copy
 import pickle
+import warnings
 from functools import partial
 
 import numpy as np
@@ -11,6 +12,24 @@ import src.cvi as cvi
 
 
 INDICES = [cvi.CH, cvi.WB, cvi.XB]
+
+ZERO_DENOMINATOR_STREAMS = [
+    (
+        cvi.CH,
+        np.array([[0.0], [0.0], [2.0], [2.0]]),
+        np.array([0, 0, 1, 1]),
+    ),
+    (
+        cvi.WB,
+        np.array([[-1.0], [1.0], [-1.0], [1.0]]),
+        np.array([0, 0, 1, 1]),
+    ),
+    (
+        cvi.XB,
+        np.array([[-1.0], [1.0], [-1.0], [1.0]]),
+        np.array([0, 0, 1, 1]),
+    ),
+]
 
 
 def samples(case="random", dtype=np.float64):
@@ -144,10 +163,11 @@ def test_capacity_opt_in_and_empty_chunks(jax_runtime):
         obj.stream_state = None
     assert obj.update_many(np.empty((0, 2)), np.array([], dtype=int)).size == 0
     assert obj.stream_state is None
-    assert obj.get_cvi(np.array([1., 2.]), 77) == 0
-    assert obj.update_many(np.empty((0, 2)), np.array([], dtype=int),
-                           return_history=False) == 0
-    assert obj.get_cvi(np.array([2., 3.]), 77) == 0
+    assert np.isnan(obj.get_cvi(np.array([1., 2.]), 77))
+    assert np.isnan(obj.update_many(
+        np.empty((0, 2)), np.array([], dtype=int), return_history=False,
+    ))
+    assert np.isnan(obj.get_cvi(np.array([2., 3.]), 77))
 
 
 @pytest.mark.parametrize("index_type", INDICES)
@@ -205,7 +225,36 @@ def test_functional_invalid_chunk_is_atomic_under_jit(jax_runtime, index):
     np.testing.assert_array_equal(result.counts, state.counts)
     result, history = scan(state, np.empty((0, 1)), np.array([], dtype=int))
     assert history.shape == (0,)
-    assert f.evaluate_stream(result, index=index) == 0
+    assert np.isnan(f.evaluate_stream(result, index=index))
+
+
+@pytest.mark.parametrize(
+    "index_type,data,slots",
+    ZERO_DENOMINATOR_STREAMS,
+    ids=["CH-zero-WGSS", "WB-zero-BGSS", "XB-zero-separation"],
+)
+def test_stream_zero_denominators_return_nan_and_incremental_is_silent(
+    jax_runtime, index_type, data, slots,
+):
+    jax, functional = jax_runtime
+    name = index_type.info.name_short
+    state = functional.empty_stream(
+        capacity=2, n_features=1, index=name,
+    )
+    update_chunk = jax.jit(partial(functional.stream_chunk, index=name))
+    state, history = update_chunk(state, data, slots)
+
+    assert np.isnan(history[-1])
+    assert np.isnan(functional.evaluate_stream(state, index=name))
+
+    actual = index_type(backend="jax", capacity=2)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        values = [actual.get_cvi(sample, int(slot))
+                  for sample, slot in zip(data, slots)]
+
+    assert np.isnan(values[-1])
+    assert np.isnan(actual.criterion_value)
 
 
 @pytest.mark.parametrize("index", ["CH", "WB", "XB"])
@@ -257,6 +306,6 @@ def test_functional_validation_and_x64(jax_runtime):
 @pytest.mark.parametrize("index_type", INDICES)
 def test_large_finite_new_cluster_has_zero_compactness(jax_runtime, index_type):
     actual = index_type(backend="jax", capacity=3)
-    assert actual.get_cvi(np.array([1e200, -1e200]), 11) == 0
+    assert np.isnan(actual.get_cvi(np.array([1e200, -1e200]), 11))
     np.testing.assert_array_equal(actual.stream_state.compactness, 0.0)
     np.testing.assert_array_equal(actual.stream_state.residuals, 0.0)

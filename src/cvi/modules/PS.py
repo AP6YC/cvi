@@ -251,14 +251,17 @@ class PS(_base.CVI):
                 delta_v = self._v[ix, :] - self._v_bar
                 self._beta_t = self._beta_t + np.inner(delta_v, delta_v)
             self._beta_t /= self._n_clusters
-            n_max = max(self._n)
-            for ix in range(self._n_clusters):
-                d = self._D[ix, :]
-                d = np.delete(d, ix)
-                self._PS_i[ix] = (
-                    (self._n[ix] / n_max)
-                    - np.exp(-np.min(d) / self._beta_t)
-                )
-            self.criterion_value = np.sum(self._PS_i)
+            if self._beta_t > 0.0:
+                n_max = max(self._n)
+                for ix in range(self._n_clusters):
+                    d = self._D[ix, :]
+                    d = np.delete(d, ix)
+                    self._PS_i[ix] = (
+                        (self._n[ix] / n_max)
+                        - np.exp(-np.min(d) / self._beta_t)
+                    )
+                self.criterion_value = np.sum(self._PS_i)
+            else:
+                self.criterion_value = np.nan
         else:
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

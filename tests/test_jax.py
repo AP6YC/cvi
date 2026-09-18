@@ -5,6 +5,7 @@ from pathlib import Path
 import pickle
 import subprocess
 import sys
+import warnings
 
 import numpy as np
 import pytest
@@ -14,6 +15,36 @@ from test_kernels import assert_state_equal, batch_case, reference_batch
 
 
 INDICES = [cvi.CH, cvi.WB, cvi.XB]
+
+ZERO_DENOMINATOR_CASES = [
+    (
+        cvi.CH,
+        np.array([[0.0], [0.0], [2.0], [2.0]]),
+        np.array([0, 0, 1, 1]),
+    ),
+    (
+        cvi.WB,
+        np.array([[-1.0], [1.0], [-1.0], [1.0]]),
+        np.array([0, 0, 1, 1]),
+    ),
+    (
+        cvi.XB,
+        np.array([[-1.0], [1.0], [-1.0], [1.0]]),
+        np.array([0, 0, 1, 1]),
+    ),
+]
+
+
+def batch_with_expected_warning(index, data, labels, expected_value):
+    if np.isnan(expected_value):
+        with pytest.warns(
+            RuntimeWarning,
+            match=f"{type(index).__name__} is undefined for the supplied batch",
+        ):
+            return index.get_cvi(data, labels)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        return index.get_cvi(data, labels)
 
 
 @pytest.mark.parametrize("index_type", INDICES)
@@ -26,8 +57,10 @@ def test_jax_object_matches_reference_state(jax_runtime, index_type, dtype, case
     before_data, before_labels = data.copy(), labels.copy()
     with np.errstate(divide="ignore", invalid="ignore"):
         expected = reference_batch(index_type, data, labels)
-        actual = index_type(backend="jax")
-        value = actual.get_cvi(data, labels)
+    actual = index_type(backend="jax")
+    value = batch_with_expected_warning(
+        actual, data, labels, expected.criterion_value,
+    )
     assert isinstance(value, float)
     assert actual.backend == "jax"
     assert_state_equal(actual, expected)
@@ -163,7 +196,10 @@ def test_functional_undefined_scores_and_invalid_dense_partitions(jax_runtime, i
     data = np.ones((4, 2))
     labels = np.array([0, 0, 1, 1])
     with np.errstate(divide="ignore", invalid="ignore"):
-        expected = getattr(cvi, index)().get_cvi(data, labels)
+        expected_index = getattr(cvi, index)()
+        expected = batch_with_expected_warning(
+            expected_index, data, labels, np.nan,
+        )
     np.testing.assert_allclose(
         functional.batch_cvi(data, labels, n_clusters=2, index=index),
         expected, equal_nan=True,
@@ -171,6 +207,62 @@ def test_functional_undefined_scores_and_invalid_dense_partitions(jax_runtime, i
     for invalid in (np.array([0, 0, 0, 0]), np.array([0, 0, 1, 3]),
                     np.array([-1, 0, 1, 1])):
         assert np.isnan(functional.batch_cvi(data, invalid, n_clusters=2, index=index))
+
+
+@pytest.mark.parametrize(
+    "index_type,data,labels",
+    ZERO_DENOMINATOR_CASES,
+    ids=["CH-zero-WGSS", "WB-zero-BGSS", "XB-zero-separation"],
+)
+def test_jax_batch_zero_denominators_return_nan_and_warn(
+    jax_runtime, index_type, data, labels,
+):
+    _, functional = jax_runtime
+    actual = index_type(backend="jax")
+    result = batch_with_expected_warning(actual, data, labels, np.nan)
+
+    assert np.isnan(result)
+    assert np.isnan(actual.criterion_value)
+    assert np.isnan(functional.batch_cvi(
+        data, labels, n_clusters=2, index=index_type.info.name_short,
+    ))
+
+
+@pytest.mark.parametrize(
+    "index_type,data,labels",
+    [
+        (
+            cvi.CH,
+            np.array([[-1.0], [1.0], [-1.0], [1.0]]),
+            np.array([0, 0, 1, 1]),
+        ),
+        (
+            cvi.WB,
+            np.array([[0.0], [0.0], [2.0], [2.0]]),
+            np.array([0, 0, 1, 1]),
+        ),
+        (
+            cvi.XB,
+            np.array([[0.0], [0.0], [2.0], [2.0]]),
+            np.array([0, 0, 1, 1]),
+        ),
+    ],
+    ids=["CH-valid-zero", "WB-valid-zero", "XB-valid-zero"],
+)
+def test_jax_batch_valid_zero_remains_defined(
+    jax_runtime, index_type, data, labels,
+):
+    _, functional = jax_runtime
+    actual = index_type(backend="jax")
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        result = actual.get_cvi(data, labels)
+    functional_result = functional.batch_cvi(
+        data, labels, n_clusters=2, index=index_type.info.name_short,
+    )
+
+    assert result == 0.0
+    assert float(functional_result) == 0.0
 
 
 def test_functional_shape_dtype_and_static_argument_errors(jax_runtime):
@@ -214,7 +306,8 @@ def test_functional_large_offset_and_singleton_partitions(jax_runtime, index):
     )
     singletons = np.arange(4)
     with np.errstate(divide="ignore", invalid="ignore"):
-        expected = getattr(cvi, index)().get_cvi(data[:4], singletons)
+        expected_index = reference_batch(getattr(cvi, index), data[:4], singletons)
+    expected = expected_index.criterion_value
     np.testing.assert_allclose(
         functional.batch_cvi(data[:4], singletons, n_clusters=4, index=index),
         expected, equal_nan=True,

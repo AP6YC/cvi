@@ -92,6 +92,52 @@ separation, while ``rCIP`` uses distributional information. ``CONN`` is the
 specialized choice when connectivity between learned prototypes is important;
 see :doc:`conn` before using it.
 
-The value ``0.0`` is used when an index is not yet defined, including many
-one-cluster states. When monitoring a stream, consider the trajectory only
-after enough clusters and samples have been observed.
+The value ``numpy.nan`` is used when an index is not yet defined, including
+many one-cluster states. When monitoring a stream, consider the trajectory
+only after enough clusters and samples have been observed. An undefined batch
+evaluation also emits a ``RuntimeWarning``; incremental startup and structural
+operations remain silent. Use ``numpy.isnan`` to test whether a result is
+undefined. A computed score of ``0.0`` remains a valid result.
+
+The conditions for a defined value are:
+
+.. list-table:: Definition conditions
+   :header-rows: 1
+
+   * - Index
+     - The score is defined when
+   * - ``CH``
+     - There are at least two clusters and within-cluster sum of squares is positive.
+   * - ``CONN``
+     - At least two prototypes or ART categories have been learned.
+   * - ``cSIL``
+     - There are at least two clusters. A local term with equal zero compactness and separation contributes ``0.0``.
+   * - ``DB``
+     - There are at least two clusters and every pair of centroids has positive separation.
+   * - ``GD43`` and ``GD53``
+     - There are at least two clusters and at least one cluster has positive dispersion.
+   * - ``PS``
+     - There are at least two clusters and the cluster centroids have positive dispersion.
+   * - ``rCIP``
+     - There are at least two clusters.
+   * - ``WB``
+     - There are at least two clusters and between-cluster sum of squares is positive.
+   * - ``XB``
+     - There are at least two clusters and minimum centroid separation is positive.
+
+The checks use exact zero comparisons. No small value is added to a
+denominator, so a very small nonzero denominator remains part of the metric's
+result.
+
+For example, exclude undefined values when consuming a streaming score:
+
+.. code-block:: python
+
+   import cvi
+   import numpy as np
+
+   index = cvi.CH()
+   for sample, label in zip(samples, labels):
+       value = index.get_cvi(sample, label)
+       if not np.isnan(value):
+           print(value)

@@ -209,9 +209,12 @@ class XB(_base.CVI):
             # )
             values = self._D[np.triu_indices(dim, k=1)]
             self._SEP = np.min(values)
-            # XB index value
-            self.criterion_value = (
-                self._WGSS / (self._n_samples * self._SEP)
-            )
+            if self._SEP > 0.0:
+                # XB index value
+                self.criterion_value = (
+                    self._WGSS / (self._n_samples * self._SEP)
+                )
+            else:
+                self.criterion_value = np.nan
         else:
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

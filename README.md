@@ -291,6 +291,12 @@ and index name are static under JIT; new input shapes can require recompilation.
 Small CPU workloads and the compatibility object may be slower than NumPy.
 See [benchmarks](benchmarks/README.md) for synchronized timing instructions.
 
+Undefined CH, WB, and XB scores are `NaN` when fewer than two clusters are
+present or their denominator is exactly zero: WGSS for CH, BGSS for WB, and
+minimum centroid separation for XB. Denominators use exact zero checks, with no
+epsilon adjustment. An undefined object batch evaluation emits a
+`RuntimeWarning`; functional JAX and streaming calls return `NaN` silently.
+
 ### Fixed-capacity JAX Streaming
 
 Reserve space for the maximum number of distinct clusters to enable streaming:
