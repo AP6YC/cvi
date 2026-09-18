@@ -755,7 +755,7 @@ class CONN(_base.CVI):
             self._n_samples += 1
             self._sync_base_cluster_count()
 
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan
             return
 
         # Second sample:
@@ -832,7 +832,7 @@ class CONN(_base.CVI):
         self._CP = []
         self._G = np.zeros([0, self._dim])
         self._n_clusters = 0
-        self.criterion_value = 0.0
+        self.criterion_value = np.nan
         self._is_defined = False
 
         self._init_conn_state()
@@ -860,4 +860,4 @@ class CONN(_base.CVI):
         self._is_defined = bool(prototype_count > 1)
 
         if not self._is_defined:
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

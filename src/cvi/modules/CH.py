@@ -210,7 +210,7 @@ class CH(_base.CVI):
                     )
                 )
             else:
-                self.criterion_value = 0.0
+                self.criterion_value = np.nan
         else:
             self._BGSS = 0.0
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

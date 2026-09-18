@@ -380,4 +380,4 @@ class cSIL(_base.CVI):
             self.criterion_value = np.sum(self._sil_coefs) / self._n_clusters
 
         else:
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

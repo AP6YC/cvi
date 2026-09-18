@@ -84,17 +84,18 @@ separation, while ``rCIP`` uses distributional information. ``CONN`` is the
 specialized choice when connectivity between learned prototypes is important;
 see :doc:`conn` before using it.
 
-The value ``0.0`` is used when an index is not yet defined, including many
-one-cluster states. When monitoring a stream, consider the trajectory only
-after enough clusters and samples have been observed.
+The value ``numpy.nan`` is used when an index is not yet defined, including
+many one-cluster states. When monitoring a stream, consider the trajectory
+only after enough clusters and samples have been observed.
 
 Every index provides a read-only ``is_defined`` property. It is ``False``
 before evaluation and is updated after batch or incremental evaluation and
-after remove, merge, or split operations. Undefined states return ``0.0``.
+after remove, merge, or split operations. Undefined states return
+``numpy.nan``.
 An undefined batch evaluation also emits a ``RuntimeWarning``; incremental
 startup and structural operations remain silent. A computed score of ``0.0``
-can still have ``is_defined == True``; the score alone does not identify an
-undefined state.
+can still have ``is_defined == True``. Use the property when an explicit
+status check is clearer than testing the value with ``numpy.isnan``.
 
 The conditions for a defined value are:
 

@@ -291,6 +291,6 @@ class PS(_base.CVI):
                     )
                 self.criterion_value = np.sum(self._PS_i)
             else:
-                self.criterion_value = 0.0
+                self.criterion_value = np.nan
         else:
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

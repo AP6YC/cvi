@@ -71,8 +71,8 @@ Keep the following rules in mind:
    They need not be consecutive or start at zero.
 * Batch initialization requires at least two distinct labels, and a second
   batch call on the same object is rejected.
-* Criterion values are ``0.0`` while an index is not defined, such as before enough clusters have been observed.
-   Check the read-only ``is_defined`` property rather than interpreting that sentinel as an optimal clustering result; a valid score may also be zero.
+* Criterion values are ``numpy.nan`` while an index is not defined, such as before enough clusters have been observed.
+   Check the read-only ``is_defined`` property before consuming a result; a valid score may be zero.
    An undefined batch evaluation emits a ``RuntimeWarning``; incremental updates remain silent while an index is not yet defined.
 * Use a fresh instance when comparing independent datasets or partitions.
 

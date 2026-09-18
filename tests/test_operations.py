@@ -73,6 +73,7 @@ def assert_equivalent(actual, expected):
         expected.criterion_value,
         rtol=1e-7,
         atol=1e-10,
+        equal_nan=True,
     )
 
     for attribute in ("_CP", "_G", "_D", "_S", "_SEP", "_sigma"):
@@ -122,7 +123,10 @@ def assert_snapshot(local_cvi, snapshot):
     assert local_cvi.is_defined is snapshot["is_defined"]
     np.testing.assert_array_equal(np.asarray(local_cvi._n), snapshot["n"])
     np.testing.assert_array_equal(local_cvi._v, snapshot["v"])
-    assert local_cvi.criterion_value == snapshot["criterion_value"]
+    np.testing.assert_equal(
+        local_cvi.criterion_value,
+        snapshot["criterion_value"],
+    )
 
     for attribute, expected in snapshot["statistics"].items():
         actual = getattr(local_cvi, attribute)
@@ -290,13 +294,13 @@ def test_add_then_remove_restores_state(cvi_type):
 
 @pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_merge_to_single_cluster(cvi_type):
-    """Merging the final two clusters leaves the CVI undefined at zero."""
+    """Merging the final two clusters leaves the CVI undefined."""
 
     samples = SAMPLES[:6]
     labels = LABELS[:6]
     actual = build_incrementally(cvi_type, samples, labels)
     assert actual.is_defined is True
-    actual.merge(target_label=20, source_label=10)
+    result = actual.merge(target_label=20, source_label=10)
 
     expected = build_incrementally(
         cvi_type,
@@ -305,7 +309,8 @@ def test_merge_to_single_cluster(cvi_type):
     )
 
     assert_equivalent(actual, expected)
-    assert actual.criterion_value == 0.0
+    assert np.isnan(result)
+    assert np.isnan(actual.criterion_value)
     assert actual.is_defined is False
 
 
@@ -318,7 +323,7 @@ def test_remove_to_single_cluster_updates_definition_status(cvi_type):
     local_cvi = build_incrementally(cvi_type, samples, labels)
     assert local_cvi.is_defined is True
 
-    assert local_cvi.remove(np.asarray([3.0]), 20) == 0.0
+    assert np.isnan(local_cvi.remove(np.asarray([3.0]), 20))
     assert local_cvi.is_defined is False
 
 
@@ -370,13 +375,14 @@ def test_removing_final_sample_resets_object(cvi_type):
         samples=np.asarray([[0.25, 0.75]]),
         labels=np.asarray([42]),
     )
-    local_cvi.remove(np.asarray([0.25, 0.75]), 42)
+    result = local_cvi.remove(np.asarray([0.25, 0.75]), 42)
 
     assert local_cvi._n_samples == 0
     assert local_cvi._n_clusters == 0
     assert local_cvi._label_map.map == {}
     assert local_cvi._is_setup is False
-    assert local_cvi.criterion_value == 0.0
+    assert np.isnan(result)
+    assert np.isnan(local_cvi.criterion_value)
     assert local_cvi.is_defined is False
 
     local_cvi.get_cvi(np.asarray([0.1, 0.2]), 42)

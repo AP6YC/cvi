@@ -114,7 +114,7 @@ class CVI():
         self._CP = []                # dim
         self._G = np.zeros([0, 0])   # n_clusters x dim
         self._n_clusters = 0
-        self.criterion_value = 0.0
+        self.criterion_value = np.nan
         self._is_defined = False
         self._is_setup = False
 
@@ -122,8 +122,8 @@ class CVI():
     def is_defined(self) -> bool:
         """Whether the latest criterion value is defined.
 
-        Undefined states return ``0.0`` as a sentinel. A criterion value of
-        ``0.0`` can still be defined, so callers should inspect this property
+        Undefined states return ``numpy.nan``. A criterion value of ``0.0``
+        can still be defined, so callers should inspect this property
         when consuming values during initialization or after structural
         updates.
         """
@@ -404,7 +404,7 @@ class CVI():
         self._CP = []
         self._G = np.zeros([0, 0])
         self._n_clusters = 0
-        self.criterion_value = 0.0
+        self.criterion_value = np.nan
         self._is_defined = False
         self._is_setup = False
 
@@ -736,7 +736,7 @@ class CVI():
         -----
         RuntimeWarning
             If the criterion is undefined after a batch evaluation. The
-            returned value is still the undefined ``0.0`` sentinel.
+            returned value is still ``numpy.nan``.
         """
 
         # If we got 1D data, do a quick update
@@ -784,7 +784,7 @@ class CVI():
         if data.ndim == 2 and not self.is_defined:
             warnings.warn(
                 f"{type(self).__name__} is undefined for the supplied batch; "
-                "returning 0.0. Check is_defined before using the result.",
+                "returning nan. Check is_defined before using the result.",
                 RuntimeWarning,
                 stacklevel=2,
             )

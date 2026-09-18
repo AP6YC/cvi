@@ -209,7 +209,7 @@ class WB(_base.CVI):
                     (self._WGSS / self._BGSS) * self._n_clusters
                 )
             else:
-                self.criterion_value = 0.0
+                self.criterion_value = np.nan
         else:
             self._BGSS = 0.0
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

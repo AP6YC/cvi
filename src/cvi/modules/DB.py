@@ -251,6 +251,6 @@ class DB(_base.CVI):
                     np.sum(np.max(self._R, axis=0)) / self._n_clusters
                 )
             else:
-                self.criterion_value = 0.0
+                self.criterion_value = np.nan
         else:
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

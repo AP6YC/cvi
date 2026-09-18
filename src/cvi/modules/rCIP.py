@@ -432,4 +432,4 @@ class rCIP(_base.CVI):
             self.criterion_value = np.sum(values)
 
         else:
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

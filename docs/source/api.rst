@@ -49,5 +49,5 @@ Evaluation status
 -----------------
 
 Every index exposes the read-only :attr:`cvi.CVI.is_defined` property to
-distinguish a computed score from the ``0.0`` fallback for undefined states.
+distinguish a computed score from the ``numpy.nan`` result for undefined states.
 An undefined batch evaluation emits a ``RuntimeWarning``.

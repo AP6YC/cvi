@@ -241,6 +241,6 @@ class GD53(_base.CVI):
             if self.is_defined:
                 self.criterion_value = self._inter / self._intra
             else:
-                self.criterion_value = 0.0
+                self.criterion_value = np.nan
         else:
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

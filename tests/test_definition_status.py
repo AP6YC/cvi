@@ -18,6 +18,7 @@ def test_is_defined_starts_false_and_is_read_only(cvi_type):
     local_cvi = cvi_type()
 
     assert local_cvi.is_defined is False
+    assert np.isnan(local_cvi.criterion_value)
     with pytest.raises(AttributeError):
         local_cvi.is_defined = True
 
@@ -28,10 +29,10 @@ def test_incremental_status_becomes_true_when_formula_is_defined(cvi_type):
 
     local_cvi = cvi_type()
 
-    assert local_cvi.get_cvi(np.asarray([0.0]), 10) == 0.0
+    assert np.isnan(local_cvi.get_cvi(np.asarray([0.0]), 10))
     assert local_cvi.is_defined is False
 
-    assert local_cvi.get_cvi(np.asarray([1.0]), 10) == 0.0
+    assert np.isnan(local_cvi.get_cvi(np.asarray([1.0]), 10))
     assert local_cvi.is_defined is False
 
     with warnings.catch_warnings():
@@ -82,12 +83,12 @@ def test_incremental_status_becomes_true_when_formula_is_defined(cvi_type):
     ],
     ids=["CH", "WB", "DB", "XB", "GD43", "GD53", "PS"],
 )
-def test_undefined_batch_returns_sentinel_with_warning(
+def test_undefined_batch_returns_nan_with_warning(
     cvi_type,
     samples,
     labels,
 ):
-    """Formula-specific undefined batches warn and use the sentinel."""
+    """Formula-specific undefined batches warn and return NaN."""
 
     local_cvi = cvi_type()
 
@@ -95,8 +96,8 @@ def test_undefined_batch_returns_sentinel_with_warning(
     with pytest.warns(RuntimeWarning, match=message):
         result = local_cvi.get_cvi(samples, labels)
 
-    assert result == 0.0
-    assert local_cvi.criterion_value == 0.0
+    assert np.isnan(result)
+    assert np.isnan(local_cvi.criterion_value)
     assert local_cvi.is_defined is False
 
 
@@ -137,7 +138,7 @@ def test_undefined_batch_returns_sentinel_with_warning(
     ids=["CH", "WB", "DB", "XB", "GD43", "GD53"],
 )
 def test_computed_zero_can_be_defined(cvi_type, samples, labels):
-    """The status property distinguishes a valid zero from the sentinel."""
+    """The status property distinguishes a valid zero from undefined NaN."""
 
     local_cvi = cvi_type()
 
@@ -185,7 +186,7 @@ def test_conn_becomes_defined_after_second_art_category():
 
     local_cvi = cvi.CONN(model_type="Fuzzy", normalize_batch=False)
 
-    assert local_cvi.get_cvi(np.asarray([0.0]), 10) == 0.0
+    assert np.isnan(local_cvi.get_cvi(np.asarray([0.0]), 10))
     assert local_cvi.is_defined is False
 
     local_cvi.get_cvi(np.asarray([1.0]), 20)

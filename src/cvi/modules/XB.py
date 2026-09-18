@@ -242,6 +242,6 @@ class XB(_base.CVI):
                     self._WGSS / (self._n_samples * self._SEP)
                 )
             else:
-                self.criterion_value = 0.0
+                self.criterion_value = np.nan
         else:
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

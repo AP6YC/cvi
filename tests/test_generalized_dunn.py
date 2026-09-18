@@ -26,8 +26,8 @@ GENERALIZED_DUNN_INDICES = [cvi.GD43, cvi.GD53]
     ],
     ids=["singleton-clusters", "identical-members"],
 )
-def test_batch_zero_dispersion_returns_default(cvi_type, samples, labels):
-    """Zero dispersion warns and returns the undefined fallback."""
+def test_batch_zero_dispersion_returns_nan(cvi_type, samples, labels):
+    """Zero dispersion warns and returns NaN."""
 
     local_cvi = cvi_type()
     assert local_cvi.is_defined is False
@@ -36,25 +36,25 @@ def test_batch_zero_dispersion_returns_default(cvi_type, samples, labels):
     with pytest.warns(RuntimeWarning, match=message):
         result = local_cvi.get_cvi(samples, labels)
 
-    assert result == 0.0
-    assert local_cvi.criterion_value == 0.0
+    assert np.isnan(result)
+    assert np.isnan(local_cvi.criterion_value)
     assert local_cvi._intra == 0.0
     assert local_cvi.is_defined is False
 
 
 @pytest.mark.parametrize("cvi_type", GENERALIZED_DUNN_INDICES)
-def test_incremental_zero_dispersion_returns_default(cvi_type):
+def test_incremental_zero_dispersion_returns_nan(cvi_type):
     """Singleton clusters remain quietly undefined until dispersion exists."""
 
     local_cvi = cvi_type()
-    assert local_cvi.get_cvi(np.asarray([0.0]), 10) == 0.0
+    assert np.isnan(local_cvi.get_cvi(np.asarray([0.0]), 10))
     assert local_cvi.is_defined is False
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         result = local_cvi.get_cvi(np.asarray([2.0]), 20)
 
-    assert result == 0.0
+    assert np.isnan(result)
     assert local_cvi._intra == 0.0
     assert local_cvi.is_defined is False
 
@@ -63,7 +63,7 @@ def test_incremental_zero_dispersion_returns_default(cvi_type):
 
 
 @pytest.mark.parametrize("cvi_type", GENERALIZED_DUNN_INDICES)
-def test_remove_to_zero_dispersion_returns_default(cvi_type):
+def test_remove_to_zero_dispersion_returns_nan(cvi_type):
     """The property updates when an operation makes the index undefined."""
 
     samples = np.asarray([[0.0], [1.0], [3.0]])
@@ -76,7 +76,7 @@ def test_remove_to_zero_dispersion_returns_default(cvi_type):
         warnings.simplefilter("error")
         result = local_cvi.remove(np.asarray([1.0]), 10)
 
-    assert result == 0.0
+    assert np.isnan(result)
     assert local_cvi._intra == 0.0
     assert local_cvi.is_defined is False
 
@@ -97,7 +97,7 @@ def test_remove_to_zero_dispersion_returns_default(cvi_type):
     ],
 )
 def test_zero_score_can_be_defined(cvi_type, samples, labels):
-    """A computed zero is distinguishable from the zero fallback."""
+    """A computed zero is distinguishable from undefined NaN."""
 
     local_cvi = cvi_type()
     assert local_cvi.get_cvi(samples, labels) == 0.0
