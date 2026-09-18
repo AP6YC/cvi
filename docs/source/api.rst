@@ -35,7 +35,7 @@ Common methods
 --------------
 
 All indices inherit the common update interface from :class:`cvi.CVI`.
-``CONN`` does not currently implement ``remove`` or ``merge``.
+``CONN`` does not currently implement ``remove``, ``merge``, or ``split``.
 
 .. autosummary::
 
@@ -43,6 +43,7 @@ All indices inherit the common update interface from :class:`cvi.CVI`.
    cvi.CVI.update_many
    cvi.CVI.remove
    cvi.CVI.merge
+   cvi.CVI.split
 
 Functional JAX batch interface
 ------------------------------

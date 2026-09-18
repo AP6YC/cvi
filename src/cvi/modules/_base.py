@@ -8,6 +8,7 @@ Utilities that are common across all CVI objects.
 # Standard library imports
 from typing import (
     Callable,
+    Optional,
     Union
 )
 from abc import abstractmethod
@@ -274,12 +275,12 @@ class CVI():
 
         if not self._supports_remove_merge:
             raise NotImplementedError(
-                f"{type(self).__name__} does not support remove or merge"
+                f"{type(self).__name__} does not support remove, merge, or split"
             )
 
         if not self._is_setup:
             raise ValueError(
-                "Remove and merge require an initialized CVI"
+                "Remove, merge, and split require an initialized CVI"
             )
 
     def _validate_sample(self, sample: np.ndarray) -> np.ndarray:
@@ -325,6 +326,115 @@ class CVI():
             raise ValueError(
                 "The supplied sample does not match the singleton cluster"
             )
+
+    def _validate_split_inputs(
+        self,
+        retained_label: int,
+        new_label: int,
+        count: int,
+        centroid: np.ndarray,
+        compactness: Optional[float],
+        covariance: Optional[np.ndarray],
+    ):
+        """Validate and normalize the sufficient statistics for a split."""
+
+        retained_i = self._label_map.get_existing_label(retained_label)
+
+        if new_label in self._label_map.map:
+            raise ValueError(
+                f"Split requires an unused new cluster label: {new_label}"
+            )
+
+        if isinstance(count, (bool, np.bool_)) or not isinstance(
+            count,
+            (int, np.integer),
+        ):
+            raise ValueError("Split count must be a positive integer")
+
+        count = int(count)
+        if count < 1:
+            raise ValueError("Split count must be a positive integer")
+
+        if count >= self._n[retained_i]:
+            raise ValueError(
+                "Split count must be smaller than the retained cluster count"
+            )
+
+        centroid = np.asarray(centroid, dtype=float)
+        if centroid.ndim != 1:
+            raise ValueError("Split centroid must be one-dimensional")
+
+        if centroid.shape[0] != self._dim:
+            raise ValueError(
+                f"Expected a centroid with {self._dim} features, "
+                f"received {centroid.shape[0]}"
+            )
+
+        if not np.all(np.isfinite(centroid)):
+            raise ValueError("Split centroid must contain finite values")
+
+        if compactness is not None:
+            compactness_array = np.asarray(compactness, dtype=float)
+            if compactness_array.ndim != 0:
+                raise ValueError("Split compactness must be a scalar")
+
+            compactness = float(compactness_array)
+            if not np.isfinite(compactness):
+                raise ValueError("Split compactness must be finite")
+
+            compactness = self._nonnegative_or_error(
+                compactness,
+                compactness,
+                "split compactness",
+            )
+
+        if covariance is not None:
+            covariance = np.asarray(covariance, dtype=float)
+            expected_shape = (self._dim, self._dim)
+            if covariance.shape != expected_shape:
+                raise ValueError(
+                    f"Expected covariance with shape {expected_shape}, "
+                    f"received {covariance.shape}"
+                )
+
+            if not np.all(np.isfinite(covariance)):
+                raise ValueError("Split covariance must contain finite values")
+
+            if not np.allclose(
+                covariance,
+                covariance.T,
+                rtol=1e-10,
+                atol=1e-12,
+            ):
+                raise ValueError("Split covariance must be symmetric")
+
+            covariance = (covariance + covariance.T) / 2
+            eigenvalues, eigenvectors = np.linalg.eigh(covariance)
+            tolerance = 1e-10 * max(
+                1.0,
+                np.linalg.norm(covariance, ord=2),
+            )
+            if np.min(eigenvalues) < -tolerance:
+                raise ValueError(
+                    "Split covariance must be positive semidefinite"
+                )
+
+            eigenvalues = np.maximum(eigenvalues, 0.0)
+            covariance = (eigenvectors * eigenvalues) @ eigenvectors.T
+
+        if count == 1:
+            if compactness is not None and compactness > 1e-10:
+                raise ValueError("Singleton split compactness must be zero")
+            compactness = 0.0
+
+            if (
+                covariance is not None
+                and np.linalg.norm(covariance, ord=2) > 1e-10
+            ):
+                raise ValueError("Singleton split covariance must be zero")
+            covariance = np.zeros((self._dim, self._dim))
+
+        return retained_i, count, centroid, compactness, covariance
 
     @staticmethod
     def _delete_vector_entry(values, index: int):
@@ -379,7 +489,7 @@ class CVI():
         self._is_setup = False
 
     def _rebuild_after_operation(self):
-        """Rebuild CVI-specific derived state after remove or merge."""
+        """Rebuild CVI-specific derived state after a structural operation."""
 
         raise NotImplementedError
 
@@ -470,6 +580,60 @@ class CVI():
         self._delete_common_cluster(source_label, source_i)
         self._rebuild_after_operation()
 
+    def _split(
+        self,
+        new_label: int,
+        retained_i: int,
+        count: int,
+        centroid: np.ndarray,
+        compactness: Optional[float],
+        covariance: Optional[np.ndarray],
+    ):
+        """Split sufficient statistics from a compactness-based CVI."""
+
+        if not self._uses_compactness_stats:
+            raise NotImplementedError
+
+        if compactness is None:
+            raise ValueError(
+                f"{type(self).__name__} split requires compactness"
+            )
+
+        n_parent = self._n[retained_i]
+        n_remainder = n_parent - count
+        v_parent = self._v[retained_i, :].copy()
+        v_remainder = (
+            n_parent * v_parent - count * centroid
+        ) / n_remainder
+        difference = centroid - v_parent
+        correction = (
+            n_parent * count / n_remainder
+        ) * np.inner(difference, difference)
+        CP_remainder = self._nonnegative_or_error(
+            self._CP[retained_i] - compactness - correction,
+            max(
+                abs(self._CP[retained_i]),
+                abs(compactness),
+                correction,
+            ),
+            "cluster compactness",
+        )
+
+        new_i = self._label_map.get_internal_label(new_label)
+        if new_i != self._n_clusters:
+            raise RuntimeError("New split label was not appended")
+
+        self._n[retained_i] = n_remainder
+        self._v[retained_i, :] = v_remainder
+        self._CP[retained_i] = CP_remainder
+        self._G[retained_i, :] = np.zeros(self._dim)
+        self._n.append(count)
+        self._v = np.vstack((self._v, centroid))
+        self._CP.append(compactness)
+        self._G = np.vstack((self._G, np.zeros(self._dim)))
+        self._n_clusters += 1
+        self._rebuild_after_operation()
+
     def remove(self, sample: np.ndarray, label: int) -> float:
         """
         Remove a sample from an initialized CVI.
@@ -542,6 +706,80 @@ class CVI():
         target_i = self._label_map.get_existing_label(target_label)
         source_i = self._label_map.get_existing_label(source_label)
         self._merge(target_label, source_label, target_i, source_i)
+        self._evaluate()
+        return self.criterion_value
+
+    def split(
+        self,
+        retained_label: int,
+        new_label: int,
+        count: int,
+        centroid: np.ndarray,
+        *,
+        compactness: Optional[float] = None,
+        covariance: Optional[np.ndarray] = None,
+    ) -> float:
+        """
+        Split a tracked subset from an existing cluster.
+
+        The existing external label is retained by the residual cluster. The
+        supplied sufficient statistics are assigned to a new cluster with
+        ``new_label``. The total sample count and global mean do not change.
+
+        Parameters
+        ----------
+        retained_label : int
+            External label of the cluster retaining the residual statistics.
+        new_label : int
+            Unused external label assigned to the split-off subset.
+        count : int
+            Number of samples in the split-off subset.
+        centroid : numpy.ndarray
+            Mean vector of the split-off subset.
+        compactness : float, optional
+            Sum of squared distances from the subset centroid. Required by
+            compactness-based indices when ``count`` is greater than one.
+        covariance : numpy.ndarray, optional
+            Unregularized unbiased sample covariance of the subset. Required
+            by rCIP when ``count`` is greater than one.
+
+        Returns
+        -------
+        float
+            The updated CVI criterion value.
+
+        Raises
+        ------
+        NotImplementedError
+            If this index does not implement cluster splitting.
+        ValueError
+            If the index is uninitialized, labels or statistics are invalid,
+            or the supplied subset is inconsistent with the retained cluster.
+        """
+
+        self._require_operations()
+        (
+            retained_i,
+            count,
+            centroid,
+            compactness,
+            covariance,
+        ) = self._validate_split_inputs(
+            retained_label,
+            new_label,
+            count,
+            centroid,
+            compactness,
+            covariance,
+        )
+        self._split(
+            new_label,
+            retained_i,
+            count,
+            centroid,
+            compactness,
+            covariance,
+        )
         self._evaluate()
         return self.criterion_value
 

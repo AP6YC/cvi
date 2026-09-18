@@ -145,7 +145,7 @@ For input rules, index-selection guidance, references, legacy API information, a
 The operation support below describes the default NumPy backend. Optional
 backend coverage is listed separately.
 
-| Index | Prefer | Range | Batch | Incremental | Remove/merge |
+| Index | Prefer | Range | Batch | Incremental | Remove/merge/split |
 |---|---|---|---|---|---|
 | `CH` | Larger | `[0, ∞)` | Yes | Yes | Yes |
 | `CONN` | Larger | `[0, 1]` | Yes | FuzzyART backend only | No |
@@ -192,6 +192,26 @@ See the [CONN guide][conn-guide] before using it.
 
 ## Optimizations
 
+Except for `CONN`, initialized indices support adding samples, removing samples, merging clusters, and splitting clusters from tracked sufficient statistics without replaying the full dataset:
+
+```python
+value = index.get_cvi(new_sample, new_label)
+value = index.remove(existing_sample, existing_label)
+value = index.merge(target_label=20, source_label=10)
+value = index.split(
+    retained_label=20,
+    new_label=30,
+    count=prototype_count,
+    centroid=prototype_centroid,
+    compactness=prototype_compactness,
+    covariance=prototype_covariance,
+)
+```
+
+These methods update the object in place and return its new criterion value.
+Removing the final sample of a cluster deletes that cluster, while `merge` retains `target_label` and deletes `source_label`.
+`split` retains `retained_label` for the residual cluster and assigns the split-off statistics to the unused `new_label`.
+The caller is responsible for ensuring that a removed sample belongs to the supplied label.
 `cvi` comes with some optimizations in the form of various backends that you can switch between for faster performance depending on your use-case.
 
 ### Optional Numba Acceleration

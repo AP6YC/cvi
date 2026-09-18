@@ -324,6 +324,79 @@ class rCIP(_base.CVI):
         self._delete_cluster(source_label, source_i)
         self._rebuild_after_operation()
 
+    def _split(
+        self,
+        new_label: int,
+        retained_i: int,
+        count: int,
+        centroid: np.ndarray,
+        compactness,
+        covariance,
+    ):
+        """Split mean and sample covariance statistics from an rCIP cluster."""
+
+        if covariance is None:
+            raise ValueError("rCIP split requires covariance")
+
+        n_parent = self._n[retained_i]
+        n_remainder = n_parent - count
+        v_parent = self._v[retained_i, :].copy()
+        v_remainder = (
+            n_parent * v_parent - count * centroid
+        ) / n_remainder
+        covariance_parent = (
+            self._sigma[:, :, retained_i] - self._delta_term
+        )
+        covariance_split = self._stabilize_covariance(covariance)
+
+        if n_remainder == 1:
+            covariance_remainder = np.zeros((self._dim, self._dim))
+            covariance_reconstructed = (
+                ((count - 1) / (n_parent - 1)) * covariance_split
+                + (n_remainder * count / (n_parent * (n_parent - 1)))
+                * np.outer(centroid - v_remainder, centroid - v_remainder)
+            )
+            if not np.allclose(
+                covariance_parent,
+                covariance_reconstructed,
+                rtol=1e-8,
+                atol=1e-10,
+            ):
+                raise ValueError(
+                    "The requested operation produces invalid covariance; "
+                    "check the supplied split statistics and cluster label"
+                )
+        else:
+            difference = centroid - v_parent
+            covariance_remainder = (
+                ((n_parent - 1) / (n_remainder - 1))
+                * covariance_parent
+                - ((count - 1) / (n_remainder - 1))
+                * covariance_split
+                - (n_parent * count)
+                / (n_remainder * (n_remainder - 1))
+                * np.outer(difference, difference)
+            )
+            covariance_remainder = self._stabilize_covariance(
+                covariance_remainder
+            )
+
+        sigma_remainder = covariance_remainder + self._delta_term
+        sigma_split = covariance_split + self._delta_term
+
+        new_i = self._label_map.get_internal_label(new_label)
+        if new_i != self._n_clusters:
+            raise RuntimeError("New split label was not appended")
+
+        self._n[retained_i] = n_remainder
+        self._v[retained_i, :] = v_remainder
+        self._sigma[:, :, retained_i] = sigma_remainder
+        self._n.append(count)
+        self._v = np.vstack((self._v, centroid))
+        self._sigma = np.dstack((self._sigma, sigma_split))
+        self._n_clusters += 1
+        self._rebuild_after_operation()
+
     def _rebuild_after_operation(self):
         """Rebuild pairwise representative information potentials."""
 

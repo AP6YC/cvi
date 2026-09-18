@@ -18,7 +18,7 @@ listed index supports batch evaluation.
      - Prefer
      - Range
      - Incremental
-     - Remove/merge
+     - Remove/merge/split
    * - ``CH``
      - Calinski–Harabasz
      - Larger
@@ -95,4 +95,3 @@ see :doc:`conn` before using it.
 The value ``0.0`` is used when an index is not yet defined, including many
 one-cluster states. When monitoring a stream, consider the trajectory only
 after enough clusters and samples have been observed.
-

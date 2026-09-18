@@ -191,6 +191,35 @@ class PS(_base.CVI):
         self._delete_cluster(source_label, source_i)
         self._rebuild_after_operation()
 
+    def _split(
+        self,
+        new_label: int,
+        retained_i: int,
+        count: int,
+        centroid: np.ndarray,
+        compactness,
+        covariance,
+    ):
+        """Split count and centroid statistics from a PS cluster."""
+
+        n_parent = self._n[retained_i]
+        n_remainder = n_parent - count
+        v_parent = self._v[retained_i, :].copy()
+        v_remainder = (
+            n_parent * v_parent - count * centroid
+        ) / n_remainder
+
+        new_i = self._label_map.get_internal_label(new_label)
+        if new_i != self._n_clusters:
+            raise RuntimeError("New split label was not appended")
+
+        self._n[retained_i] = n_remainder
+        self._v[retained_i, :] = v_remainder
+        self._n.append(count)
+        self._v = np.vstack((self._v, centroid))
+        self._n_clusters += 1
+        self._rebuild_after_operation()
+
     def _rebuild_after_operation(self):
         """Rebuild pairwise centroid distances."""
 
