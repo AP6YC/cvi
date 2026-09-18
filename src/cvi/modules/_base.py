@@ -116,7 +116,20 @@ class CVI():
         self._G = np.zeros([0, 0])   # n_clusters x dim
         self._n_clusters = 0
         self.criterion_value = 0.0
+        self._is_defined = False
         self._is_setup = False
+
+    @property
+    def is_defined(self) -> bool:
+        """Whether the latest criterion value is defined.
+
+        Undefined states return ``0.0`` as a sentinel. A criterion value of
+        ``0.0`` can still be defined, so callers should inspect this property
+        when consuming values during initialization or after structural
+        updates.
+        """
+
+        return self._is_defined
 
     def _setup(self, sample: np.ndarray):
         """
@@ -393,6 +406,7 @@ class CVI():
         self._G = np.zeros([0, 0])
         self._n_clusters = 0
         self.criterion_value = 0.0
+        self._is_defined = False
         self._is_setup = False
 
     def _rebuild_after_operation(self):

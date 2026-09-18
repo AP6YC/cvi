@@ -65,6 +65,7 @@ def assert_equivalent(actual, expected):
     assert actual._label_map.map == expected._label_map.map
     assert actual._n_samples == expected._n_samples
     assert actual._n_clusters == expected._n_clusters
+    assert actual.is_defined is expected.is_defined
     np.testing.assert_array_equal(np.asarray(actual._n), np.asarray(expected._n))
     np.testing.assert_allclose(actual._v, expected._v, rtol=1e-8, atol=1e-10)
     np.testing.assert_allclose(
@@ -102,6 +103,7 @@ def core_snapshot(local_cvi):
         "n": copy.deepcopy(local_cvi._n),
         "v": local_cvi._v.copy(),
         "criterion_value": local_cvi.criterion_value,
+        "is_defined": local_cvi.is_defined,
     }
     snapshot["statistics"] = {
         attribute: copy.deepcopy(getattr(local_cvi, attribute))
@@ -117,6 +119,7 @@ def assert_snapshot(local_cvi, snapshot):
     assert local_cvi._label_map.map == snapshot["label_map"]
     assert local_cvi._n_samples == snapshot["n_samples"]
     assert local_cvi._n_clusters == snapshot["n_clusters"]
+    assert local_cvi.is_defined is snapshot["is_defined"]
     np.testing.assert_array_equal(np.asarray(local_cvi._n), snapshot["n"])
     np.testing.assert_array_equal(local_cvi._v, snapshot["v"])
     assert local_cvi.criterion_value == snapshot["criterion_value"]
@@ -292,6 +295,7 @@ def test_merge_to_single_cluster(cvi_type):
     samples = SAMPLES[:6]
     labels = LABELS[:6]
     actual = build_incrementally(cvi_type, samples, labels)
+    assert actual.is_defined is True
     actual.merge(target_label=20, source_label=10)
 
     expected = build_incrementally(
@@ -302,6 +306,39 @@ def test_merge_to_single_cluster(cvi_type):
 
     assert_equivalent(actual, expected)
     assert actual.criterion_value == 0.0
+    assert actual.is_defined is False
+
+
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+def test_remove_to_single_cluster_updates_definition_status(cvi_type):
+    """Removing the only member of a second cluster makes every CVI undefined."""
+
+    samples = np.asarray([[0.0], [1.0], [3.0]])
+    labels = np.asarray([10, 10, 20])
+    local_cvi = build_incrementally(cvi_type, samples, labels)
+    assert local_cvi.is_defined is True
+
+    assert local_cvi.remove(np.asarray([3.0]), 20) == 0.0
+    assert local_cvi.is_defined is False
+
+
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+def test_split_from_single_cluster_updates_definition_status(cvi_type):
+    """Creating a valid second cluster makes every CVI defined."""
+
+    samples = np.asarray([[0.0], [1.0], [3.0]])
+    labels = np.asarray([10, 10, 10])
+    local_cvi = build_incrementally(cvi_type, samples, labels)
+    assert local_cvi.is_defined is False
+
+    local_cvi.split(
+        retained_label=10,
+        new_label=20,
+        count=1,
+        centroid=np.asarray([3.0]),
+    )
+
+    assert local_cvi.is_defined is True
 
 
 @pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
@@ -340,6 +377,7 @@ def test_removing_final_sample_resets_object(cvi_type):
     assert local_cvi._label_map.map == {}
     assert local_cvi._is_setup is False
     assert local_cvi.criterion_value == 0.0
+    assert local_cvi.is_defined is False
 
     local_cvi.get_cvi(np.asarray([0.1, 0.2]), 42)
     assert local_cvi._n_samples == 1

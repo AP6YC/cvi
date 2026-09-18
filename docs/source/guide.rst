@@ -72,7 +72,7 @@ Keep the following rules in mind:
 * Batch initialization requires at least two distinct labels, and a second
   batch call on the same object is rejected.
 * Criterion values are ``0.0`` while an index is not defined, such as before enough clusters have been observed.
-   Do not interpret that sentinel as an optimal clustering result.
+   Check the read-only ``is_defined`` property rather than interpreting that sentinel as an optimal clustering result; a valid score may also be zero.
 * Use a fresh instance when comparing independent datasets or partitions.
 
 See :doc:`choosing` for differences between indices.

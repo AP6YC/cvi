@@ -425,7 +425,9 @@ class rCIP(_base.CVI):
         """
 
         dim = self._D.shape[0]
-        if dim > 1:
+        self._is_defined = bool(dim > 1)
+
+        if self._is_defined:
             values = self._D[np.triu_indices(dim, k=1)]
             self.criterion_value = np.sum(values)
 

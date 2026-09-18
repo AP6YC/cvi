@@ -194,15 +194,22 @@ class WB(_base.CVI):
         Criterion value evaluation method for the WB-Index (WB) CVI.
         """
 
+        self._is_defined = False
+
         if self._n_clusters > 1:
             # Within group sum of scatters
             self._WGSS = sum(self._CP)
             # Between groups sum of scatters
             self._BGSS = sum(self._SEP)
-            # WB index value
-            self.criterion_value = (
-                (self._WGSS / self._BGSS) * self._n_clusters
-            )
+            self._is_defined = bool(self._BGSS > 0.0)
+
+            if self._is_defined:
+                # WB index value
+                self.criterion_value = (
+                    (self._WGSS / self._BGSS) * self._n_clusters
+                )
+            else:
+                self.criterion_value = 0.0
         else:
             self._BGSS = 0.0
             self.criterion_value = 0.0

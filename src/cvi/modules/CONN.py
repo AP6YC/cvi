@@ -305,6 +305,8 @@ class CONN(_base.CVI):
         Initialize or reset all CONN-specific state.
         """
 
+        self._is_defined = False
+
         module_a = _CONNFuzzyART(
             rho=self.rho,
             alpha=self.alpha,
@@ -831,6 +833,7 @@ class CONN(_base.CVI):
         self._G = np.zeros([0, self._dim])
         self._n_clusters = 0
         self.criterion_value = 0.0
+        self._is_defined = False
 
         self._init_conn_state()
 
@@ -849,5 +852,12 @@ class CONN(_base.CVI):
         requires the label pair touched by the most recent ART transition.
         """
 
-        if self._n_clusters <= 0:
+        if self.model_type == "Fuzzy":
+            prototype_count = len(self._artmap.module_a.W)
+        else:
+            prototype_count = len(self._cluster_centers)
+
+        self._is_defined = bool(prototype_count > 1)
+
+        if not self._is_defined:
             self.criterion_value = 0.0

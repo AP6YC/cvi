@@ -39,7 +39,14 @@ All indices inherit the common update interface from :class:`cvi.CVI`.
 
 .. autosummary::
 
+   cvi.CVI.is_defined
    cvi.CVI.get_cvi
    cvi.CVI.remove
    cvi.CVI.merge
    cvi.CVI.split
+
+Evaluation status
+-----------------
+
+Every index exposes the read-only :attr:`cvi.CVI.is_defined` property to
+distinguish a computed score from the ``0.0`` fallback for undefined states.
