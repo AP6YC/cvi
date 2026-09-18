@@ -198,7 +198,7 @@ class GD53(_base.CVI):
         self._D = self._D + np.transpose(self._D)
 
     def _rebuild_after_operation(self):
-        """Rebuild pairwise dispersion after a remove or merge."""
+        """Rebuild pairwise dispersion after a structural operation."""
 
         if self._n_clusters == 0:
             self._mu = np.zeros(0)

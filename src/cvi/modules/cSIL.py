@@ -280,6 +280,59 @@ class cSIL(_base.CVI):
         self._delete_cluster(source_label, source_i)
         self._rebuild_after_operation()
 
+    def _split(
+        self,
+        new_label: int,
+        retained_i: int,
+        count: int,
+        centroid: np.ndarray,
+        compactness,
+        covariance,
+    ):
+        """Split centered statistics from cSIL's raw moments."""
+
+        if compactness is None:
+            raise ValueError("cSIL split requires compactness")
+
+        n_parent = self._n[retained_i]
+        n_remainder = n_parent - count
+        G_split = count * centroid
+        raw_CP_split = (
+            compactness + count * np.inner(centroid, centroid)
+        )
+        G_remainder = self._G[retained_i, :] - G_split
+        v_remainder = G_remainder / n_remainder
+        raw_CP_remainder = self._CP[retained_i] - raw_CP_split
+        centered_CP_remainder = self._nonnegative_or_error(
+            raw_CP_remainder
+            - n_remainder * np.inner(v_remainder, v_remainder),
+            max(
+                abs(self._CP[retained_i]),
+                abs(raw_CP_split),
+                abs(raw_CP_remainder),
+            ),
+            "cluster compactness",
+        )
+        raw_CP_remainder = (
+            centered_CP_remainder
+            + n_remainder * np.inner(v_remainder, v_remainder)
+        )
+
+        new_i = self._label_map.get_internal_label(new_label)
+        if new_i != self._n_clusters:
+            raise RuntimeError("New split label was not appended")
+
+        self._n[retained_i] = n_remainder
+        self._v[retained_i, :] = v_remainder
+        self._CP[retained_i] = raw_CP_remainder
+        self._G[retained_i, :] = G_remainder
+        self._n.append(count)
+        self._v = np.vstack((self._v, centroid))
+        self._CP.append(raw_CP_split)
+        self._G = np.vstack((self._G, G_split))
+        self._n_clusters += 1
+        self._rebuild_after_operation()
+
     def _rebuild_after_operation(self):
         """Rebuild the centroid-to-cluster dissimilarity matrix."""
 

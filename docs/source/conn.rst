@@ -51,7 +51,7 @@ Streamorder and those parameters can therefore affect the learned prototypes and
 Limitations
 -----------
 
-``CONN`` does not currently implement :meth:`cvi.CVI.remove` or
-:meth:`cvi.CVI.merge`.
+``CONN`` does not currently implement :meth:`cvi.CVI.remove`,
+:meth:`cvi.CVI.merge`, or :meth:`cvi.CVI.split`.
 A KMeans-backed object also rejects incremental samples.
 Use a new object when changing backend or evaluating another independent partition.

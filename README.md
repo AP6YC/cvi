@@ -120,7 +120,7 @@ CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf,
 
 ## Implemented Indices
 
-| Index | Prefer | Range | Batch | Incremental | Remove/merge |
+| Index | Prefer | Range | Batch | Incremental | Remove/merge/split |
 |---|---|---|---|---|---|
 | `CH` | Larger | `[0, ∞)` | Yes | Yes | Yes |
 | `CONN` | Larger | `[0, 1]` | Yes | Fuzzy backend only | No |
@@ -138,16 +138,25 @@ See the [CONN guide][conn-guide] before using it.
 
 ## Updating an Existing Partition
 
-Except for `CONN`, initialized indices support adding samples, removing samples, and merging clusters without replaying the full dataset via `remove` and `merge`:
+Except for `CONN`, initialized indices support adding samples, removing samples, merging clusters, and splitting clusters from tracked sufficient statistics without replaying the full dataset:
 
 ```python
 value = index.get_cvi(new_sample, new_label)
 value = index.remove(existing_sample, existing_label)
 value = index.merge(target_label=20, source_label=10)
+value = index.split(
+    retained_label=20,
+    new_label=30,
+    count=prototype_count,
+    centroid=prototype_centroid,
+    compactness=prototype_compactness,
+    covariance=prototype_covariance,
+)
 ```
 
-Both methods update the object in place and return its new criterion value.
+These methods update the object in place and return its new criterion value.
 Removing the final sample of a cluster deletes that cluster, while `merge` retains `target_label` and deletes `source_label`.
+`split` retains `retained_label` for the residual cluster and assigns the split-off statistics to the unused `new_label`.
 The caller is responsible for ensuring that a removed sample belongs to the supplied label.
 
 For input rules, index-selection guidance, references, legacy API information, and the complete API, see the [documentation][docs-stable-url].

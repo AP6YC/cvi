@@ -169,7 +169,7 @@ class CH(_base.CVI):
             self._SEP[ix] = self._n[ix] * np.sum((self._v[ix, :] - self._mu) ** 2)
 
     def _rebuild_after_operation(self):
-        """Rebuild separation statistics after a remove or merge."""
+        """Rebuild separation statistics after a structural operation."""
 
         if self._n_clusters == 0:
             self._mu = np.zeros(0)
