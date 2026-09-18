@@ -290,7 +290,6 @@ def test_ps_non_singleton_split_needs_no_dispersion_statistic():
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 @pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_add_then_remove_restores_state(cvi_type):
     """An add/remove round trip must restore the previous summary."""
@@ -418,7 +417,6 @@ def test_rcip_split_with_nonsingleton_remainder():
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 @pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_invalid_operation_arguments_are_atomic(cvi_type):
     """Label and dimension errors must not mutate the object."""
@@ -603,7 +601,6 @@ def test_batch_then_split_matches_incremental_replay(cvi_type):
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 @pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_batch_add_then_remove_restores_state(cvi_type):
     """A scalar add/remove round trip restores batch-initialized state."""
