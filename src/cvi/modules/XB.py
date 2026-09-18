@@ -39,7 +39,7 @@ class XB(_base.CVI):
     _supports_remove_merge = True
     _uses_compactness_stats = True
 
-    def __init__(self, *, backend="numpy"):
+    def __init__(self, *, backend="numpy", capacity=None):
         """
         XB initialization routine.
 
@@ -47,11 +47,14 @@ class XB(_base.CVI):
         ----------
         backend : {"numpy", "numba", "jax"}, default="numpy"
             Select the numerical backend. Optional backends load on demand.
-            JAX currently supports batch initialization only and requires x64.
+            JAX requires x64.
+        capacity : int or None, default=None
+            Opt into JAX streaming with this maximum number of clusters.
+            Only available with backend="jax". No limit on sample count.
         """
 
         # Run the base initialization
-        super().__init__(backend=backend)
+        super().__init__(backend=backend, capacity=capacity)
 
         # XB-specific initialization
         self._mu = np.zeros([0])     # dim

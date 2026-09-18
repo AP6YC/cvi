@@ -173,8 +173,22 @@ JAX_ENABLE_X64=1 python -m benchmarks.benchmark_kernels --backend jax --compare-
 This defaults to supported batch indices and rejects unsupported operations.
 `cvi.jax.batch_state` and `evaluate` can reuse an immutable device-resident
 summary for several supported indices. They require dense labels and static
-cluster counts under JIT. Neither functional nor object APIs currently implement
-JAX streaming, remove, or merge. The regression suite checks NumPy equivalence,
+cluster counts under JIT. Fixed-capacity streaming is covered below; JAX remove
+and merge remain unsupported. The regression suite checks NumPy equivalence,
 degenerate scores, float32 compatibility, large offsets, `jit`, `vmap`, gradients,
 dependency isolation, and failure atomicity. No global JAX settings are modified
 by library imports or constructors.
+
+## Fixed-capacity JAX streaming
+
+```bash
+JAX_ENABLE_X64=1 python -m benchmarks.benchmark_jax_stream --samples 2000 --clusters 24 --capacity 32
+```
+
+This verifies complete score histories and final statistics against NumPy before
+reporting synchronized timings. First calls include compilation. Warm timings
+separate device-resident scans (history and final-only), object chunks including
+host validation/transfers, and Python per-sample calls for JAX and NumPy. Device
+placement is outside resident timings. Vary `--capacity` independently of
+`--clusters` to measure padding costs, especially XB's square distance matrix.
+Single-sample dispatch may be slower than NumPy even when compiled chunks win.

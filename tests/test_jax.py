@@ -1,7 +1,6 @@
 """JAX batch compatibility and transformation tests (optional dependency)."""
 
 import copy
-import importlib
 from pathlib import Path
 import pickle
 import subprocess
@@ -15,17 +14,6 @@ from test_kernels import assert_state_equal, batch_case, reference_batch
 
 
 INDICES = [cvi.CH, cvi.WB, cvi.XB]
-
-
-@pytest.fixture
-def jax_runtime():
-    jax = pytest.importorskip("jax")
-    previous = jax.config.x64_enabled
-    jax.config.update("jax_enable_x64", True)
-    try:
-        yield jax, importlib.import_module("src.cvi.jax")
-    finally:
-        jax.config.update("jax_enable_x64", previous)
 
 
 @pytest.mark.parametrize("index_type", INDICES)
@@ -196,7 +184,7 @@ def test_functional_shape_dtype_and_static_argument_errors(jax_runtime):
     ):
         with pytest.raises(ValueError):
             functional.batch_state(bad_data, bad_labels, n_clusters=k)
-    with pytest.raises(ValueError, match="JAX batch indices"):
+    with pytest.raises(ValueError, match="JAX indices"):
         functional.batch_cvi(data, labels, n_clusters=2, index="DB")
 
 

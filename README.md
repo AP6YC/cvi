@@ -35,10 +35,13 @@ Please see the [documentation][docs-stable-url] for detailed usage.
 - [Table of Contents](#table-of-contents)
 - [What Are Cluster Validity Indices?](#what-are-cluster-validity-indices)
 - [Installation](#installation)
-  - [Optional Numba Acceleration](#optional-numba-acceleration)
 - [Quickstart](#quickstart)
-- [Implemented Indices](#implemented-indices)
-- [Updating an Existing Partition](#updating-an-existing-partition)
+  - [Implemented Indices](#implemented-indices)
+  - [Updating an Existing Partition](#updating-an-existing-partition)
+- [Optimizations](#optimizations)
+  - [Optional Numba Acceleration](#optional-numba-acceleration)
+  - [Optional JAX Batch Backend](#optional-jax-batch-backend)
+  - [Fixed-capacity JAX Streaming](#fixed-capacity-jax-streaming)
 - [Acknowledgements](#acknowledgements)
   - [Derivation](#derivation)
   - [Authors](#authors)
@@ -78,83 +81,6 @@ pip install cvi==0.7.0
 ```
 
 Alternatively, you can manually install a release from any of the builds on the [releases page](https://github.com/AP6YC/cvi/releases) on GitHub.
-
-### Optional Numba Acceleration
-
-Install the extra and select the backend per index:
-
-```console
-python -m pip install "cvi[numba]"
-```
-
-```python
-import cvi
-
-index = cvi.XB(backend="numba")
-value = index.get_cvi(samples, labels)
-```
-
-For a development checkout, install with `python -m pip install -e ".[numba]"`.
-`backend="numpy"` remains the default. Numba acceleration is available for
-`CH`, `WB`, `DB`, `XB`, `GD43`, `GD53`, `PS`, and `cSIL`, with the same batch,
-incremental, remove, and merge API. `CONN` and `rCIP` currently support only the
-NumPy numerical backend. CONN's `model_type` separately selects its clustering
-algorithm.
-
-The backend compiles grouping, compactness, centroid distances, and cSIL batch
-distance assembly on the CPU. It retains NumPy's dtype-sensitive means and raw
-moments. Float16, non-native byte-order arrays, and other unsupported array types
-use NumPy for the affected operations. Results agree within floating-point
-tolerances, rather than necessarily bit for bit. Unchanged operations, such as
-CH/WB streaming updates, are not accelerated by this selection.
-
-The first use of a kernel for an input type/layout incurs compilation; subsequent
-calls reuse compiled code, with a disk cache across processes. Measure warmed
-performance for your workload; small workloads may not repay compilation cost.
-Numba is imported by the numerical backend only when selected. The existing
-ART dependency may also install/use Numba independently when using CONN.
-See [backend benchmarks](benchmarks/README.md) for timings and reproduction steps.
-
-### Optional JAX batch backend
-
-Install `cvi[jax]` (or `python -m pip install -e ".[jax]"` in a checkout), then
-enable JAX's 64-bit mode explicitly:
-
-```python
-import jax
-import cvi
-
-jax.config.update("jax_enable_x64", True)
-index = cvi.XB(backend="jax")
-value = index.get_cvi(samples, labels)
-```
-
-This first JAX implementation supports **batch CH, WB, and XB**. It rejects
-incremental updates, remove, and merge before changing state. Other indices
-continue to support their existing backends. Importing CVI does not import JAX
-or change its configuration.
-
-The object interface returns a Python float and retains host-side state. It
-preserves NumPy's input-dtype mean reductions, including float32 behavior, then
-uses JAX for compactness, separation, and evaluation. For device-resident work
-and composition with `jit`, `vmap`, or `grad`, use the functional interface:
-
-```python
-from functools import partial
-from cvi.jax import batch_cvi
-
-# Dense labels must be integers 0..2, with every cluster represented.
-score = jax.jit(partial(batch_cvi, n_clusters=3, index="XB"))
-device_value = score(device_samples, dense_labels)
-```
-
-The functional API evaluates real input data in float64 and uses shifted means
-for numerical stability. `batch_state(...)` returns an immutable pytree that
-`evaluate(state, index="CH")` can reuse for another supported index. Results
-agree mathematically, with floating-point reduction differences. Cluster count
-and index name are static under JIT; new input shapes can require recompilation.
-Small CPU workloads and the compatibility object may be slower than NumPy.
-See [benchmarks](benchmarks/README.md) for synchronized timing instructions.
 
 ## Quickstart
 
@@ -196,7 +122,7 @@ Users can also query the `.info` property of the CVI objects to obtain relevant 
 CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max')
 ```
 
-## Implemented Indices
+### Implemented Indices
 
 | Index | Prefer | Range | Batch | Incremental | Remove/merge |
 |---|---|---|---|---|---|
@@ -214,7 +140,7 @@ CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf,
 `CONN` uses prototype connectivity and has additional backend and normalization requirements.
 See the [CONN guide][conn-guide] before using it.
 
-## Updating an Existing Partition
+### Updating an Existing Partition
 
 Except for `CONN`, initialized indices support adding samples, removing samples, and merging clusters without replaying the full dataset via `remove` and `merge`:
 
@@ -231,6 +157,114 @@ The caller is responsible for ensuring that a removed sample belongs to the supp
 For input rules, index-selection guidance, references, legacy API information, and the complete API, see the [documentation][docs-stable-url].
 
 [conn-guide]: https://AP6YC.github.io/cvi/main/conn.html
+
+## Optimizations
+
+`cvi` comes with some optimizations in the form of various backends that you can switch between for faster performance depending on your use-case.
+
+### Optional Numba Acceleration
+
+Install the extra and select the backend per index:
+
+```console
+python -m pip install "cvi[numba]"
+```
+
+```python
+import cvi
+
+index = cvi.XB(backend="numba")
+value = index.get_cvi(samples, labels)
+```
+
+For a development checkout, install with `python -m pip install -e ".[numba]"`.
+`backend="numpy"` remains the default. Numba acceleration is available for
+`CH`, `WB`, `DB`, `XB`, `GD43`, `GD53`, `PS`, and `cSIL`, with the same batch,
+incremental, remove, and merge API. `CONN` and `rCIP` currently support only the
+NumPy numerical backend. CONN's `model_type` separately selects its clustering
+algorithm.
+
+The backend compiles grouping, compactness, centroid distances, and cSIL batch
+distance assembly on the CPU. It retains NumPy's dtype-sensitive means and raw
+moments. Float16, non-native byte-order arrays, and other unsupported array types
+use NumPy for the affected operations. Results agree within floating-point
+tolerances, rather than necessarily bit for bit. Unchanged operations, such as
+CH/WB streaming updates, are not accelerated by this selection.
+
+The first use of a kernel for an input type/layout incurs compilation; subsequent
+calls reuse compiled code, with a disk cache across processes. Measure warmed
+performance for your workload; small workloads may not repay compilation cost.
+Numba is imported by the numerical backend only when selected. The existing
+ART dependency may also install/use Numba independently when using CONN.
+See [backend benchmarks](benchmarks/README.md) for timings and reproduction steps.
+
+### Optional JAX Batch Backend
+
+Install `cvi[jax]` (or `python -m pip install -e ".[jax]"` in a checkout), then
+enable JAX's 64-bit mode explicitly:
+
+```python
+import jax
+import cvi
+
+jax.config.update("jax_enable_x64", True)
+index = cvi.XB(backend="jax")
+value = index.get_cvi(samples, labels)
+```
+
+JAX supports **batch CH, WB, and XB**, plus optional fixed-capacity streaming
+for these indices. Remove and merge remain unsupported. Other indices
+continue to support their existing backends. Importing CVI does not import JAX
+or change its configuration.
+
+The batch object interface returns a Python float and retains host-side state. It
+preserves NumPy's input-dtype mean reductions, including float32 behavior, then
+uses JAX for compactness, separation, and evaluation. For device-resident work
+and composition with `jit`, `vmap`, or `grad`, use the functional interface:
+
+```python
+from functools import partial
+from cvi.jax import batch_cvi
+
+# Dense labels must be integers 0..2, with every cluster represented.
+score = jax.jit(partial(batch_cvi, n_clusters=3, index="XB"))
+device_value = score(device_samples, dense_labels)
+```
+
+The functional API evaluates real input data in float64 and uses shifted means
+for numerical stability. `batch_state(...)` returns an immutable pytree that
+`evaluate(state, index="CH")` can reuse for another supported index. Results
+agree mathematically, with floating-point reduction differences. Cluster count
+and index name are static under JIT; new input shapes can require recompilation.
+Small CPU workloads and the compatibility object may be slower than NumPy.
+See [benchmarks](benchmarks/README.md) for synchronized timing instructions.
+
+### Fixed-capacity JAX Streaming
+
+Reserve space for the maximum number of distinct clusters to enable streaming:
+
+```python
+index = cvi.XB(backend="jax", capacity=32)
+value = index.get_cvi(sample, label)
+history = index.update_many(next_samples, next_labels)
+value = index.update_many(more_samples, more_labels, return_history=False)
+```
+
+`capacity` limits clusters, not samples. Arbitrary integer labels map to slots
+in first-seen order. Exceeding capacity raises before any part of the call is
+applied. An initial batch can also be followed by samples or chunks. Without
+`capacity`, JAX objects retain their batch-only behavior.
+
+Statistics stay on-device as a fixed-shape `index.stream_state`; scalar calls
+return a Python float and chunks return NumPy histories (or a final float).
+New clusters within capacity do not change array shapes. Streaming uses float64
+and the existing incremental formulas, with unused slots excluded from scores.
+The functional `empty_stream`, `stream_update`, `stream_chunk`, and
+`evaluate_stream` functions support device-resident use inside JIT; see the
+[guide](docs/source/guide.rst) for their slot and validation contracts.
+Choose capacity near the expected maximum: XB reserves a capacity-by-capacity
+distance matrix. Chunk processing amortizes Python and device synchronization
+costs; per-sample JAX calls can be slower than NumPy.
 
 ## Acknowledgements
 
