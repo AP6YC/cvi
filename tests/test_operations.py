@@ -1,6 +1,7 @@
 """Tests for CVI add, remove, merge, and split operations."""
 
 import copy
+from functools import partial
 
 import numpy as np
 import pytest
@@ -25,6 +26,24 @@ LABELS = np.asarray([10, 10, 10, 20, 20, 20, 30, 30, 30])
 # This is a patch to test every module except for CONN index that currently has
 # its own API for batch and incremental usage (due to the selected internal clustering method)
 CVIS_NOT_CONN = [m for m in cvi.MODULES if m is not cvi.CONN]
+
+
+@pytest.fixture
+def cvi_type(request):
+    # Bind each existing operation test to its selected numerical backend.
+    index_type, backend = request.param
+    if backend == "numba":
+        pytest.importorskip("numba")
+    return partial(index_type, backend=backend)
+
+
+def backend_cases(indices):
+    return [
+        pytest.param((index, backend), id=f"{index.__name__}-{backend}")
+        for index in indices
+        for backend in ("numpy", "numba")
+        if backend == "numpy" or index._supports_numba
+    ]
 
 
 def build_incrementally(cvi_type, samples=SAMPLES, labels=LABELS):
@@ -132,7 +151,7 @@ def assert_snapshot(local_cvi, snapshot):
             )
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_remove_matches_incremental_replay(cvi_type):
     """Removing a member must equal replaying all other samples."""
 
@@ -147,7 +166,7 @@ def test_remove_matches_incremental_replay(cvi_type):
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_merge_matches_relabelled_incremental_replay(cvi_type):
     """Merging labels must equal replaying with the source relabelled."""
 
@@ -272,6 +291,7 @@ def test_ps_non_singleton_split_needs_no_dispersion_statistic():
 
 
 @pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_add_then_remove_restores_state(cvi_type):
     """An add/remove round trip must restore the previous summary."""
 
@@ -285,7 +305,7 @@ def test_add_then_remove_restores_state(cvi_type):
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_merge_to_single_cluster(cvi_type):
     """Merging the final two clusters leaves the CVI undefined at zero."""
 
@@ -304,7 +324,7 @@ def test_merge_to_single_cluster(cvi_type):
     assert actual.criterion_value == 0.0
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_singleton_removal_compacts_and_reuses_label(cvi_type):
     """Deleting a singleton removes its mapping and permits label reuse."""
 
@@ -324,7 +344,7 @@ def test_singleton_removal_compacts_and_reuses_label(cvi_type):
     assert actual._n[3] == 1
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_removing_final_sample_resets_object(cvi_type):
     """Removing the final sample returns the object to fresh state."""
 
@@ -399,6 +419,7 @@ def test_rcip_split_with_nonsingleton_remainder():
 
 
 @pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_invalid_operation_arguments_are_atomic(cvi_type):
     """Label and dimension errors must not mutate the object."""
 
@@ -472,7 +493,7 @@ def test_invalid_operation_arguments_are_atomic(cvi_type):
     assert_snapshot(local_cvi, snapshot)
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_operations_require_initialized_state(cvi_type):
     """Fresh CVIs reject structural operations."""
 
@@ -485,7 +506,7 @@ def test_operations_require_initialized_state(cvi_type):
         fresh.split(10, 20, 1, SAMPLES[0])
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 @pytest.mark.parametrize(
     ("sample", "label"),
     [
@@ -510,7 +531,7 @@ def test_batch_then_add_matches_incremental_replay(cvi_type, sample, label):
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_batch_then_add_rejects_wrong_dimension_atomically(cvi_type):
     """An invalid scalar update must not create a new batch-state label."""
 
@@ -523,7 +544,7 @@ def test_batch_then_add_rejects_wrong_dimension_atomically(cvi_type):
     assert_snapshot(actual, snapshot)
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_batch_then_remove_matches_incremental_replay(cvi_type):
     """A batch-initialized CVI can remove a sample by external label."""
 
@@ -541,7 +562,7 @@ def test_batch_then_remove_matches_incremental_replay(cvi_type):
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_batch_then_merge_matches_incremental_replay(cvi_type):
     """A batch-initialized CVI can merge clusters by external label."""
 
@@ -583,6 +604,7 @@ def test_batch_then_split_matches_incremental_replay(cvi_type):
 
 
 @pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_batch_add_then_remove_restores_state(cvi_type):
     """A scalar add/remove round trip restores batch-initialized state."""
 
@@ -596,7 +618,7 @@ def test_batch_add_then_remove_restores_state(cvi_type):
     assert_equivalent(actual, expected)
 
 
-@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+@pytest.mark.parametrize("cvi_type", backend_cases(CVIS_NOT_CONN), indirect=True)
 def test_batch_singleton_removal_deletes_and_reuses_label(cvi_type):
     """Batch labels are compacted and reusable after singleton deletion."""
 
@@ -613,7 +635,9 @@ def test_batch_singleton_removal_deletes_and_reuses_label(cvi_type):
     assert actual._n[3] == 1
 
 
-@pytest.mark.parametrize("cvi_type", [cvi.CH, cvi.cSIL, cvi.rCIP])
+@pytest.mark.parametrize(
+    "cvi_type", backend_cases([cvi.CH, cvi.cSIL, cvi.rCIP]), indirect=True,
+)
 def test_inconsistent_remove_is_atomic(cvi_type):
     """Statistics-bearing CVIs reject a sample inconsistent with a cluster."""
 
