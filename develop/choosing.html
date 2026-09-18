@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Using CONN" href="conn.html"><link rel="prev" title="Getting Started" href="guide.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Using CONN" href="conn.html"><link rel="prev" title="Backends" href="backends.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
         <title>Choosing an Index - cvi 0.7.0 documentation</title>
@@ -196,6 +196,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="guide.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backends.html">Backends</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Choosing an Index</a></li>
 <li class="toctree-l1"><a class="reference internal" href="conn.html">Using CONN</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -266,6 +267,8 @@
 Values from different index families are not on a common scale, so compare
 candidate partitions with the same index rather than comparing one index’s
 number directly with another’s.</p>
+<p>The following operation support describes the default NumPy backend. Every
+listed index supports batch evaluation.</p>
 <div class="table-wrapper colwidths-given docutils container" id="id1">
 <table class="docutils align-default" id="id1">
 <caption><span class="caption-text">Implemented indices</span><a class="headerlink" href="#id1" title="Link to this table">¶</a></caption>
@@ -298,7 +301,7 @@ number directly with another’s.</p>
 <td><p>Connectivity</p></td>
 <td><p>Larger</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code></p></td>
-<td><p>Fuzzy backend</p></td>
+<td><p>FuzzyART Backend Only</p></td>
 <td><p>No</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cSIL</span></code></p></td>
@@ -360,6 +363,115 @@ number directly with another’s.</p>
 </tbody>
 </table>
 </div>
+<div class="table-wrapper colwidths-given docutils container" id="id2">
+<table class="docutils align-default" id="id2">
+<caption><span class="caption-text">Optional optimization coverage</span><a class="headerlink" href="#id2" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 10.0%" />
+<col style="width: 15.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 15.0%" />
+<col style="width: 20.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Index</p></th>
+<th class="head"><p>Numba batch</p></th>
+<th class="head"><p>Numba sample updates</p></th>
+<th class="head"><p>Numba remove/merge</p></th>
+<th class="head"><p>JAX batch</p></th>
+<th class="head"><p>JAX streaming</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CH</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p>Unchanged</p></td>
+<td><p>Unchanged</p></td>
+<td><p>Yes</p></td>
+<td><p>Capacity</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CONN</span></code></p></td>
+<td><p>Unavailable</p></td>
+<td><p>Unavailable</p></td>
+<td><p>Unavailable</p></td>
+<td><p>Unavailable</p></td>
+<td><p>Unavailable</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cSIL</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p>Unchanged</p></td>
+<td><p>Unchanged</p></td>
+<td><p>Unavailable</p></td>
+<td><p>Unavailable</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DB</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p>Distances</p></td>
+<td><p>Distances</p></td>
+<td><p>Unavailable</p></td>
+<td><p>Unavailable</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GD43</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p>Distances</p></td>
+<td><p>Distances</p></td>
+<td><p>Unavailable</p></td>
+<td><p>Unavailable</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GD53</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p>Unchanged</p></td>
+<td><p>Unchanged</p></td>
+<td><p>Unavailable</p></td>
+<td><p>Unavailable</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PS</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p>Distances</p></td>
+<td><p>Distances</p></td>
+<td><p>Unavailable</p></td>
+<td><p>Unavailable</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rCIP</span></code></p></td>
+<td><p>Unavailable</p></td>
+<td><p>Unavailable</p></td>
+<td><p>Unavailable</p></td>
+<td><p>Unavailable</p></td>
+<td><p>Unavailable</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WB</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p>Unchanged</p></td>
+<td><p>Unchanged</p></td>
+<td><p>Yes</p></td>
+<td><p>Capacity</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">XB</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p>Distances</p></td>
+<td><p>Distances</p></td>
+<td><p>Yes</p></td>
+<td><p>Capacity</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Yes</strong> means compiled batch kernels are available; it does not mean that every
+operation is compiled. <strong>Distances</strong> means centroid-distance kernels are
+compiled while other update logic remains in Python/NumPy. <strong>Unchanged</strong> means
+the operation is supported with <code class="docutils literal notranslate"><span class="pre">backend=&quot;numba&quot;</span></code> but uses its existing NumPy
+implementation. <strong>Unavailable</strong> means the index rejects that numerical backend.</p>
+<p><strong>Capacity</strong> means JAX sample additions and <code class="docutils literal notranslate"><span class="pre">update_many</span></code> chunks require a
+positive <code class="docutils literal notranslate"><span class="pre">capacity</span></code> at construction. CH, WB, and XB also provide functional
+JAX batch and streaming APIs. All JAX modes require x64, and none support remove
+or merge. Numba retains remove/merge support for all eight supported indices,
+including the operations marked <strong>Unchanged</strong>.</p>
+<p>NumPy remains the default for every index. CONN’s <code class="docutils literal notranslate"><span class="pre">model_type</span></code> selects its
+prototype learner separately from numerical <code class="docutils literal notranslate"><span class="pre">backend</span></code> selection; it does not
+enable the optional Numba or JAX numerical backends.</p>
+<p>See <a class="reference internal" href="backends.html"><span class="doc">Backends</span></a> for installation, accelerated kernels, precision rules,
+and compilation costs. Backend availability does not guarantee a speedup.</p>
 <p><code class="docutils literal notranslate"><span class="pre">CH</span></code>, <code class="docutils literal notranslate"><span class="pre">DB</span></code>, <code class="docutils literal notranslate"><span class="pre">GD43</span></code>, <code class="docutils literal notranslate"><span class="pre">GD53</span></code>, <code class="docutils literal notranslate"><span class="pre">WB</span></code>, and <code class="docutils literal notranslate"><span class="pre">XB</span></code> summarize variants of
 within-cluster compactness and between-cluster separation. <code class="docutils literal notranslate"><span class="pre">cSIL</span></code> offers a
 bounded, centroid-based silhouette measure. <code class="docutils literal notranslate"><span class="pre">PS</span></code> measures partition
@@ -385,14 +497,14 @@ after enough clusters and samples have been observed.</p>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="guide.html">
+          <a class="prev-page" href="backends.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Getting Started</div>
+                <div class="title">Backends</div>
                 
               </div>
             </a>

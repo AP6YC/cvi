@@ -21,6 +21,7 @@
       ~CH.merge
       ~CH.remove
       ~CH.split
+      ~CH.update_many
    
    
 
@@ -30,6 +31,9 @@
 
    .. autosummary::
    
+      ~CH.backend
+      ~CH.capacity
       ~CH.info
+      ~CH.stream_state
    
    

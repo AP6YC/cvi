@@ -21,6 +21,7 @@
       ~rCIP.merge
       ~rCIP.remove
       ~rCIP.split
+      ~rCIP.update_many
    
    
 
@@ -30,6 +31,9 @@
 
    .. autosummary::
    
+      ~rCIP.backend
+      ~rCIP.capacity
       ~rCIP.info
+      ~rCIP.stream_state
    
    

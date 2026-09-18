@@ -21,6 +21,7 @@
       ~DB.merge
       ~DB.remove
       ~DB.split
+      ~DB.update_many
    
    
 
@@ -30,6 +31,9 @@
 
    .. autosummary::
    
+      ~DB.backend
+      ~DB.capacity
       ~DB.info
+      ~DB.stream_state
    
    

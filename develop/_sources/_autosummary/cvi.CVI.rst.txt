@@ -21,6 +21,7 @@
       ~CVI.merge
       ~CVI.remove
       ~CVI.split
+      ~CVI.update_many
    
    
 
@@ -30,6 +31,9 @@
 
    .. autosummary::
    
+      ~CVI.backend
+      ~CVI.capacity
+      ~CVI.stream_state
       ~CVI.info
    
    

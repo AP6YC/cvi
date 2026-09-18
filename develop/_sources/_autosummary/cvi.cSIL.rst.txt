@@ -21,6 +21,7 @@
       ~cSIL.merge
       ~cSIL.remove
       ~cSIL.split
+      ~cSIL.update_many
    
    
 
@@ -30,6 +31,9 @@
 
    .. autosummary::
    
+      ~cSIL.backend
+      ~cSIL.capacity
       ~cSIL.info
+      ~cSIL.stream_state
    
    

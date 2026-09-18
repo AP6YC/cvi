@@ -196,6 +196,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../guide.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../backends.html">Backends</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../choosing.html">Choosing an Index</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../conn.html">Using CONN</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../api.html">API Reference</a><input aria-label="Toggle navigation of API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
@@ -264,7 +265,7 @@
 <h1>cvi.GD53<a class="headerlink" href="#cvi-gd53" title="Link to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="cvi.GD53">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">cvi.</span></span><span class="sig-name descname"><span class="pre">GD53</span></span><a class="headerlink" href="#cvi.GD53" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">cvi.</span></span><span class="sig-name descname"><span class="pre">GD53</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numpy'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.GD53" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="cvi.CVI.html#cvi.CVI" title="cvi.modules._base.CVI"><code class="xref py py-class docutils literal notranslate"><span class="pre">CVI</span></code></a></p>
 <p>Generalized Dunn’s Index 53 (GD53) Cluster Validity Index.</p>
 <p class="rubric">References</p>
@@ -298,15 +299,20 @@
 </ol>
 <dl class="py method">
 <dt class="sig sig-object py" id="cvi.GD53.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cvi.GD53.__init__" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numpy'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.GD53.__init__" title="Link to this definition">¶</a></dt>
 <dd><p>Generalized Dunn’s Index 53 (GD53) initialization routine.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>backend</strong> (<em>{&quot;numpy&quot;</em><em>, </em><em>&quot;numba&quot;}</em><em>, </em><em>default=&quot;numpy&quot;</em>) – Select the numerical backend. Numba is loaded on demand.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <p class="rubric">Methods</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#cvi.GD53.__init__" title="cvi.GD53.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#cvi.GD53.__init__" title="cvi.GD53.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*[, backend])</p></td>
 <td><p>Generalized Dunn's Index 53 (GD53) initialization routine.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#cvi.GD53.get_cvi" title="cvi.GD53.get_cvi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_cvi</span></code></a>(data, label)</p></td>
@@ -321,6 +327,9 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#cvi.GD53.split" title="cvi.GD53.split"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split</span></code></a>(retained_label, new_label, count, ...)</p></td>
 <td><p>Split a tracked subset from an existing cluster.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#cvi.GD53.update_many" title="cvi.GD53.update_many"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_many</span></code></a>(data, labels, *[, return_history])</p></td>
+<td><p>Add a chunk to a fixed-capacity JAX stream, atomically on input errors.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -328,12 +337,33 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#cvi.GD53.backend" title="cvi.GD53.backend"><code class="xref py py-obj docutils literal notranslate"><span class="pre">backend</span></code></a></p></td>
+<td><p>Selected numerical backend (fixed for this object's lifetime).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#cvi.GD53.capacity" title="cvi.GD53.capacity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">capacity</span></code></a></p></td>
+<td><p>Maximum distinct clusters for JAX streaming, or None for batch only.</p></td>
+</tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">info</span></code></p></td>
 <td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#cvi.GD53.stream_state" title="cvi.GD53.stream_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stream_state</span></code></a></p></td>
+<td><p>Immutable device state for JAX streaming; None until initialized.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<dl class="py property">
+<dt class="sig sig-object py" id="cvi.GD53.backend">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">backend</span></span><a class="headerlink" href="#cvi.GD53.backend" title="Link to this definition">¶</a></dt>
+<dd><p>Selected numerical backend (fixed for this object’s lifetime).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="cvi.GD53.capacity">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">capacity</span></span><a class="headerlink" href="#cvi.GD53.capacity" title="Link to this definition">¶</a></dt>
+<dd><p>Maximum distinct clusters for JAX streaming, or None for batch only.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="cvi.GD53.get_cvi">
 <span class="sig-name descname"><span class="pre">get_cvi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></span><a class="headerlink" href="#cvi.GD53.get_cvi" title="Link to this definition">¶</a></dt>
@@ -342,7 +372,8 @@
 incremental update, or a two-dimensional batch and label vector for
 batch initialization. The object is mutated in both modes. A batch may
 be followed by incremental updates, but a second batch is not
-supported.</p>
+supported. JAX supports incremental additions when capacity is provided;
+it rejects remove and merge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -459,6 +490,22 @@ by rCIP when <code class="docutils literal notranslate"><span class="pre">count<
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="cvi.GD53.stream_state">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stream_state</span></span><a class="headerlink" href="#cvi.GD53.stream_state" title="Link to this definition">¶</a></dt>
+<dd><p>Immutable device state for JAX streaming; None until initialized.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cvi.GD53.update_many">
+<span class="sig-name descname"><span class="pre">update_many</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_history</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.GD53.update_many" title="Link to this definition">¶</a></dt>
+<dd><p>Add a chunk to a fixed-capacity JAX stream, atomically on input errors.</p>
+<p>Return a NumPy score history, or a Python final score when
+return_history=False. Empty chunks are no-ops, including on new objects.
+The entire chunk must fit the remaining cluster capacity. This is an
+incremental scan, distinct from the one-time batch get_cvi operation.</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -521,10 +568,14 @@ by rCIP when <code class="docutils literal notranslate"><span class="pre">count<
 <li><a class="reference internal" href="#">cvi.GD53</a><ul>
 <li><a class="reference internal" href="#cvi.GD53"><code class="docutils literal notranslate"><span class="pre">GD53</span></code></a><ul>
 <li><a class="reference internal" href="#cvi.GD53.__init__"><code class="docutils literal notranslate"><span class="pre">GD53.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#cvi.GD53.backend"><code class="docutils literal notranslate"><span class="pre">GD53.backend</span></code></a></li>
+<li><a class="reference internal" href="#cvi.GD53.capacity"><code class="docutils literal notranslate"><span class="pre">GD53.capacity</span></code></a></li>
 <li><a class="reference internal" href="#cvi.GD53.get_cvi"><code class="docutils literal notranslate"><span class="pre">GD53.get_cvi()</span></code></a></li>
 <li><a class="reference internal" href="#cvi.GD53.merge"><code class="docutils literal notranslate"><span class="pre">GD53.merge()</span></code></a></li>
 <li><a class="reference internal" href="#cvi.GD53.remove"><code class="docutils literal notranslate"><span class="pre">GD53.remove()</span></code></a></li>
 <li><a class="reference internal" href="#cvi.GD53.split"><code class="docutils literal notranslate"><span class="pre">GD53.split()</span></code></a></li>
+<li><a class="reference internal" href="#cvi.GD53.stream_state"><code class="docutils literal notranslate"><span class="pre">GD53.stream_state</span></code></a></li>
+<li><a class="reference internal" href="#cvi.GD53.update_many"><code class="docutils literal notranslate"><span class="pre">GD53.update_many()</span></code></a></li>
 </ul>
 </li>
 </ul>

@@ -196,6 +196,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../guide.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../backends.html">Backends</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../choosing.html">Choosing an Index</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../conn.html">Using CONN</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../api.html">API Reference</a><input aria-label="Toggle navigation of API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
@@ -264,7 +265,7 @@
 <h1>cvi.cSIL<a class="headerlink" href="#cvi-csil" title="Link to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="cvi.cSIL">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">cvi.</span></span><span class="sig-name descname"><span class="pre">cSIL</span></span><a class="headerlink" href="#cvi.cSIL" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">cvi.</span></span><span class="sig-name descname"><span class="pre">cSIL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numpy'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.cSIL" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="cvi.CVI.html#cvi.CVI" title="cvi.modules._base.CVI"><code class="xref py py-class docutils literal notranslate"><span class="pre">CVI</span></code></a></p>
 <p>Centroid-based Silhouette (cSIL) Cluster Validity Index.</p>
 <p class="rubric">References</p>
@@ -290,15 +291,20 @@
 </ol>
 <dl class="py method">
 <dt class="sig sig-object py" id="cvi.cSIL.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cvi.cSIL.__init__" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numpy'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.cSIL.__init__" title="Link to this definition">¶</a></dt>
 <dd><p>Centroid-based Silhouette (cSIL) initialization routine.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>backend</strong> (<em>{&quot;numpy&quot;</em><em>, </em><em>&quot;numba&quot;}</em><em>, </em><em>default=&quot;numpy&quot;</em>) – Select the numerical backend. Numba is loaded on demand.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <p class="rubric">Methods</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#cvi.cSIL.__init__" title="cvi.cSIL.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#cvi.cSIL.__init__" title="cvi.cSIL.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*[, backend])</p></td>
 <td><p>Centroid-based Silhouette (cSIL) initialization routine.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#cvi.cSIL.get_cvi" title="cvi.cSIL.get_cvi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_cvi</span></code></a>(data, label)</p></td>
@@ -313,6 +319,9 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#cvi.cSIL.split" title="cvi.cSIL.split"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split</span></code></a>(retained_label, new_label, count, ...)</p></td>
 <td><p>Split a tracked subset from an existing cluster.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#cvi.cSIL.update_many" title="cvi.cSIL.update_many"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_many</span></code></a>(data, labels, *[, return_history])</p></td>
+<td><p>Add a chunk to a fixed-capacity JAX stream, atomically on input errors.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -320,12 +329,33 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#cvi.cSIL.backend" title="cvi.cSIL.backend"><code class="xref py py-obj docutils literal notranslate"><span class="pre">backend</span></code></a></p></td>
+<td><p>Selected numerical backend (fixed for this object's lifetime).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#cvi.cSIL.capacity" title="cvi.cSIL.capacity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">capacity</span></code></a></p></td>
+<td><p>Maximum distinct clusters for JAX streaming, or None for batch only.</p></td>
+</tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">info</span></code></p></td>
 <td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#cvi.cSIL.stream_state" title="cvi.cSIL.stream_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stream_state</span></code></a></p></td>
+<td><p>Immutable device state for JAX streaming; None until initialized.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<dl class="py property">
+<dt class="sig sig-object py" id="cvi.cSIL.backend">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">backend</span></span><a class="headerlink" href="#cvi.cSIL.backend" title="Link to this definition">¶</a></dt>
+<dd><p>Selected numerical backend (fixed for this object’s lifetime).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="cvi.cSIL.capacity">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">capacity</span></span><a class="headerlink" href="#cvi.cSIL.capacity" title="Link to this definition">¶</a></dt>
+<dd><p>Maximum distinct clusters for JAX streaming, or None for batch only.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="cvi.cSIL.get_cvi">
 <span class="sig-name descname"><span class="pre">get_cvi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></span><a class="headerlink" href="#cvi.cSIL.get_cvi" title="Link to this definition">¶</a></dt>
@@ -334,7 +364,8 @@
 incremental update, or a two-dimensional batch and label vector for
 batch initialization. The object is mutated in both modes. A batch may
 be followed by incremental updates, but a second batch is not
-supported.</p>
+supported. JAX supports incremental additions when capacity is provided;
+it rejects remove and merge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -451,6 +482,22 @@ by rCIP when <code class="docutils literal notranslate"><span class="pre">count<
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="cvi.cSIL.stream_state">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stream_state</span></span><a class="headerlink" href="#cvi.cSIL.stream_state" title="Link to this definition">¶</a></dt>
+<dd><p>Immutable device state for JAX streaming; None until initialized.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cvi.cSIL.update_many">
+<span class="sig-name descname"><span class="pre">update_many</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_history</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.cSIL.update_many" title="Link to this definition">¶</a></dt>
+<dd><p>Add a chunk to a fixed-capacity JAX stream, atomically on input errors.</p>
+<p>Return a NumPy score history, or a Python final score when
+return_history=False. Empty chunks are no-ops, including on new objects.
+The entire chunk must fit the remaining cluster capacity. This is an
+incremental scan, distinct from the one-time batch get_cvi operation.</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -513,10 +560,14 @@ by rCIP when <code class="docutils literal notranslate"><span class="pre">count<
 <li><a class="reference internal" href="#">cvi.cSIL</a><ul>
 <li><a class="reference internal" href="#cvi.cSIL"><code class="docutils literal notranslate"><span class="pre">cSIL</span></code></a><ul>
 <li><a class="reference internal" href="#cvi.cSIL.__init__"><code class="docutils literal notranslate"><span class="pre">cSIL.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#cvi.cSIL.backend"><code class="docutils literal notranslate"><span class="pre">cSIL.backend</span></code></a></li>
+<li><a class="reference internal" href="#cvi.cSIL.capacity"><code class="docutils literal notranslate"><span class="pre">cSIL.capacity</span></code></a></li>
 <li><a class="reference internal" href="#cvi.cSIL.get_cvi"><code class="docutils literal notranslate"><span class="pre">cSIL.get_cvi()</span></code></a></li>
 <li><a class="reference internal" href="#cvi.cSIL.merge"><code class="docutils literal notranslate"><span class="pre">cSIL.merge()</span></code></a></li>
 <li><a class="reference internal" href="#cvi.cSIL.remove"><code class="docutils literal notranslate"><span class="pre">cSIL.remove()</span></code></a></li>
 <li><a class="reference internal" href="#cvi.cSIL.split"><code class="docutils literal notranslate"><span class="pre">cSIL.split()</span></code></a></li>
+<li><a class="reference internal" href="#cvi.cSIL.stream_state"><code class="docutils literal notranslate"><span class="pre">cSIL.stream_state</span></code></a></li>
+<li><a class="reference internal" href="#cvi.cSIL.update_many"><code class="docutils literal notranslate"><span class="pre">cSIL.update_many()</span></code></a></li>
 </ul>
 </li>
 </ul>

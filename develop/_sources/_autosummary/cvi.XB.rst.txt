@@ -21,6 +21,7 @@
       ~XB.merge
       ~XB.remove
       ~XB.split
+      ~XB.update_many
    
    
 
@@ -30,6 +31,9 @@
 
    .. autosummary::
    
+      ~XB.backend
+      ~XB.capacity
       ~XB.info
+      ~XB.stream_state
    
    

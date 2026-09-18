@@ -21,6 +21,7 @@
       ~PS.merge
       ~PS.remove
       ~PS.split
+      ~PS.update_many
    
    
 
@@ -30,6 +31,9 @@
 
    .. autosummary::
    
+      ~PS.backend
+      ~PS.capacity
       ~PS.info
+      ~PS.stream_state
    
    

@@ -21,6 +21,7 @@
       ~GD43.merge
       ~GD43.remove
       ~GD43.split
+      ~GD43.update_many
    
    
 
@@ -30,6 +31,9 @@
 
    .. autosummary::
    
+      ~GD43.backend
+      ~GD43.capacity
       ~GD43.info
+      ~GD43.stream_state
    
    

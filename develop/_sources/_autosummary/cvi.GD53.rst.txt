@@ -21,6 +21,7 @@
       ~GD53.merge
       ~GD53.remove
       ~GD53.split
+      ~GD53.update_many
    
    
 
@@ -30,6 +31,9 @@
 
    .. autosummary::
    
+      ~GD53.backend
+      ~GD53.capacity
       ~GD53.info
+      ~GD53.stream_state
    
    

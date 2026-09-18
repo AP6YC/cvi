@@ -196,6 +196,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="guide.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backends.html">Backends</a></li>
 <li class="toctree-l1"><a class="reference internal" href="choosing.html">Choosing an Index</a></li>
 <li class="toctree-l1"><a class="reference internal" href="conn.html">Using CONN</a></li>
 <li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">API Reference</a><input aria-label="Toggle navigation of API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -269,7 +270,7 @@ from <code class="docutils literal notranslate"><span class="pre">cvi</span></co
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI" title="cvi.CVI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI" title="cvi.CVI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI</span></code></a>(*[, backend, capacity])</p></td>
 <td><p>Superclass containing elements shared between all CVIs.</p></td>
 </tr>
 </tbody>
@@ -281,34 +282,34 @@ from <code class="docutils literal notranslate"><span class="pre">cvi</span></co
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.CH.html#cvi.CH" title="cvi.CH"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CH</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.CH.html#cvi.CH" title="cvi.CH"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CH</span></code></a>(*[, backend, capacity])</p></td>
 <td><p>Calinski-Harabasz (CH) Cluster Validity Index.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.CONN.html#cvi.CONN" title="cvi.CONN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CONN</span></code></a>([rho, alpha, beta, match_tracking, ...])</p></td>
 <td><p>CONN Cluster Validity Index.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.cSIL.html#cvi.cSIL" title="cvi.cSIL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.cSIL</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.cSIL.html#cvi.cSIL" title="cvi.cSIL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.cSIL</span></code></a>(*[, backend])</p></td>
 <td><p>Centroid-based Silhouette (cSIL) Cluster Validity Index.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.DB.html#cvi.DB" title="cvi.DB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.DB</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.DB.html#cvi.DB" title="cvi.DB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.DB</span></code></a>(*[, backend])</p></td>
 <td><p>Davies-Bouldin (DB) Cluster Validity Index.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.GD43.html#cvi.GD43" title="cvi.GD43"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.GD43</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.GD43.html#cvi.GD43" title="cvi.GD43"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.GD43</span></code></a>(*[, backend])</p></td>
 <td><p>Generalized Dunn's Index 43 (GD43) Cluster Validity Index.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.GD53.html#cvi.GD53" title="cvi.GD53"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.GD53</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.GD53.html#cvi.GD53" title="cvi.GD53"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.GD53</span></code></a>(*[, backend])</p></td>
 <td><p>Generalized Dunn's Index 53 (GD53) Cluster Validity Index.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.PS.html#cvi.PS" title="cvi.PS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.PS</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.PS.html#cvi.PS" title="cvi.PS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.PS</span></code></a>(*[, backend])</p></td>
 <td><p>Partition Separation (PS) Cluster Validity Index.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.rCIP.html#cvi.rCIP" title="cvi.rCIP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.rCIP</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.rCIP.html#cvi.rCIP" title="cvi.rCIP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.rCIP</span></code></a>(*[, backend])</p></td>
 <td><p>(Renyi's) representative Cross Information Potential (rCIP) Cluster Validity Index.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.WB.html#cvi.WB" title="cvi.WB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.WB</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.WB.html#cvi.WB" title="cvi.WB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.WB</span></code></a>(*[, backend, capacity])</p></td>
 <td><p>WB-Index (WB) Cluster Validity Index.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.XB.html#cvi.XB" title="cvi.XB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.XB</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.XB.html#cvi.XB" title="cvi.XB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.XB</span></code></a>(*[, backend, capacity])</p></td>
 <td><p>Xie-Beni (XB) Cluster Validity Index.</p></td>
 </tr>
 </tbody>
@@ -325,18 +326,89 @@ from <code class="docutils literal notranslate"><span class="pre">cvi</span></co
 <tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI.get_cvi" title="cvi.CVI.get_cvi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI.get_cvi</span></code></a>(data, label)</p></td>
 <td><p>Update the CVI and return its criterion value.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI.remove" title="cvi.CVI.remove"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI.remove</span></code></a>(sample, label)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI.update_many" title="cvi.CVI.update_many"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI.update_many</span></code></a>(data, labels, *[, ...])</p></td>
+<td><p>Add a chunk to a fixed-capacity JAX stream, atomically on input errors.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI.remove" title="cvi.CVI.remove"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI.remove</span></code></a>(sample, label)</p></td>
 <td><p>Remove a sample from an initialized CVI.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI.merge" title="cvi.CVI.merge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI.merge</span></code></a>(target_label, source_label)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI.merge" title="cvi.CVI.merge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI.merge</span></code></a>(target_label, source_label)</p></td>
 <td><p>Merge a source cluster into a target cluster.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI.split" title="cvi.CVI.split"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI.split</span></code></a>(retained_label, new_label, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/cvi.CVI.html#cvi.CVI.split" title="cvi.CVI.split"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvi.CVI.split</span></code></a>(retained_label, new_label, ...)</p></td>
 <td><p>Split a tracked subset from an existing cluster.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+</section>
+<section id="functional-jax-batch-interface">
+<h2>Functional JAX batch interface<a class="headerlink" href="#functional-jax-batch-interface" title="Link to this heading">¶</a></h2>
+<p>Install the optional <code class="docutils literal notranslate"><span class="pre">jax</span></code> extra and enable JAX x64 before using this module.
+See <a class="reference internal" href="guide.html"><span class="doc">Getting Started</span></a> for label encoding, precision, and supported operations.</p>
+<dl class="py function" id="module-cvi.jax">
+<dt class="sig sig-object py" id="cvi.jax.batch_state">
+<span class="sig-prename descclassname"><span class="pre">cvi.jax.</span></span><span class="sig-name descname"><span class="pre">batch_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_clusters</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.jax.batch_state" title="Link to this definition">¶</a></dt>
+<dd><p>Return an immutable <code class="docutils literal notranslate"><span class="pre">BatchState</span></code> pytree of device-resident sufficient
+statistics. Labels must be dense and every cluster must be represented.
+<code class="docutils literal notranslate"><span class="pre">n_clusters</span></code> must be static under JIT.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cvi.jax.evaluate">
+<span class="sig-prename descclassname"><span class="pre">cvi.jax.</span></span><span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.jax.evaluate" title="Link to this definition">¶</a></dt>
+<dd><p>Return a JAX scalar for <code class="docutils literal notranslate"><span class="pre">index=&quot;CH&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;WB&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;XB&quot;</span></code>. The index
+name must be static under JIT.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cvi.jax.batch_cvi">
+<span class="sig-prename descclassname"><span class="pre">cvi.jax.</span></span><span class="sig-name descname"><span class="pre">batch_cvi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_clusters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.jax.batch_cvi" title="Link to this definition">¶</a></dt>
+<dd><p>Compute batch statistics and evaluate the chosen index in one functional
+call. Suitable for composition with <code class="docutils literal notranslate"><span class="pre">jit</span></code>, <code class="docutils literal notranslate"><span class="pre">vmap</span></code>, and differentiation
+with fixed labels. No host scalar conversion is performed.</p>
+</dd></dl>
+
+</section>
+<section id="functional-jax-streaming-interface">
+<h2>Functional JAX streaming interface<a class="headerlink" href="#functional-jax-streaming-interface" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="cvi.jax.empty_stream">
+<span class="sig-prename descclassname"><span class="pre">cvi.jax.</span></span><span class="sig-name descname"><span class="pre">empty_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">capacity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.jax.empty_stream" title="Link to this definition">¶</a></dt>
+<dd><p>Allocate an immutable <code class="docutils literal notranslate"><span class="pre">StreamingState</span></code> of fixed-shape device arrays.
+Capacity and feature count must be positive static integers.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cvi.jax.stream_from_batch">
+<span class="sig-prename descclassname"><span class="pre">cvi.jax.</span></span><span class="sig-name descname"><span class="pre">stream_from_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">capacity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.jax.stream_from_batch" title="Link to this definition">¶</a></dt>
+<dd><p>Pad a valid <code class="docutils literal notranslate"><span class="pre">BatchState</span></code> into a stream without changing its statistics.
+Capacity must accommodate all existing clusters.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cvi.jax.stream_update">
+<span class="sig-prename descclassname"><span class="pre">cvi.jax.</span></span><span class="sig-name descname"><span class="pre">stream_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.jax.stream_update" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">(new_state,</span> <span class="pre">score)</span></code> after one incremental addition. Slots are
+integers in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">capacity)</span></code>; they need not be contiguous.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cvi.jax.stream_chunk">
+<span class="sig-prename descclassname"><span class="pre">cvi.jax.</span></span><span class="sig-name descname"><span class="pre">stream_chunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slots</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_history</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.jax.stream_chunk" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">(new_state,</span> <span class="pre">history)</span></code> using a compiled scan, or a final scalar
+when <code class="docutils literal notranslate"><span class="pre">return_history=False</span></code>. Empty chunks are no-ops. Invalid slot values
+or nonfinite data return unchanged state and NaN output for the whole call.
+Shape/dtype errors raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>. Options must be static under JIT.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cvi.jax.evaluate_stream">
+<span class="sig-prename descclassname"><span class="pre">cvi.jax.</span></span><span class="sig-name descname"><span class="pre">evaluate_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.jax.evaluate_stream" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate active clusters; zero/one-cluster states return zero. The index
+must match the state’s distance layout (CH/WB versus XB).</p>
+</dd></dl>
+
 </section>
 </section>
 
@@ -399,6 +471,20 @@ from <code class="docutils literal notranslate"><span class="pre">cvi</span></co
 <li><a class="reference internal" href="#base-class">Base class</a></li>
 <li><a class="reference internal" href="#indices">Indices</a></li>
 <li><a class="reference internal" href="#common-methods">Common methods</a></li>
+<li><a class="reference internal" href="#functional-jax-batch-interface">Functional JAX batch interface</a><ul>
+<li><a class="reference internal" href="#cvi.jax.batch_state"><code class="docutils literal notranslate"><span class="pre">batch_state()</span></code></a></li>
+<li><a class="reference internal" href="#cvi.jax.evaluate"><code class="docutils literal notranslate"><span class="pre">evaluate()</span></code></a></li>
+<li><a class="reference internal" href="#cvi.jax.batch_cvi"><code class="docutils literal notranslate"><span class="pre">batch_cvi()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#functional-jax-streaming-interface">Functional JAX streaming interface</a><ul>
+<li><a class="reference internal" href="#cvi.jax.empty_stream"><code class="docutils literal notranslate"><span class="pre">empty_stream()</span></code></a></li>
+<li><a class="reference internal" href="#cvi.jax.stream_from_batch"><code class="docutils literal notranslate"><span class="pre">stream_from_batch()</span></code></a></li>
+<li><a class="reference internal" href="#cvi.jax.stream_update"><code class="docutils literal notranslate"><span class="pre">stream_update()</span></code></a></li>
+<li><a class="reference internal" href="#cvi.jax.stream_chunk"><code class="docutils literal notranslate"><span class="pre">stream_chunk()</span></code></a></li>
+<li><a class="reference internal" href="#cvi.jax.evaluate_stream"><code class="docutils literal notranslate"><span class="pre">evaluate_stream()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

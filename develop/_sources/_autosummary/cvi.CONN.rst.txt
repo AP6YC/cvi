@@ -21,6 +21,7 @@
       ~CONN.merge
       ~CONN.remove
       ~CONN.split
+      ~CONN.update_many
    
    
 
@@ -30,6 +31,9 @@
 
    .. autosummary::
    
+      ~CONN.backend
+      ~CONN.capacity
       ~CONN.info
+      ~CONN.stream_state
    
    

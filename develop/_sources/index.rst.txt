@@ -24,6 +24,7 @@ Start with :doc:`guide`, then use :doc:`choosing` to select an index.
 
    background
    guide
+   backends
    choosing
    conn
    api
