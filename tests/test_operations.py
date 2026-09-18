@@ -1,4 +1,4 @@
-"""Tests for CVI add, remove, and merge operations."""
+"""Tests for CVI add, remove, merge, and split operations."""
 
 import copy
 
@@ -44,6 +44,21 @@ def build_in_batch(cvi_type, samples=SAMPLES, labels=LABELS):
     return local_cvi
 
 
+def subset_statistics(samples):
+    """Return count, centroid, compactness, and sample covariance."""
+
+    count = len(samples)
+    centroid = np.mean(samples, axis=0)
+    differences = samples - centroid
+    compactness = float(np.sum(differences ** 2))
+    if count == 1:
+        covariance = np.zeros((samples.shape[1], samples.shape[1]))
+    else:
+        covariance = differences.T @ differences / (count - 1)
+
+    return count, centroid, compactness, covariance
+
+
 def assert_equivalent(actual, expected):
     """Compare the common and index-specific sufficient statistics."""
 
@@ -80,7 +95,7 @@ def assert_equivalent(actual, expected):
 def core_snapshot(local_cvi):
     """Copy state used to prove failed operations are atomic."""
 
-    return {
+    snapshot = {
         "label_map": copy.deepcopy(local_cvi._label_map.map),
         "n_samples": local_cvi._n_samples,
         "n_clusters": local_cvi._n_clusters,
@@ -88,6 +103,12 @@ def core_snapshot(local_cvi):
         "v": local_cvi._v.copy(),
         "criterion_value": local_cvi.criterion_value,
     }
+    snapshot["statistics"] = {
+        attribute: copy.deepcopy(getattr(local_cvi, attribute))
+        for attribute in ("_CP", "_G", "_D", "_S", "_SEP", "_sigma")
+        if hasattr(local_cvi, attribute)
+    }
+    return snapshot
 
 
 def assert_snapshot(local_cvi, snapshot):
@@ -99,6 +120,16 @@ def assert_snapshot(local_cvi, snapshot):
     np.testing.assert_array_equal(np.asarray(local_cvi._n), snapshot["n"])
     np.testing.assert_array_equal(local_cvi._v, snapshot["v"])
     assert local_cvi.criterion_value == snapshot["criterion_value"]
+
+    for attribute, expected in snapshot["statistics"].items():
+        actual = getattr(local_cvi, attribute)
+        if expected is None:
+            assert actual is None
+        else:
+            np.testing.assert_array_equal(
+                np.asarray(actual),
+                np.asarray(expected),
+            )
 
 
 @pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
@@ -128,6 +159,115 @@ def test_merge_matches_relabelled_incremental_replay(cvi_type):
     expected = build_incrementally(cvi_type, SAMPLES, merged_labels)
 
     assert returned == actual.criterion_value
+    assert_equivalent(actual, expected)
+
+
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+def test_split_matches_incremental_replay(cvi_type):
+    """Splitting sufficient statistics must equal replaying new labels."""
+
+    split_indices = np.asarray([7, 8])
+    count, centroid, compactness, covariance = subset_statistics(
+        SAMPLES[split_indices]
+    )
+    actual = build_incrementally(cvi_type)
+    returned = actual.split(
+        retained_label=30,
+        new_label=40,
+        count=count,
+        centroid=centroid,
+        compactness=compactness,
+        covariance=covariance,
+    )
+
+    split_labels = LABELS.copy()
+    split_labels[split_indices] = 40
+    expected = build_incrementally(cvi_type, SAMPLES, split_labels)
+
+    assert returned == actual.criterion_value
+    assert_equivalent(actual, expected)
+
+
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+def test_split_then_merge_restores_state(cvi_type):
+    """A split/merge round trip must restore the previous summary."""
+
+    split_indices = np.asarray([7, 8])
+    count, centroid, compactness, covariance = subset_statistics(
+        SAMPLES[split_indices]
+    )
+    expected = build_incrementally(cvi_type)
+    actual = build_incrementally(cvi_type)
+
+    actual.split(
+        retained_label=30,
+        new_label=40,
+        count=count,
+        centroid=centroid,
+        compactness=compactness,
+        covariance=covariance,
+    )
+    actual.merge(target_label=30, source_label=40)
+
+    assert_equivalent(actual, expected)
+
+
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+def test_singleton_split_infers_zero_statistics(cvi_type):
+    """Singleton splits do not require explicit compactness or covariance."""
+
+    actual = build_incrementally(cvi_type)
+    returned = actual.split(
+        retained_label=30,
+        new_label=40,
+        count=1,
+        centroid=SAMPLES[8],
+    )
+
+    split_labels = LABELS.copy()
+    split_labels[8] = 40
+    expected = build_incrementally(cvi_type, SAMPLES, split_labels)
+
+    assert returned == actual.criterion_value
+    assert_equivalent(actual, expected)
+
+
+@pytest.mark.parametrize(
+    ("cvi_type", "required_statistic"),
+    [
+        (cvi.CH, "compactness"),
+        (cvi.cSIL, "compactness"),
+        (cvi.rCIP, "covariance"),
+    ],
+)
+def test_non_singleton_split_requires_index_statistic(
+    cvi_type,
+    required_statistic,
+):
+    """Non-singleton splits require the statistic used by the index."""
+
+    count, centroid, _, _ = subset_statistics(SAMPLES[[7, 8]])
+    local_cvi = build_incrementally(cvi_type)
+    snapshot = core_snapshot(local_cvi)
+
+    with pytest.raises(ValueError, match=f"requires {required_statistic}"):
+        local_cvi.split(30, 40, count, centroid)
+
+    assert_snapshot(local_cvi, snapshot)
+
+
+def test_ps_non_singleton_split_needs_no_dispersion_statistic():
+    """PS can split using only its count and centroid statistics."""
+
+    split_indices = np.asarray([7, 8])
+    count, centroid, _, _ = subset_statistics(SAMPLES[split_indices])
+    actual = build_incrementally(cvi.PS)
+    actual.split(30, 40, count, centroid)
+
+    split_labels = LABELS.copy()
+    split_labels[split_indices] = 40
+    expected = build_incrementally(cvi.PS, SAMPLES, split_labels)
+
     assert_equivalent(actual, expected)
 
 
@@ -231,6 +371,33 @@ def test_rcip_merge_singletons():
     assert_equivalent(actual, expected)
 
 
+def test_rcip_split_with_nonsingleton_remainder():
+    """rCIP applies the general covariance split when both sides are larger."""
+
+    extra_samples = np.asarray([[3.1, -0.2], [2.7, 0.4]])
+    samples = np.vstack((SAMPLES, extra_samples))
+    labels = np.append(LABELS, [30, 30])
+    split_indices = np.asarray([9, 10])
+    count, centroid, compactness, covariance = subset_statistics(
+        samples[split_indices]
+    )
+    actual = build_incrementally(cvi.rCIP, samples, labels)
+    actual.split(
+        retained_label=30,
+        new_label=40,
+        count=count,
+        centroid=centroid,
+        compactness=compactness,
+        covariance=covariance,
+    )
+
+    split_labels = labels.copy()
+    split_labels[split_indices] = 40
+    expected = build_incrementally(cvi.rCIP, samples, split_labels)
+
+    assert_equivalent(actual, expected)
+
+
 @pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_invalid_operation_arguments_are_atomic(cvi_type):
     """Label and dimension errors must not mutate the object."""
@@ -254,6 +421,56 @@ def test_invalid_operation_arguments_are_atomic(cvi_type):
         local_cvi.merge(10, 10)
     assert_snapshot(local_cvi, snapshot)
 
+    with pytest.raises(ValueError, match="Unknown cluster label"):
+        local_cvi.split(999, 40, 1, SAMPLES[0])
+    assert_snapshot(local_cvi, snapshot)
+
+    with pytest.raises(ValueError, match="unused new cluster label"):
+        local_cvi.split(10, 20, 1, SAMPLES[0])
+    assert_snapshot(local_cvi, snapshot)
+
+    with pytest.raises(ValueError, match="positive integer"):
+        local_cvi.split(10, 40, 0, SAMPLES[0])
+    assert_snapshot(local_cvi, snapshot)
+
+    with pytest.raises(ValueError, match="smaller than"):
+        local_cvi.split(10, 40, 3, SAMPLES[0])
+    assert_snapshot(local_cvi, snapshot)
+
+    with pytest.raises(ValueError, match="Expected a centroid"):
+        local_cvi.split(10, 40, 1, np.asarray([1.0, 2.0, 3.0]))
+    assert_snapshot(local_cvi, snapshot)
+
+    with pytest.raises(ValueError, match="invalid split compactness"):
+        local_cvi.split(
+            10,
+            40,
+            2,
+            SAMPLES[0],
+            compactness=-1.0,
+        )
+    assert_snapshot(local_cvi, snapshot)
+
+    with pytest.raises(ValueError, match="Expected covariance"):
+        local_cvi.split(
+            10,
+            40,
+            2,
+            SAMPLES[0],
+            covariance=np.zeros((3, 3)),
+        )
+    assert_snapshot(local_cvi, snapshot)
+
+    with pytest.raises(ValueError, match="positive semidefinite"):
+        local_cvi.split(
+            10,
+            40,
+            2,
+            SAMPLES[0],
+            covariance=np.asarray([[1.0, 0.0], [0.0, -1.0]]),
+        )
+    assert_snapshot(local_cvi, snapshot)
+
 
 @pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_operations_require_initialized_state(cvi_type):
@@ -264,6 +481,8 @@ def test_operations_require_initialized_state(cvi_type):
         fresh.remove(SAMPLES[0], 10)
     with pytest.raises(ValueError, match="initialized CVI"):
         fresh.merge(10, 20)
+    with pytest.raises(ValueError, match="initialized CVI"):
+        fresh.split(10, 20, 1, SAMPLES[0])
 
 
 @pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
@@ -338,6 +557,32 @@ def test_batch_then_merge_matches_incremental_replay(cvi_type):
 
 
 @pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
+def test_batch_then_split_matches_incremental_replay(cvi_type):
+    """A batch-initialized CVI can split tracked sufficient statistics."""
+
+    split_indices = np.asarray([7, 8])
+    count, centroid, compactness, covariance = subset_statistics(
+        SAMPLES[split_indices]
+    )
+    actual = build_in_batch(cvi_type)
+    returned = actual.split(
+        retained_label=30,
+        new_label=40,
+        count=count,
+        centroid=centroid,
+        compactness=compactness,
+        covariance=covariance,
+    )
+
+    split_labels = LABELS.copy()
+    split_labels[split_indices] = 40
+    expected = build_incrementally(cvi_type, SAMPLES, split_labels)
+
+    assert returned == actual.criterion_value
+    assert_equivalent(actual, expected)
+
+
+@pytest.mark.parametrize("cvi_type", CVIS_NOT_CONN)
 def test_batch_add_then_remove_restores_state(cvi_type):
     """A scalar add/remove round trip restores batch-initialized state."""
 
@@ -381,6 +626,26 @@ def test_inconsistent_remove_is_atomic(cvi_type):
     assert_snapshot(local_cvi, snapshot)
 
 
+@pytest.mark.parametrize("cvi_type", [cvi.CH, cvi.cSIL, cvi.rCIP])
+def test_inconsistent_split_is_atomic(cvi_type):
+    """A subset inconsistent with its parent must not mutate the CVI."""
+
+    local_cvi = build_incrementally(cvi_type)
+    snapshot = core_snapshot(local_cvi)
+
+    with pytest.raises(ValueError, match="invalid (cluster compactness|covariance)"):
+        local_cvi.split(
+            retained_label=10,
+            new_label=40,
+            count=2,
+            centroid=np.asarray([100.0, 100.0]),
+            compactness=0.0,
+            covariance=np.zeros((2, 2)),
+        )
+
+    assert_snapshot(local_cvi, snapshot)
+
+
 def test_conn_operations_are_explicitly_unsupported():
     """CONN exposes the common interface but defers reversible state."""
 
@@ -391,3 +656,6 @@ def test_conn_operations_are_explicitly_unsupported():
 
     with pytest.raises(NotImplementedError, match="does not support"):
         conn.merge(0, 1)
+
+    with pytest.raises(NotImplementedError, match="does not support"):
+        conn.split(0, 1, 1, np.asarray([0.1, 0.2]))

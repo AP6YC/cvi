@@ -35,10 +35,11 @@ Common methods
 --------------
 
 All indices inherit the common update interface from :class:`cvi.CVI`.
-``CONN`` does not currently implement ``remove`` or ``merge``.
+``CONN`` does not currently implement ``remove``, ``merge``, or ``split``.
 
 .. autosummary::
 
    cvi.CVI.get_cvi
    cvi.CVI.remove
    cvi.CVI.merge
+   cvi.CVI.split

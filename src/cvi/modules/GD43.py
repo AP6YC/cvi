@@ -197,7 +197,7 @@ class GD43(_base.CVI):
         self._D = self._D + np.transpose(self._D)
 
     def _rebuild_after_operation(self):
-        """Rebuild centroid distances after a remove or merge."""
+        """Rebuild centroid distances after a structural operation."""
 
         if self._n_clusters == 0:
             self._mu = np.zeros(0)
