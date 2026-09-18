@@ -3,6 +3,11 @@ Backends
 
 `cvi` comes with some optimizations in the form of various backends that you can switch between for faster performance depending on your use-case.
 
+.. include:: _backend_coverage.rstinc
+
+Backend availability does not guarantee a speedup. The sections below describe
+which kernels are compiled and when compilation or transfer costs matter.
+
 Optional CPU acceleration
 -------------------------
 
@@ -32,8 +37,14 @@ cSIL batch dissimilarities. Dtype-sensitive means and raw-moment reductions
 remain in NumPy. Unsupported array types (including float16 and non-native
 byte order) use NumPy for the affected operations. Floating-point rounding may
 differ; bitwise equivalence is not guaranteed. Existing undefined NaN/inf scores
-retain their meaning. Unchanged paths, including CH/WB streaming updates and
-cSIL incremental updates, are not accelerated.
+retain their meaning. Unchanged paths, including CH/WB, GD53, and cSIL sample updates and
+remove/merge operations, are not accelerated. DB, GD43, PS, and XB use compiled
+centroid-distance kernels during sample updates and after remove/merge.
+Batch CH/WB compile grouping, compactness, and centroid-to-mean distances;
+GD53 compiles grouping and compactness. Batch DB, GD43, and XB compile grouping,
+compactness, and pairwise centroid distances. PS compiles grouping and pairwise
+centroid distances, without a compactness calculation. cSIL compiles grouping,
+compactness, and its batch dissimilarity calculation.
 
 The first invocation for a new input type/layout incurs compilation. Later
 calls reuse compiled code, with a disk cache across processes. Include that

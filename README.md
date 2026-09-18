@@ -36,8 +36,8 @@ Please see the [documentation][docs-stable-url] for detailed usage.
 - [What Are Cluster Validity Indices?](#what-are-cluster-validity-indices)
 - [Installation](#installation)
 - [Quickstart](#quickstart)
-  - [Implemented Indices](#implemented-indices)
   - [Updating an Existing Partition](#updating-an-existing-partition)
+  - [Implemented Indices](#implemented-indices)
 - [Optimizations](#optimizations)
   - [Optional Numba Acceleration](#optional-numba-acceleration)
   - [Optional JAX Batch Backend](#optional-jax-batch-backend)
@@ -122,24 +122,6 @@ Users can also query the `.info` property of the CVI objects to obtain relevant 
 CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max')
 ```
 
-### Implemented Indices
-
-| Index | Prefer | Range | Batch | Incremental | Remove/merge |
-|---|---|---|---|---|---|
-| `CH` | Larger | `[0, ∞)` | Yes | Yes | Yes |
-| `CONN` | Larger | `[0, 1]` | Yes | FuzzyART backend only | No |
-| `cSIL` | Larger | `[-1, 1]` | Yes | Yes | Yes |
-| `DB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
-| `GD43` | Larger | `[0, ∞)` | Yes | Yes | Yes |
-| `GD53` | Larger | `[0, ∞)` | Yes | Yes | Yes |
-| `PS` | Larger | `[0, 1]` | Yes | Yes | Yes |
-| `rCIP` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
-| `WB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
-| `XB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
-
-`CONN` uses prototype connectivity and has additional backend and normalization requirements.
-See the [CONN guide][conn-guide] before using it.
-
 ### Updating an Existing Partition
 
 Except for `CONN`, initialized indices support adding samples, removing samples, and merging clusters without replaying the full dataset via `remove` and `merge`:
@@ -157,6 +139,56 @@ The caller is responsible for ensuring that a removed sample belongs to the supp
 For input rules, index-selection guidance, references, legacy API information, and the complete API, see the [documentation][docs-stable-url].
 
 [conn-guide]: https://AP6YC.github.io/cvi/main/conn.html
+
+### Implemented Indices
+
+The operation support below describes the default NumPy backend. Optional
+backend coverage is listed separately.
+
+| Index | Prefer | Range | Batch | Incremental | Remove/merge |
+|---|---|---|---|---|---|
+| `CH` | Larger | `[0, ∞)` | Yes | Yes | Yes |
+| `CONN` | Larger | `[0, 1]` | Yes | FuzzyART backend only | No |
+| `cSIL` | Larger | `[-1, 1]` | Yes | Yes | Yes |
+| `DB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
+| `GD43` | Larger | `[0, ∞)` | Yes | Yes | Yes |
+| `GD53` | Larger | `[0, ∞)` | Yes | Yes | Yes |
+| `PS` | Larger | `[0, 1]` | Yes | Yes | Yes |
+| `rCIP` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
+| `WB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
+| `XB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
+
+**Optional optimization coverage**
+
+|Index | Numba batch | Numba sample updates | Numba remove/merge | JAX batch | JAX streaming |
+|---|---|---|---|---|---|
+| `CH` | Yes | Unchanged | Unchanged | Yes | Capacity |
+| `CONN` | Unavailable | Unavailable | Unavailable | Unavailable | Unavailable |
+| `cSIL` | Yes | Unchanged | Unchanged | Unavailable | Unavailable |
+| `DB` | Yes | Distances | Distances | Unavailable | Unavailable |
+| `GD43` | Yes | Distances | Distances | Unavailable | Unavailable |
+| `GD53` | Yes | Unchanged | Unchanged | Unavailable | Unavailable |
+| `PS` | Yes | Distances | Distances | Unavailable | Unavailable |
+| `rCIP` | Unavailable | Unavailable | Unavailable | Unavailable | Unavailable |
+| `WB` | Yes | Unchanged | Unchanged | Yes | Capacity |
+| `XB` | Yes | Distances | Distances | Yes | Capacity |
+
+**Yes** means compiled batch kernels are available, not that every operation is
+compiled. **Distances** means centroid-distance kernels are compiled; other
+update logic remains in Python/NumPy. **Unchanged** means the operation is
+supported with `backend="numba"` but uses its existing NumPy implementation.
+**Unavailable** means that index rejects the selected numerical backend.
+
+**Capacity** means JAX sample updates and `update_many` chunks require a positive
+`capacity` at construction. CH, WB, and XB also expose functional JAX batch and
+streaming APIs. All JAX modes require x64; JAX remove/merge is unsupported.
+Numba retains remove/merge support for all eight supported indices, including
+operations marked **Unchanged**. Backend selection does not guarantee a speedup;
+see [Numba](#optional-numba-acceleration) and [JAX](#optional-jax-batch-backend)
+for compilation, precision, and fallback details.
+
+`CONN` uses prototype connectivity and has additional backend and normalization requirements.
+See the [CONN guide][conn-guide] before using it.
 
 ## Optimizations
 

@@ -1,0 +1,86 @@
+.. list-table:: Optional optimization coverage
+   :header-rows: 1
+   :widths: 10 15 20 20 15 20
+
+   * - Index
+     - Numba batch
+     - Numba sample updates
+     - Numba remove/merge
+     - JAX batch
+     - JAX streaming
+   * - ``CH``
+     - Yes
+     - Unchanged
+     - Unchanged
+     - Yes
+     - Capacity
+   * - ``CONN``
+     - Unavailable
+     - Unavailable
+     - Unavailable
+     - Unavailable
+     - Unavailable
+   * - ``cSIL``
+     - Yes
+     - Unchanged
+     - Unchanged
+     - Unavailable
+     - Unavailable
+   * - ``DB``
+     - Yes
+     - Distances
+     - Distances
+     - Unavailable
+     - Unavailable
+   * - ``GD43``
+     - Yes
+     - Distances
+     - Distances
+     - Unavailable
+     - Unavailable
+   * - ``GD53``
+     - Yes
+     - Unchanged
+     - Unchanged
+     - Unavailable
+     - Unavailable
+   * - ``PS``
+     - Yes
+     - Distances
+     - Distances
+     - Unavailable
+     - Unavailable
+   * - ``rCIP``
+     - Unavailable
+     - Unavailable
+     - Unavailable
+     - Unavailable
+     - Unavailable
+   * - ``WB``
+     - Yes
+     - Unchanged
+     - Unchanged
+     - Yes
+     - Capacity
+   * - ``XB``
+     - Yes
+     - Distances
+     - Distances
+     - Yes
+     - Capacity
+
+**Yes** means compiled batch kernels are available; it does not mean that every
+operation is compiled. **Distances** means centroid-distance kernels are
+compiled while other update logic remains in Python/NumPy. **Unchanged** means
+the operation is supported with ``backend="numba"`` but uses its existing NumPy
+implementation. **Unavailable** means the index rejects that numerical backend.
+
+**Capacity** means JAX sample additions and ``update_many`` chunks require a
+positive ``capacity`` at construction. CH, WB, and XB also provide functional
+JAX batch and streaming APIs. All JAX modes require x64, and none support remove
+or merge. Numba retains remove/merge support for all eight supported indices,
+including the operations marked **Unchanged**.
+
+NumPy remains the default for every index. CONN's ``model_type`` selects its
+prototype learner separately from numerical ``backend`` selection; it does not
+enable the optional Numba or JAX numerical backends.
