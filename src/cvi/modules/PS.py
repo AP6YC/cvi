@@ -11,7 +11,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base, _kernels
+from . import _base
 
 
 # PS object definition
@@ -32,15 +32,21 @@ class PS(_base.CVI):
         index_max=1.0,
         optimality="max"
     )
+    _supports_numba = True
     _supports_remove_merge = True
 
-    def __init__(self):
+    def __init__(self, *, backend="numpy"):
         """
         Partition Separation (PS) initialization routine.
+
+        Parameters
+        ----------
+        backend : {"numpy", "numba"}, default="numpy"
+            Select the numerical backend. Numba is loaded on demand.
         """
 
         # Run the base initialization
-        super().__init__()
+        super().__init__(backend=backend)
 
         # PS-specific initialization
         self._D = np.zeros([0, 0])   # n_clusters x n_clusters
@@ -89,7 +95,7 @@ class PS(_base.CVI):
                 D_new = np.zeros((self._n_clusters + 1, self._n_clusters + 1))
                 D_new[0:self._n_clusters, 0:self._n_clusters] = self._D
                 d_column_new = np.zeros(self._n_clusters + 1)
-                d_column_new[:-1] = _kernels.centroid_distances(
+                d_column_new[:-1] = self._backend.centroid_distances(
                     self._v, v_new,
                 )
                 D_new[i_label, :] = d_column_new
@@ -110,7 +116,7 @@ class PS(_base.CVI):
                 (1 - 1 / n_new) * self._v[i_label, :]
                 + (1 / n_new) * sample
             )
-            d_column_new = _kernels.centroid_distances(
+            d_column_new = self._backend.centroid_distances(
                 self._v, v_new,
             )
             d_column_new[i_label] = 0.0
@@ -132,7 +138,7 @@ class PS(_base.CVI):
 
         self._setup_batch_statistics(data, labels, compactness=False)
         self._mu = np.mean(data, axis=0)
-        self._D = _kernels.pairwise_centroid_distances(
+        self._D = self._backend.pairwise_centroid_distances(
             self._v,
         )
 
@@ -195,7 +201,7 @@ class PS(_base.CVI):
             self._PS_i = np.zeros(0)
             return
 
-        self._D = _kernels.pairwise_centroid_distances(
+        self._D = self._backend.pairwise_centroid_distances(
             self._v,
         )
         self._v_bar = []

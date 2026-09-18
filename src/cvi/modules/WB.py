@@ -14,7 +14,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base, _kernels
+from . import _base
 
 
 # WB object definition
@@ -38,16 +38,22 @@ class WB(_base.CVI):
         index_max=np.inf,
         optimality="min"
     )
+    _supports_numba = True
     _supports_remove_merge = True
     _uses_compactness_stats = True
 
-    def __init__(self):
+    def __init__(self, *, backend="numpy"):
         """
         WB initialization routine.
+
+        Parameters
+        ----------
+        backend : {"numpy", "numba"}, default="numpy"
+            Select the numerical backend. Numba is loaded on demand.
         """
 
         # Run the base initialization
-        super().__init__()
+        super().__init__(backend=backend)
 
         # WB-specific initialization
         self._mu = np.zeros([0])     # dim
@@ -148,7 +154,7 @@ class WB(_base.CVI):
 
         self._setup_batch_statistics(data, labels)
         self._mu = np.mean(data, axis=0)
-        self._SEP = np.asarray(self._n) * _kernels.centroid_distances(
+        self._SEP = np.asarray(self._n) * self._backend.centroid_distances(
             self._v, self._mu,
         )
 

@@ -42,6 +42,46 @@ The call updates ``index`` in place and returns the resulting criterion value.
 A CVI object accepts only one batch initialization.
 Create a new object to evaluate an independent partition.
 
+Optional CPU acceleration
+-------------------------
+
+Install the Numba extra to enable compiled numerical kernels:
+
+.. code-block:: console
+
+   python -m pip install "cvi[numba]"
+
+For a development checkout, use ``python -m pip install -e ".[numba]"``.
+Select the backend when constructing an index:
+
+.. code-block:: python
+
+   index = cvi.XB(backend="numba")
+   value = index.get_cvi(samples, labels)
+   assert index.backend == "numba"
+
+NumPy remains the default. Numba is supported by ``CH``, ``WB``, ``DB``, ``XB``,
+``GD43``, ``GD53``, ``PS``, and ``cSIL``. ``CONN`` and ``rCIP`` reject
+``backend="numba"``. CONN's numerical backend is separate from ``model_type``.
+Selection is per object and remains fixed through removal of all samples and
+reinitialization. The batch, incremental, remove, and merge APIs are unchanged.
+
+Compiled kernels accelerate grouping, compactness, centroid distances, and
+cSIL batch dissimilarities. Dtype-sensitive means and raw-moment reductions
+remain in NumPy. Unsupported array types (including float16 and non-native
+byte order) use NumPy for the affected operations. Floating-point rounding may
+differ; bitwise equivalence is not guaranteed. Existing undefined NaN/inf scores
+retain their meaning. Unchanged paths, including CH/WB streaming updates and
+cSIL incremental updates, are not accelerated.
+
+The first invocation for a new input type/layout incurs compilation. Later
+calls reuse compiled code, with a disk cache across processes. Include that
+initial latency when measuring short tasks, and warm up kernels before measuring
+steady-state throughput. Numba is imported for the numerical backend only when
+selected; CONN's existing ART dependency can independently install and use it.
+Selecting Numba without the dependency installed raises an installation hint
+rather than silently selecting another backend.
+
 Streaming evaluation
 --------------------
 

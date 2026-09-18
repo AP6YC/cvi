@@ -26,7 +26,7 @@ number directly with another's.
      - Connectivity
      - Larger
      - ``[0, 1]``
-     - Fuzzy backend
+     - FuzzyART Backend Only
      - No
    * - ``cSIL``
      - Centroid-based Silhouette

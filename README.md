@@ -35,6 +35,7 @@ Please see the [documentation][docs-stable-url] for detailed usage.
 - [Table of Contents](#table-of-contents)
 - [What Are Cluster Validity Indices?](#what-are-cluster-validity-indices)
 - [Installation](#installation)
+  - [Optional Numba Acceleration](#optional-numba-acceleration)
 - [Quickstart](#quickstart)
 - [Implemented Indices](#implemented-indices)
 - [Updating an Existing Partition](#updating-an-existing-partition)
@@ -77,6 +78,42 @@ pip install cvi==0.7.0
 ```
 
 Alternatively, you can manually install a release from any of the builds on the [releases page](https://github.com/AP6YC/cvi/releases) on GitHub.
+
+### Optional Numba Acceleration
+
+Install the extra and select the backend per index:
+
+```console
+python -m pip install "cvi[numba]"
+```
+
+```python
+import cvi
+
+index = cvi.XB(backend="numba")
+value = index.get_cvi(samples, labels)
+```
+
+For a development checkout, install with `python -m pip install -e ".[numba]"`.
+`backend="numpy"` remains the default. Numba acceleration is available for
+`CH`, `WB`, `DB`, `XB`, `GD43`, `GD53`, `PS`, and `cSIL`, with the same batch,
+incremental, remove, and merge API. `CONN` and `rCIP` currently support only the
+NumPy numerical backend. CONN's `model_type` separately selects its clustering
+algorithm.
+
+The backend compiles grouping, compactness, centroid distances, and cSIL batch
+distance assembly on the CPU. It retains NumPy's dtype-sensitive means and raw
+moments. Float16, non-native byte-order arrays, and other unsupported array types
+use NumPy for the affected operations. Results agree within floating-point
+tolerances, rather than necessarily bit for bit. Unchanged operations, such as
+CH/WB streaming updates, are not accelerated by this selection.
+
+The first use of a kernel for an input type/layout incurs compilation; subsequent
+calls reuse compiled code, with a disk cache across processes. Measure warmed
+performance for your workload; small workloads may not repay compilation cost.
+Numba is imported by the numerical backend only when selected. The existing
+ART dependency may also install/use Numba independently when using CONN.
+See [backend benchmarks](benchmarks/README.md) for timings and reproduction steps.
 
 ## Quickstart
 
@@ -123,7 +160,7 @@ CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf,
 | Index | Prefer | Range | Batch | Incremental | Remove/merge |
 |---|---|---|---|---|---|
 | `CH` | Larger | `[0, ∞)` | Yes | Yes | Yes |
-| `CONN` | Larger | `[0, 1]` | Yes | Fuzzy backend only | No |
+| `CONN` | Larger | `[0, 1]` | Yes | FuzzyART backend only | No |
 | `cSIL` | Larger | `[-1, 1]` | Yes | Yes | Yes |
 | `DB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
 | `GD43` | Larger | `[0, ∞)` | Yes | Yes | Yes |

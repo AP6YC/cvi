@@ -18,7 +18,7 @@ from typing import ClassVar
 # Custom imports
 import numpy as np
 
-from . import _kernels
+from ..backends import get_backend
 
 # --------------------------------------------------------------------------- #
 # CLASSES
@@ -102,12 +102,24 @@ class CVI():
     info: ClassVar[CVIInfo]
     _supports_remove_merge: ClassVar[bool] = False
     _uses_compactness_stats: ClassVar[bool] = False
+    _supports_numba: ClassVar[bool] = False
 
-    def __init__(self):
+    def __init__(self, *, backend="numpy"):
         """
         CVI base class initialization method.
+
+        Parameters
+        ----------
+        backend : {"numpy", "numba"}, default="numpy"
+            Numerical implementation. Numba is optional and must be supported
+            by the concrete index. The choice remains fixed through resets.
         """
 
+        if backend == "numba" and not self._supports_numba:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not support the numba backend"
+            )
+        self._backend = get_backend(backend)
         self._label_map = LabelMap()
         self._dim = 0
         self._n_samples = 0
@@ -118,6 +130,17 @@ class CVI():
         self._n_clusters = 0
         self.criterion_value = 0.0
         self._is_setup = False
+
+    @property
+    def backend(self):
+        """Selected numerical backend (fixed for this object's lifetime)."""
+        return self._backend.name
+
+    def __setstate__(self, state):
+        """Treat objects serialized before backend selection as NumPy objects."""
+        self.__dict__.update(state)
+        if "_backend" not in state:
+            self._backend = get_backend("numpy")
 
     def _setup(self, sample: np.ndarray):
         """
@@ -175,8 +198,8 @@ class CVI():
             dtype=np.intp,
             count=len(labels),
         )
-        order, offsets = _kernels.grouped_rows(dense_labels, self._n_clusters)
-        counts, self._v, squared_errors = _kernels.batch_statistics(
+        order, offsets = self._backend.grouped_rows(dense_labels, self._n_clusters)
+        counts, self._v, squared_errors = self._backend.batch_statistics(
             data, order, offsets, compactness=compactness,
         )
         # Lists remain appendable by the existing incremental implementation.

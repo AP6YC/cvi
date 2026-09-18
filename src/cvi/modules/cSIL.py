@@ -12,7 +12,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base, _kernels
+from . import _base
 
 
 # cSIL object definition
@@ -34,15 +34,21 @@ class cSIL(_base.CVI):
         index_max=1.0,
         optimality="max"
     )
+    _supports_numba = True
     _supports_remove_merge = True
 
-    def __init__(self):
+    def __init__(self, *, backend="numpy"):
         """
         Centroid-based Silhouette (cSIL) initialization routine.
+
+        Parameters
+        ----------
+        backend : {"numpy", "numba"}, default="numpy"
+            Select the numerical backend. Numba is loaded on demand.
         """
 
         # Run the base initialization
-        super().__init__()
+        super().__init__(backend=backend)
 
         # cSIL-specific initialization
         self._S = np.empty([0, 0])   # n_clusters x dim
@@ -179,7 +185,7 @@ class cSIL(_base.CVI):
         """
 
         order, offsets = self._setup_batch_statistics(data, labels)
-        self._CP, self._G, self._S = _kernels.silhouette_batch_statistics(
+        self._CP, self._G, self._S = self._backend.silhouette_batch_statistics(
             data, order, offsets, self._v, self._CP,
         )
 

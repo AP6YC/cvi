@@ -38,16 +38,22 @@ class GD53(_base.CVI):
         index_max=np.inf,
         optimality="max"
     )
+    _supports_numba = True
     _supports_remove_merge = True
     _uses_compactness_stats = True
 
-    def __init__(self):
+    def __init__(self, *, backend="numpy"):
         """
         Generalized Dunn's Index 53 (GD53) initialization routine.
+
+        Parameters
+        ----------
+        backend : {"numpy", "numba"}, default="numpy"
+            Select the numerical backend. Numba is loaded on demand.
         """
 
         # Run the base initialization
-        super().__init__()
+        super().__init__(backend=backend)
 
         # GD53-specific initialization
         self._mu = np.zeros([0])     # dim

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 import src.cvi as cvi
-from src.cvi.modules import _kernels
+from src.cvi.backends import get_backend
 
 
 CHANGED_CVIS = [cvi.CH, cvi.WB, cvi.DB, cvi.XB, cvi.GD43, cvi.GD53,
@@ -114,13 +114,13 @@ def batch_case(case, dtype):
 @pytest.mark.parametrize("case", [
     "random", "offset", "strided", "coincident", "identical", "one_feature",
 ])
-def test_batch_matches_direct_sample_definitions(cvi_type, dtype, case):
+def test_batch_matches_direct_sample_definitions(cvi_type, dtype, case, backend):
     data, labels = batch_case(case, dtype)
     original_data, original_labels = data.copy(), labels.copy()
     # Undefined scores (e.g. coincident centroids) must retain NaN/inf behavior.
     with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
         expected = reference_batch(cvi_type, data, labels)
-        actual = cvi_type()
+        actual = cvi_type(backend=backend)
         actual.get_cvi(data, labels)
     assert_state_equal(actual, expected)
     np.testing.assert_array_equal(data, original_data)
@@ -128,9 +128,11 @@ def test_batch_matches_direct_sample_definitions(cvi_type, dtype, case):
 
 
 @pytest.mark.parametrize("cvi_type", CHANGED_CVIS)
-def test_reference_batch_state_remains_equivalent_through_operations(cvi_type):
+def test_reference_batch_state_remains_equivalent_through_operations(
+    cvi_type, backend,
+):
     data, labels = batch_case("random", np.float64)
-    actual = cvi_type()
+    actual = cvi_type(backend=backend)
     actual.get_cvi(data, labels)
     expected = reference_batch(cvi_type, data, labels)
     for index in (actual, expected):
@@ -148,9 +150,9 @@ def test_reference_batch_state_remains_equivalent_through_operations(cvi_type):
 
 
 @pytest.mark.parametrize("cvi_type", DISTANCE_CVIS)
-def test_distance_state_after_streaming_and_structural_operations(cvi_type):
+def test_distance_state_after_streaming_and_structural_operations(cvi_type, backend):
     data, labels = batch_case("random", np.float64)
-    actual = cvi_type()
+    actual = cvi_type(backend=backend)
 
     def check_distances():
         expected = np.array([
@@ -172,7 +174,9 @@ def test_distance_state_after_streaming_and_structural_operations(cvi_type):
 
 @pytest.mark.parametrize("n_clusters", [0, 1, 2, 17])
 @pytest.mark.parametrize("squared", [True, False])
-def test_pairwise_kernel_empty_singleton_and_large_offsets(n_clusters, squared):
+def test_pairwise_kernel_empty_singleton_and_large_offsets(
+    n_clusters, squared, backend,
+):
     centers = np.random.default_rng(19).normal(size=(n_clusters, 5)) + 1e12
     expected = np.zeros((n_clusters, n_clusters))
     for i in range(n_clusters):
@@ -180,13 +184,13 @@ def test_pairwise_kernel_empty_singleton_and_large_offsets(n_clusters, squared):
             expected[i, j] = np.sum((centers[i] - centers[j]) ** 2)
     if not squared:
         expected = np.sqrt(expected)
-    actual = _kernels.pairwise_centroid_distances(centers, squared=squared)
+    actual = get_backend(backend).pairwise_centroid_distances(centers, squared=squared)
     np.testing.assert_array_equal(actual, expected)
 
 
-def test_grouping_retains_sample_order_and_first_seen_cluster_order():
+def test_grouping_retains_sample_order_and_first_seen_cluster_order(backend):
     data, labels = batch_case("random", np.float64)
-    index = cvi.XB()
+    index = cvi.XB(backend=backend)
     order, offsets = index._setup_batch_statistics(data, labels)
     assert list(index._label_map.map) == list(dict.fromkeys(labels))
     for label, cluster in index._label_map.map.items():

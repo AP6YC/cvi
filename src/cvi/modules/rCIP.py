@@ -36,13 +36,18 @@ class rCIP(_base.CVI):
     )
     _supports_remove_merge = True
 
-    def __init__(self):
+    def __init__(self, *, backend="numpy"):
         """
         (Renyi's) representative Cross Information Potential (rCIP) initialization routine.
+
+        Parameters
+        ----------
+        backend : {"numpy"}, default="numpy"
+            Only NumPy is currently supported for rCIP.
         """
 
         # Run the base initialization
-        super().__init__()
+        super().__init__(backend=backend)
 
         # rCIP-specific initialization
         self._D = np.zeros([0, 0])              # n_clusters x n_clusters
