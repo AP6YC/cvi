@@ -1,48 +1,43 @@
 [![cvi-header](https://github.com/AP6YC/FileStorage/blob/main/cvi/header.png?raw=true)][docs-dev-url]
 
-A Python package implementing both batch and incremental cluster validity indices (CVIs).
+A Python package implementing batch and incremental cluster validity indices (CVIs) for hard partitions.
 
-| **Stable Docs**  | **Dev Docs** | **Build Status** | **Coverage** |
-|:----------------:|:------------:|:----------------:|:------------:|
-| [![Stable][docs-stable-img]][docs-stable-url] | [![Dev][docs-dev-img]][docs-dev-url]| [![Build Status][ci-img]][ci-url] | [![Codecov][codecov-img]][codecov-url] |
+| **Stable Docs** | **Dev Docs** | **Build Status** | **Coverage** |
+|:---------------:|:------------:|:----------------:|:------------:|
+| [![Stable][docs-stable-img]][docs-stable-url] | [![Dev][docs-dev-img]][docs-dev-url] | [![Build Status][ci-img]][ci-url] | [![Codecov][codecov-img]][codecov-url] |
 | **Version** | **Issues** | **Downloads** | **Zenodo DOI** |
-| [![version][version-img]][version-url] | [![issues][issues-img]][issues-url] | [![Downloads][downloads-img]][downloads-url] |  [![DOI][zenodo-img]][zenodo-url] |
+| [![version][version-img]][version-url] | [![issues][issues-img]][issues-url] | [![Downloads][downloads-img]][downloads-url] | [![DOI][zenodo-img]][zenodo-url] |
 
 [downloads-img]: https://static.pepy.tech/badge/cvi
 [downloads-url]: https://pepy.tech/project/cvi
-
 [zenodo-img]: https://zenodo.org/badge/526280198.svg
 [zenodo-url]: https://zenodo.org/badge/latestdoi/526280198
-
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stable-url]: https://AP6YC.github.io/cvi/main
-
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 [docs-dev-url]: https://AP6YC.github.io/cvi/develop
-
 [ci-img]: https://github.com/AP6YC/cvi/actions/workflows/Test.yml/badge.svg
 [ci-url]: https://github.com/AP6YC/cvi/actions/workflows/Test.yml
-
 [codecov-img]: https://codecov.io/gh/AP6YC/cvi/branch/main/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/AP6YC/cvi
-
 [version-img]: https://img.shields.io/pypi/v/cvi.svg
 [version-url]: https://pypi.org/project/cvi
-
 [issues-img]: https://img.shields.io/github/issues/AP6YC/cvi?style=flat
 [issues-url]: https://github.com/AP6YC/cvi/issues
+
+Cluster validity indices measure properties such as compactness, separation, and connectivity when ground-truth labels are unavailable.
+This package uses a shared, stateful interface for evaluating a complete labeled partition or tracking its criterion value as samples arrive.
+
+Please see the [documentation][docs-stable-url] for detailed usage.
 
 ## Table of Contents
 
 - [Table of Contents](#table-of-contents)
-- [Cluster Validity Indices](#cluster-validity-indices)
+- [What Are Cluster Validity Indices?](#what-are-cluster-validity-indices)
 - [Installation](#installation)
-- [Usage](#usage)
-  - [Quickstart](#quickstart)
-  - [Detailed Usage](#detailed-usage)
-  - [Remove and Merge](#remove-and-merge)
-- [Implemented CVIs](#implemented-cvis)
-- [History](#history)
+- [Quickstart](#quickstart)
+- [Implemented Indices](#implemented-indices)
+- [Updating an Existing Partition](#updating-an-existing-partition)
 - [Acknowledgements](#acknowledgements)
   - [Derivation](#derivation)
   - [Authors](#authors)
@@ -51,7 +46,7 @@ A Python package implementing both batch and incremental cluster validity indice
     - [Fonts](#fonts)
     - [Icons](#icons)
 
-## Cluster Validity Indices
+## What Are Cluster Validity Indices?
 
 Say you have a clustering algorithm that clusters a set of samples containing features of some kind and some dimensionality.
 Great!
@@ -67,156 +62,97 @@ Clustering well in this context means correctly partitioning (i.e., separating) 
 Every CVI itself also behaves differently in terms of the range and scale of their numbers.
 **Furthermore, each CVI has an original batch implementation and incremental implementation that are equivalent**.
 
-The `cvi` Python package contains a variety of these batch and incremental CVIs.
-
 ## Installation
 
 The `cvi` package is listed on PyPI, so you may install the latest version with
 
-```python
-pip install cvi
+```console
+python -m pip install cvi
 ```
 
 You can also specify a version to install in the usual way with
 
-```python
-pip install cvi==v0.7.0
+```console
+pip install cvi==0.7.1
 ```
 
-Alternatively, you can manually install a release from the [releases page](https://github.com/AP6YC/cvi/releases) on GitHub.
+Alternatively, you can manually install a release from any of the builds on the [releases page](https://github.com/AP6YC/cvi/releases) on GitHub.
 
-## Usage
-
-### Quickstart
-
-Create a CVI object and compute the criterion value in batch with `get_cvi`:
+## Quickstart
 
 ```python
-# Import the library
-import cvi
-# Create a Calinski-Harabasz (CH) CVI object
-my_cvi = cvi.CH()
-# Load some data from some clustering algorithm
-samples, labels = load_some_clustering_data()
-# Compute the final criterion value in batch
-criterion_value = my_cvi.get_cvi(samples, labels)
-```
-
-or do it incrementally, also with `get_cvi`:
-
-```python
-# Datasets are numpy arrays
 import numpy as np
-# Create a container for criterion values
-n_samples = len(labels)
-criterion_values = np.zeros(n_samples)
-# Iterate over the data
-for ix in range(n_samples):
-    criterion_values = my_cvi.get_cvi(samples[ix, :], labels[ix])
+import cvi
+
+samples = np.array([
+    [0.0, 0.1],
+    [0.2, 0.0],
+    [2.8, 3.0],
+    [3.1, 2.9],
+])
+labels = np.array([0, 1, 2, 2])
+
+# Batch evaluation
+batch_index = cvi.CH()
+batch_value = batch_index.get_cvi(samples, labels)
+
+# Incremental evaluation
+incremental_index = cvi.CH()
+values = np.empty(len(labels))
+for i, (sample, label) in enumerate(zip(samples, labels)):
+    values[i] = incremental_index.get_cvi(sample, int(label))
 ```
 
-Users can also query the `.info` property of the CVI objects to obtain relevant
-scaling and naming information.
+CVI objects accumulate state.
+Use a fresh object for each independent dataset or partition.
+A batch call may be followed by incremental samples, but the same object cannot be initialized with a second batch.
+
+> [!NOTE] NOTE
+> The `cvi` package assumes the Numpy **row-major** convention where rows are individual samples and columns are features.
+> A batch dataset is then `[n_samples, n_features]` large, and their corresponding labels are `[n_samples]` large.
+
+Users can also query the `.info` property of the CVI objects to obtain relevant scaling and naming information.
 
 ```
 >>> print(my_cvi.info)
 CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max')
 ```
 
-### Detailed Usage
+## Implemented Indices
 
-The `cvi` package contains a set of implemented CVIs with batch and incremental update methods.
-Each CVI is a standalone stateful object inheriting from a base class `CVI`, and all `CVI` functions are object methods, such as those that update parameters and return the criterion value.
+| Index | Prefer | Range | Batch | Incremental | Remove/merge |
+|---|---|---|---|---|---|
+| `CH` | Larger | `[0, ∞)` | Yes | Yes | Yes |
+| `CONN` | Larger | `[0, 1]` | Yes | Fuzzy backend only | No |
+| `cSIL` | Larger | `[-1, 1]` | Yes | Yes | Yes |
+| `DB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
+| `GD43` | Larger | `[0, ∞)` | Yes | Yes | Yes |
+| `GD53` | Larger | `[0, ∞)` | Yes | Yes | Yes |
+| `PS` | Larger | `[0, 1]` | Yes | Yes | Yes |
+| `rCIP` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
+| `WB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
+| `XB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
 
-Instantiate a CVI of you choice with the default constructor:
+`CONN` uses prototype connectivity and has additional backend and normalization requirements.
+See the [CONN guide][conn-guide] before using it.
 
-```python
-# Import the package
-import cvi
-# Import numpy for some data handling
-import numpy as np
+## Updating an Existing Partition
 
-# Instantiate a Calinski-Harabasz (CH) CVI object
-my_cvi = cvi.CH()
-```
-
-CVIs are instantiated with their acronyms, with a list of all implemented CVIS being found in the [Implemented CVIs](#implemented-cvis) section.
-
-A batch of data is assumed to be a numpy array of samples and a numpy vector of integer labels.
-
-```python
-# Load some data
-samples, labels = my_clustering_alg(some_data)
-```
-
-> **NOTE**:
->
-> The `cvi` package assumes the Numpy **row-major** convention where rows are individual samples and columns are features.
-> A batch dataset is then `[n_samples, n_features]` large, and their corresponding labels are `[n_samples]` large.
-
-You may compute the final criterion value with a batch update all at once with `CVI.get_cvi`
+Except for `CONN`, initialized indices support adding samples, removing samples, and merging clusters without replaying the full dataset via `remove` and `merge`:
 
 ```python
-# Get the final criterion value in batch mode
-criterion_value = my_cvi.get_cvi(samples, labels)
+value = index.get_cvi(new_sample, new_label)
+value = index.remove(existing_sample, existing_label)
+value = index.merge(target_label=20, source_label=10)
 ```
 
-or you may get them incrementally with the same method, where you pass instead just a single numpy vector of features and a single integer label.
-The incremental methods are used automatically based upon the dimensions of the data that is passed.
+Both methods update the object in place and return its new criterion value.
+Removing the final sample of a cluster deletes that cluster, while `merge` retains `target_label` and deletes `source_label`.
+The caller is responsible for ensuring that a removed sample belongs to the supplied label.
 
-```python
-# Create a container for the criterion value after each sample
-n_samples = len(labels)
-criterion_values = np.zeros(n_samples)
+For input rules, index-selection guidance, references, legacy API information, and the complete API, see the [documentation][docs-stable-url].
 
-# Iterate across the data and store the criterion value over time
-for ix in range(n_samples):
-    sample = samples[ix, :]
-    label = labels[ix]
-    criterion_values[ix] = my_cvi.get_cvi(sample, label)
-```
-
-> **NOTE**:
->
-> After batch initialization, additional samples may be added incrementally by passing a single sample and label to `get_cvi`.
-
-### Remove and Merge
-
-An initialized CVI can remove a previously added sample or merge two existing clusters without retaining and replaying the full dataset:
-
-```python
-# Remove a sample from its current cluster.
-criterion_value = my_cvi.remove(sample, label)
-
-# Merge every member of source_label into target_label.
-criterion_value = my_cvi.merge(target_label, source_label)
-```
-
-Both methods update the object in place and return its new criterion value. Removing the final sample of a cluster deletes that cluster, while `merge` retains `target_label` and deletes `source_label`. The caller is responsible for ensuring that a removed sample belongs to the supplied label.
-
-Add, remove, and merge are supported after either incremental or batch initialization.
-
-## Implemented CVIs
-
-The following CVIs have been implemented as of the latest version of `cvi`:
-
-- **CH**: Calinski-Harabasz.
-- **CONN**: Prototype-based intra- and inter-cluster connectivity index.
-- **cSIL**: Centroid-based Silhouette index.
-- **DB**: Davies-Bouldin index.
-- **GD43**: Generalized Dunn's Index 43.
-- **GD53**: Generalized Dunn's Index 53.
-- **PS**: Partition Separation.
-- **rCIP**: (Renyi's) representative Cross Information Potential.
-- **WB**: WB-index.
-- **XB**: Xie-Beni index.
-
-## History
-
-- 8/18/2022: Initialize project.
-- 9/8/2022: First release on PyPi and initiate GitFlow.
-- 8/10/2023: v0.5.1 released.
-- 5/31/2024: Updated documentation.
+[conn-guide]: https://AP6YC.github.io/cvi/main/conn.html
 
 ## Acknowledgements
 
