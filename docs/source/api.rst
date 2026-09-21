@@ -45,6 +45,16 @@ All indices inherit the common update interface from :class:`cvi.CVI`.
    cvi.CVI.merge
    cvi.CVI.split
 
+Undefined results
+-----------------
+
+Every index returns ``numpy.nan`` when its criterion is not mathematically
+defined. An undefined batch evaluation also emits a ``RuntimeWarning``.
+Incremental updates and functional JAX calls return NaN without warnings. For
+CH, WB, and XB, fewer than two clusters or an exactly zero denominator makes
+the score undefined: WGSS for CH, BGSS for WB, and minimum centroid separation
+for XB. Denominators are checked exactly, with no epsilon adjustment.
+
 Functional JAX batch interface
 ------------------------------
 
@@ -97,5 +107,8 @@ Functional JAX streaming interface
 
 .. py:function:: evaluate_stream(state, *, index)
 
-   Evaluate active clusters; zero/one-cluster states return zero. The index
-   must match the state's distance layout (CH/WB versus XB).
+   Evaluate active clusters. The result is NaN until at least two clusters are
+   active and the index's denominator is positive (WGSS for CH, BGSS for WB, or
+   minimum centroid separation for XB). Denominators are checked exactly, with
+   no epsilon adjustment. The index must match the state's distance layout
+   (CH/WB versus XB).

@@ -336,16 +336,20 @@ class cSIL(_base.CVI):
 
         self._sil_coefs = np.zeros(self._n_clusters)
 
-        if self._n_clusters > 1 and self._S.any():
+        if self._n_clusters > 1:
             for ix in range(self._n_clusters):
                 # Same cluster
                 a = self._S[ix, ix]
                 # Other clusters
                 local_S = np.delete(self._S[:, ix], ix)
                 b = np.min(local_S)
-                self._sil_coefs[ix] = (b - a) / np.maximum(a, b)
+                denominator = np.maximum(a, b)
+                if denominator == 0.0:
+                    self._sil_coefs[ix] = 0.0
+                else:
+                    self._sil_coefs[ix] = (b - a) / denominator
             # cSIL index value
             self.criterion_value = np.sum(self._sil_coefs) / self._n_clusters
 
         else:
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

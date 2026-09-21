@@ -684,7 +684,7 @@ class CONN(_base.CVI):
             self._n_samples += 1
             self._sync_base_cluster_count()
 
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan
             return
 
         # Second sample:
@@ -761,7 +761,7 @@ class CONN(_base.CVI):
         self._CP = []
         self._G = np.zeros([0, self._dim])
         self._n_clusters = 0
-        self.criterion_value = 0.0
+        self.criterion_value = np.nan
 
         self._init_conn_state()
 
@@ -780,5 +780,10 @@ class CONN(_base.CVI):
         requires the label pair touched by the most recent ART transition.
         """
 
-        if self._n_clusters <= 0:
-            self.criterion_value = 0.0
+        if self.model_type == "Fuzzy":
+            prototype_count = len(self._artmap.module_a.W)
+        else:
+            prototype_count = len(self._cluster_centers)
+
+        if prototype_count <= 1:
+            self.criterion_value = np.nan

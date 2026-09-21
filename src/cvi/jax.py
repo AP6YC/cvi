@@ -4,7 +4,11 @@ Import this module explicitly after installing ``cvi[jax]``. Enable JAX x64
 in the application before calling these functions; importing CVI never changes
 JAX configuration. Batch labels are dense integers in [0, n_clusters), with
 every cluster represented. Streaming labels are slots in [0, capacity) and may
-be sparse. The object API handles arbitrary external labels.
+be sparse. Undefined scores are returned as NaN: CH requires at least two
+clusters and positive within-cluster sum of squares, WB requires at least two
+clusters and positive between-cluster sum of squares, and XB requires at least
+two clusters with positive minimum centroid separation. The object API handles
+arbitrary external labels.
 """
 
 from functools import partial
@@ -65,7 +69,8 @@ def _batch_state(data, labels, n_clusters):
     first = jax.ops.segment_min(jnp.arange(data.shape[0]), labels, n_clusters)
     anchors = data[jnp.minimum(first, data.shape[0] - 1)]
     centered_sums = jax.ops.segment_sum(data - anchors[labels], labels, n_clusters)
-    centroids = anchors + centered_sums / counts[:, None]
+    safe_counts = jnp.where(counts > 0, counts, 1)
+    centroids = anchors + centered_sums / safe_counts[:, None]
     mean = data[0] + jnp.mean(data - data[0], axis=0)
     return _summarize(data, labels, centroids, mean)
 
@@ -100,7 +105,7 @@ def batch_state(data, labels, *, n_clusters):
 
 
 def _derived(state, index):
-    """Index-specific arrays and score, with the existing formulas/NaN policy."""
+    """Index-specific arrays and score, using NaN for undefined conditions."""
     counts, centers, cp, mean, n_samples = state
     k = centers.shape[0]
     within = jnp.sum(cp)
@@ -108,9 +113,16 @@ def _derived(state, index):
         separation = counts * jnp.sum((centers - mean) ** 2, axis=1)
         between = jnp.sum(separation)
         if index == "CH":
-            value = (between / within) * ((n_samples - k) / (k - 1))
+            safe_within = jnp.where(within > 0, within, 1.0)
+            safe_k_minus_one = max(k - 1, 1)
+            value = (between / safe_within) * (
+                (n_samples - k) / safe_k_minus_one
+            )
+            defined = within > 0
         else:
-            value = (within / between) * k
+            safe_between = jnp.where(between > 0, between, 1.0)
+            value = (within / safe_between) * k
+            defined = between > 0
         derived = {"_SEP": separation, "_BGSS": between}
     else:
         # Map one row at a time: avoid a K-by-K-by-d intermediate and avoid
@@ -120,12 +132,19 @@ def _derived(state, index):
         )
         distances = distances.at[jnp.diag_indices(k)].set(0.0)
         separation = jnp.min(jnp.where(jnp.eye(k, dtype=bool), jnp.inf, distances))
-        value = within / (n_samples * separation)
+        safe_n_samples = jnp.maximum(n_samples, 1)
+        safe_separation = jnp.where(separation > 0, separation, 1.0)
+        value = within / (safe_n_samples * safe_separation)
+        defined = separation > 0
         derived = {"_D": distances, "_SEP": separation}
     # Invalid dense partitions must not produce a plausible score merely
     # because segment reductions drop an out-of-range label.
-    valid = jnp.all(counts > 0) & (jnp.sum(counts) == n_samples)
-    derived.update(_WGSS=within, criterion_value=jnp.where(valid, value, jnp.nan))
+    valid = ((k >= 2) & jnp.all(counts > 0)
+             & (jnp.sum(counts) == n_samples))
+    derived.update(
+        _WGSS=within,
+        criterion_value=jnp.where(valid & defined, value, jnp.nan),
+    )
     return derived
 
 
@@ -135,14 +154,22 @@ def _evaluate(state, index):
 
 
 def evaluate(state, *, index):
-    """Evaluate CH, WB, or XB on a BatchState, returning a JAX scalar."""
+    """Evaluate CH, WB, or XB on a BatchState, returning a JAX scalar.
+
+    Returns NaN when the partition has fewer than two represented clusters or
+    the selected index's denominator is not positive.
+    """
     _require_x64()
     _check_index(index)
     return _evaluate(state, index)
 
 
 def batch_cvi(data, labels, *, n_clusters, index):
-    """Functional batch score; bind n_clusters/index statically under jit."""
+    """Functional batch score; bind n_clusters/index statically under jit.
+
+    Undefined scores are returned as NaN according to the selected index's
+    denominator conditions.
+    """
     _check_index(index)
     return evaluate(batch_state(data, labels, n_clusters=n_clusters), index=index)
 
@@ -181,8 +208,9 @@ def _positive_size(value, name):
 def empty_stream(*, capacity, n_features, index):
     """Allocate an empty float64 stream; sizes and index must be static under JIT.
 
-    Capacity limits distinct clusters, not samples. Zero/one-cluster scores
-    are zero, matching the object API. No global JAX configuration is changed.
+    Capacity limits distinct clusters, not samples. The score is NaN until its
+    index-specific definition conditions are met (at least two clusters and a
+    positive denominator). No global JAX configuration is changed.
     """
     _require_x64()
     _check_index(index)
@@ -245,22 +273,37 @@ def _stream_derived(state, index):
         )
         between = jnp.sum(separation)
         if index == "CH":
-            value = (between / within) * ((state.n_samples - k) / (k - 1))
+            safe_within = jnp.where(within > 0, within, 1.0)
+            safe_k_minus_one = jnp.maximum(k - 1, 1)
+            value = (between / safe_within) * (
+                (state.n_samples - k) / safe_k_minus_one
+            )
+            defined = (k >= 2) & (within > 0)
         else:
-            value = (within / between) * k
+            safe_between = jnp.where(between > 0, between, 1.0)
+            value = (within / safe_between) * k
+            defined = (k >= 2) & (between > 0)
         derived = {"_SEP": separation, "_BGSS": between}
     else:
         pairs = state.active[:, None] & state.active[None, :]
         pairs &= ~jnp.eye(state.counts.shape[0], dtype=bool)
         separation = jnp.min(jnp.where(pairs, state.distances, jnp.inf))
-        value = within / (state.n_samples * separation)
+        safe_n_samples = jnp.maximum(state.n_samples, 1)
+        safe_separation = jnp.where(separation > 0, separation, 1.0)
+        value = within / (safe_n_samples * safe_separation)
+        defined = (k >= 2) & (separation > 0)
         derived = {"_D": state.distances, "_SEP": separation}
-    derived.update(_WGSS=within, criterion_value=jnp.where(k > 1, value, 0.0))
+    derived.update(_WGSS=within, criterion_value=jnp.where(defined, value, jnp.nan))
     return derived
 
 
 def evaluate_stream(state, *, index):
-    """Evaluate active clusters, returning a device scalar (zero for <2 clusters)."""
+    """Evaluate a stream, returning NaN until the selected index is defined.
+
+    At least two clusters must be active. CH additionally requires positive
+    within-cluster sum of squares, WB requires positive between-cluster sum of
+    squares, and XB requires positive minimum centroid separation.
+    """
     _check_stream(state, index)
     return _stream_derived(state, index)["criterion_value"]
 
@@ -325,8 +368,9 @@ def stream_update(state, sample, slot, *, index):
     """Add one sample to a slot and return (new_state, device_score).
 
     Slots are integers in [0, capacity); unused slots need not be contiguous.
-    Invalid slot values or nonfinite samples return the unchanged state and NaN,
-    including under JIT. Shape/dtype errors raise ValueError before dispatch.
+    Undefined metric states return NaN without warning. Invalid slot values or
+    nonfinite samples return the unchanged state and NaN, including under JIT.
+    Shape/dtype errors raise ValueError before dispatch.
     """
     sample, slot = jnp.asarray(sample), jnp.asarray(slot)
     if sample.ndim != 1 or slot.ndim != 0:
@@ -359,6 +403,8 @@ def stream_chunk(state, data, slots, *, index, return_history=True):
 
     All inputs are validated before any update: an out-of-range slot or nonfinite
     sample returns the original state and NaN output for the entire chunk.
+    Scores remain NaN while the selected index is undefined; streaming emits no
+    Python warnings for these intermediate states.
     Empty chunks are no-ops. Bind index/return_history statically under JIT;
     changing chunk length can compile another specialization. Final-only mode
     avoids both per-sample score evaluation and allocating a history array.

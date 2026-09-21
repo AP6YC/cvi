@@ -217,6 +217,9 @@ class GD53(_base.CVI):
                 ])
             )
             # GD53 index value
-            self.criterion_value = self._inter / self._intra
+            if self._intra > 0.0:
+                self.criterion_value = self._inter / self._intra
+            else:
+                self.criterion_value = np.nan
         else:
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

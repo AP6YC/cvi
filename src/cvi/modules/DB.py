@@ -200,14 +200,20 @@ class DB(_base.CVI):
 
         if self._n_clusters > 1:
             self._R = np.zeros((self._n_clusters, self._n_clusters))
-            for ix in range(self._n_clusters - 1):
-                for jx in range(ix + 1, self._n_clusters):
-                    self._R[jx, ix] = (
-                        (self._S[ix] + self._S[jx]) / self._D[jx, ix]
-                    )
-            self._R = self._R + np.transpose(self._R)
-            self.criterion_value = (
-                np.sum(np.max(self._R, axis=0)) / self._n_clusters
-            )
+            separations = self._D[
+                np.triu_indices(self._n_clusters, k=1)
+            ]
+            if np.all(separations > 0.0):
+                for ix in range(self._n_clusters - 1):
+                    for jx in range(ix + 1, self._n_clusters):
+                        self._R[jx, ix] = (
+                            (self._S[ix] + self._S[jx]) / self._D[jx, ix]
+                        )
+                self._R = self._R + np.transpose(self._R)
+                self.criterion_value = (
+                    np.sum(np.max(self._R, axis=0)) / self._n_clusters
+                )
+            else:
+                self.criterion_value = np.nan
         else:
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

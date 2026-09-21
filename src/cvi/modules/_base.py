@@ -5,16 +5,15 @@ Utilities that are common across all CVI objects.
 - Sasha Petrenko <sap625@mst.edu>
 """
 
-# Standard library imports
+import warnings
+from abc import abstractmethod
+from dataclasses import dataclass
 from typing import (
     Callable,
+    ClassVar,
     Optional,
-    Union
+    Union,
 )
-from abc import abstractmethod
-
-from dataclasses import dataclass
-from typing import ClassVar
 
 # Custom imports
 import numpy as np
@@ -143,7 +142,7 @@ class CVI():
         self._CP = []                # dim
         self._G = np.zeros([0, 0])   # n_clusters x dim
         self._n_clusters = 0
-        self.criterion_value = 0.0
+        self.criterion_value = np.nan
         self._is_setup = False
 
     @property
@@ -485,7 +484,7 @@ class CVI():
         self._CP = []
         self._G = np.zeros([0, 0])
         self._n_clusters = 0
-        self.criterion_value = 0.0
+        self.criterion_value = np.nan
         self._is_setup = False
 
     def _rebuild_after_operation(self):
@@ -812,6 +811,12 @@ class CVI():
             If the input dimensionality is invalid, feature dimensionality
             changes after initialization, batch labels contain fewer than two
             distinct values, or a second batch update is requested.
+
+        Warns
+        -----
+        RuntimeWarning
+            If the criterion is undefined after a batch evaluation. The
+            returned value is still ``numpy.nan``.
         """
 
         if self.backend == "jax":
@@ -840,7 +845,15 @@ class CVI():
             label_map.map = mapping
             self.__dict__.update(state)
             self._label_map = label_map
-            return self.criterion_value
+            criterion_value = self.criterion_value
+            if data.ndim == 2 and np.isnan(criterion_value):
+                warnings.warn(
+                    f"{type(self).__name__} is undefined for the supplied batch; "
+                    "returning nan.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+            return criterion_value
 
         # If we got 1D data, do a quick update
         if (data.ndim == 1):
@@ -883,6 +896,14 @@ class CVI():
         # Regardless of path, evaluate and extract the criterion value
         self._evaluate()
         criterion_value = self.criterion_value
+
+        if data.ndim == 2 and np.isnan(criterion_value):
+            warnings.warn(
+                f"{type(self).__name__} is undefined for the supplied batch; "
+                "returning nan.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
 
         # Return the criterion value
         return criterion_value

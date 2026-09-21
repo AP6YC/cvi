@@ -188,11 +188,17 @@ class CH(_base.CVI):
             self._WGSS = sum(self._CP)
             # Between groups sum of scatters
             self._BGSS = sum(self._SEP)
-            # CH index value
-            self.criterion_value = (
-                (self._BGSS / self._WGSS)
-                * ((self._n_samples - self._n_clusters) / (self._n_clusters - 1))
-            )
+            if self._WGSS > 0.0:
+                # CH index value
+                self.criterion_value = (
+                    (self._BGSS / self._WGSS)
+                    * (
+                        (self._n_samples - self._n_clusters)
+                        / (self._n_clusters - 1)
+                    )
+                )
+            else:
+                self.criterion_value = np.nan
         else:
             self._BGSS = 0.0
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan
