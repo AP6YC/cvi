@@ -1,6 +1,0 @@
-compat.v0.norm22
-================
-
-.. currentmodule:: compat.v0
-
-.. autofunction:: norm22

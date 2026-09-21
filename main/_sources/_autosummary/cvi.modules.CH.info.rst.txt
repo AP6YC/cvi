@@ -1,6 +1,0 @@
-cvi.modules.CH.info
-===================
-
-.. currentmodule:: cvi.modules
-
-.. autoattribute:: CH.info

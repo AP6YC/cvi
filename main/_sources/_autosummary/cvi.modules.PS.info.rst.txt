@@ -1,6 +1,0 @@
-cvi.modules.PS.info
-===================
-
-.. currentmodule:: cvi.modules
-
-.. autoattribute:: PS.info

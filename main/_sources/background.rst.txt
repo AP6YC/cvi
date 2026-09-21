@@ -1,7 +1,16 @@
 Background
 ==========
 
-This page provides a theoretical overview of cluster validity indices and what this project aims to accomplish.
+Summary
+-------
+
+Cluster validity indices evaluate a clustering result when authoritative class
+labels are unavailable. Given feature vectors and the labels assigned by a
+clustering algorithm, an internal CVI returns a criterion value describing one
+or more structural properties of the partition.
+
+If you're satisfied by this, go ahead and continue on to :doc:`guide`.
+If you're still confused, read onward!
 
 Problem Statement
 -----------------
@@ -44,3 +53,47 @@ In fact, it is often the trendlines of these values that provide the most inform
 CVIs are originally derived to work on batches of samples and labels.
 However, there exist incremental variants that are proven to be mathematically equivalent to their batch counterparts.
 These incremental CVIs (ICVIs) mitigate the computational overhead of computing these metrics online, such as in a streaming clustering scenarios.
+
+Common Properties
+-----------------
+
+Compactness measures how tightly samples assigned to the same cluster are
+grouped. Separation measures how distinct different clusters are. Connectivity
+captures whether neighboring learned prototypes support the proposed cluster
+boundaries. Individual CVIs combine these properties differently, so their
+numeric values are not directly interchangeable.
+
+There is also no universal rule that larger is better. For example,
+Calinski–Harabasz is maximized while Davies–Bouldin is minimized. The
+:doc:`choosing` table records the optimization direction and nominal range of
+each implementation.
+
+Batch and Incremental Evaluation
+--------------------------------
+
+A batch CVI computes its sufficient statistics from a complete dataset.
+Incremental CVIs update corresponding statistics one sample at a time, making
+them suitable for streaming clustering and online monitoring without retaining
+and recomputing the full history.
+
+For the non-CONN indices in this package, batch and incremental
+processing represent the same criterion calculation. Small floating-point
+differences may arise from operation order. ``CONN`` is different: it also
+learns prototypes, and its batch KMeans backends are distinct from its
+incremental FuzzyART backend. See :doc:`conn` for those semantics.
+
+Interpreting Values
+-------------------
+
+CVI values are most useful when comparing candidate partitions of the same
+data under the same index, or when monitoring one index's trajectory through a
+stream. They do not establish that a clustering is objectively correct, and
+they should be interpreted alongside domain knowledge and other diagnostics.
+
+Origins
+-------
+
+The batch and incremental implementations are largely derived from the
+`ClusterValidityIndices.jl
+<https://github.com/AP6YC/ClusterValidityIndices.jl>`_ project. References for
+each criterion appear in its class documentation in :doc:`api`.

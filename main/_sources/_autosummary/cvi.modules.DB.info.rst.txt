@@ -1,6 +1,0 @@
-cvi.modules.DB.info
-===================
-
-.. currentmodule:: cvi.modules
-
-.. autoattribute:: DB.info

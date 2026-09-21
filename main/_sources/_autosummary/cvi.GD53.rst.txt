@@ -1,0 +1,34 @@
+﻿cvi.GD53
+========
+
+.. currentmodule:: cvi
+
+.. autoclass:: GD53
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~GD53.__init__
+      ~GD53.get_cvi
+      ~GD53.merge
+      ~GD53.remove
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~GD53.info
+   
+   
