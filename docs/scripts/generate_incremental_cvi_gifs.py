@@ -73,7 +73,7 @@ METRICS = (
 
 def build_datasets() -> tuple[Dataset, Dataset]:
     synthetic_data, synthetic_labels = make_blobs(
-        n_samples=(24, 24, 24),
+        n_samples=(50, 50, 50),
         centers=((-3.0, -2.2), (3.0, -1.6), (0.2, 3.0)),
         cluster_std=(0.65, 0.75, 0.70),
         random_state=42,
