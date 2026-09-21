@@ -342,6 +342,15 @@ from <code class="docutils literal notranslate"><span class="pre">cvi</span></co
 </table>
 </div>
 </section>
+<section id="undefined-results">
+<h2>Undefined results<a class="headerlink" href="#undefined-results" title="Link to this heading">¶</a></h2>
+<p>Every index returns <code class="docutils literal notranslate"><span class="pre">numpy.nan</span></code> when its criterion is not mathematically
+defined. An undefined batch evaluation also emits a <code class="docutils literal notranslate"><span class="pre">RuntimeWarning</span></code>.
+Incremental updates and functional JAX calls return NaN without warnings. For
+CH, WB, and XB, fewer than two clusters or an exactly zero denominator makes
+the score undefined: WGSS for CH, BGSS for WB, and minimum centroid separation
+for XB. Denominators are checked exactly, with no epsilon adjustment.</p>
+</section>
 <section id="functional-jax-batch-interface">
 <h2>Functional JAX batch interface<a class="headerlink" href="#functional-jax-batch-interface" title="Link to this heading">¶</a></h2>
 <p>Install the optional <code class="docutils literal notranslate"><span class="pre">jax</span></code> extra and enable JAX x64 before using this module.
@@ -405,8 +414,11 @@ Shape/dtype errors raise <code class="docutils literal notranslate"><span class=
 <dl class="py function">
 <dt class="sig sig-object py" id="cvi.jax.evaluate_stream">
 <span class="sig-prename descclassname"><span class="pre">cvi.jax.</span></span><span class="sig-name descname"><span class="pre">evaluate_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cvi.jax.evaluate_stream" title="Link to this definition">¶</a></dt>
-<dd><p>Evaluate active clusters; zero/one-cluster states return zero. The index
-must match the state’s distance layout (CH/WB versus XB).</p>
+<dd><p>Evaluate active clusters. The result is NaN until at least two clusters are
+active and the index’s denominator is positive (WGSS for CH, BGSS for WB, or
+minimum centroid separation for XB). Denominators are checked exactly, with
+no epsilon adjustment. The index must match the state’s distance layout
+(CH/WB versus XB).</p>
 </dd></dl>
 
 </section>
@@ -471,6 +483,7 @@ must match the state’s distance layout (CH/WB versus XB).</p>
 <li><a class="reference internal" href="#base-class">Base class</a></li>
 <li><a class="reference internal" href="#indices">Indices</a></li>
 <li><a class="reference internal" href="#common-methods">Common methods</a></li>
+<li><a class="reference internal" href="#undefined-results">Undefined results</a></li>
 <li><a class="reference internal" href="#functional-jax-batch-interface">Functional JAX batch interface</a><ul>
 <li><a class="reference internal" href="#cvi.jax.batch_state"><code class="docutils literal notranslate"><span class="pre">batch_state()</span></code></a></li>
 <li><a class="reference internal" href="#cvi.jax.evaluate"><code class="docutils literal notranslate"><span class="pre">evaluate()</span></code></a></li>

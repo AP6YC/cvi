@@ -36,9 +36,9 @@ Compiled kernels accelerate grouping, compactness, centroid distances, and
 cSIL batch dissimilarities. Dtype-sensitive means and raw-moment reductions
 remain in NumPy. Unsupported array types (including float16 and non-native
 byte order) use NumPy for the affected operations. Floating-point rounding may
-differ; bitwise equivalence is not guaranteed. Existing undefined NaN/inf scores
-retain their meaning. Unchanged paths, including CH/WB, GD53, and cSIL sample updates and
-remove/merge operations, are not accelerated. DB, GD43, PS, and XB use compiled
+differ; bitwise equivalence is not guaranteed. Undefined criteria return NaN.
+Unchanged paths, including CH/WB, GD53, and cSIL sample updates and remove/merge
+operations, are not accelerated. DB, GD43, PS, and XB use compiled
 centroid-distance kernels during sample updates and after remove/merge.
 Batch CH/WB compile grouping, compactness, and centroid-to-mean distances;
 GD53 compiles grouping and compactness. Batch DB, GD43, and XB compile grouping,
@@ -100,8 +100,8 @@ For device-resident calculations, use the functional interface:
 Functional labels must be dense integers in ``[0, n_clusters)`` with every
 cluster represented. Unlike the class adapter, this interface leaves
 value-dependent label validation to the caller so it can run under JAX
-transformations. Invalid partitions produce undefined scores. ``n_clusters``
-and ``index`` must be static under JIT, and new array shapes can recompile.
+transformations. Invalid partitions produce NaN scores. ``n_clusters`` and
+``index`` must be static under JIT, and new array shapes can recompile.
 ``BatchState`` is an immutable pytree of counts, centroids, centered compactness,
 global mean, and sample count. It contains JAX arrays and remains on-device.
 
@@ -109,10 +109,14 @@ The functional interface computes in float64, using shifted means to reduce
 cancellation for large offsets. Reduction order differs from NumPy and may vary
 by device; bitwise identity is not promised. It supports ``vmap`` across batches
 with compatible shapes and ``grad`` with respect to data for fixed labels where
-the score is differentiable. Degenerate NaN/inf scores retain the index formulas.
-Time JAX results with ``block_until_ready()`` and separate first-use compilation
-from warmed execution. Host transfers and small CPU workloads can outweigh the
-benefit of compilation.
+the score is differentiable. Undefined CH, WB, and XB scores are NaN when fewer
+than two clusters are present or their respective denominator is exactly zero:
+WGSS for CH, BGSS for WB, and minimum centroid separation for XB. These checks
+use exact zero comparisons, with no epsilon adjustment. Undefined object batch
+evaluations emit a ``RuntimeWarning``; functional JAX evaluations return NaN
+without warnings. Time JAX results with ``block_until_ready()`` and separate
+first-use compilation from warmed execution. Host transfers and small CPU
+workloads can outweigh the benefit of compilation.
 
 Fixed-capacity JAX streaming
 ----------------------------
@@ -137,8 +141,11 @@ a suitable bound or create a new object. It is only accepted with JAX.
 clusters. An initial batch can be followed by samples or ``update_many`` chunks.
 Chunk processing uses the incremental recurrence in input order; it is distinct
 from batch initialization. Empty chunks are no-ops and return an empty history
-or the current score. Zero/one-cluster streams return zero; otherwise existing
-NaN/inf score behavior is preserved.
+or the current score. A score is NaN until at least two clusters are active and
+the index's denominator is positive (WGSS for CH, BGSS for WB, or minimum
+centroid separation for XB). Denominators are checked exactly, without epsilon
+adjustment. Undefined object batch evaluations warn; incremental and functional
+streaming calls return NaN without warnings.
 
 The adapter checks the entire input before dispatch: data must be finite real
 numbers up to 64 bits, labels must be integers, dimensions must match, and all

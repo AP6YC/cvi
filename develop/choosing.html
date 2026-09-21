@@ -478,9 +478,66 @@ bounded, centroid-based silhouette measure. <code class="docutils literal notran
 separation, while <code class="docutils literal notranslate"><span class="pre">rCIP</span></code> uses distributional information. <code class="docutils literal notranslate"><span class="pre">CONN</span></code> is the
 specialized choice when connectivity between learned prototypes is important;
 see <a class="reference internal" href="conn.html"><span class="doc">Using CONN</span></a> before using it.</p>
-<p>The value <code class="docutils literal notranslate"><span class="pre">0.0</span></code> is used when an index is not yet defined, including many
-one-cluster states. When monitoring a stream, consider the trajectory only
-after enough clusters and samples have been observed.</p>
+<p>The value <code class="docutils literal notranslate"><span class="pre">numpy.nan</span></code> is used when an index is not yet defined, including
+many one-cluster states. When monitoring a stream, consider the trajectory
+only after enough clusters and samples have been observed. An undefined batch
+evaluation also emits a <code class="docutils literal notranslate"><span class="pre">RuntimeWarning</span></code>; incremental startup and structural
+operations remain silent. Use <code class="docutils literal notranslate"><span class="pre">numpy.isnan</span></code> to test whether a result is
+undefined. A computed score of <code class="docutils literal notranslate"><span class="pre">0.0</span></code> remains a valid result.</p>
+<p>The conditions for a defined value are:</p>
+<div class="table-wrapper docutils container" id="id3">
+<table class="docutils align-default" id="id3">
+<caption><span class="caption-text">Definition conditions</span><a class="headerlink" href="#id3" title="Link to this table">¶</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Index</p></th>
+<th class="head"><p>The score is defined when</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CH</span></code></p></td>
+<td><p>There are at least two clusters and within-cluster sum of squares is positive.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CONN</span></code></p></td>
+<td><p>At least two prototypes or ART categories have been learned.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cSIL</span></code></p></td>
+<td><p>There are at least two clusters. A local term with equal zero compactness and separation contributes <code class="docutils literal notranslate"><span class="pre">0.0</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DB</span></code></p></td>
+<td><p>There are at least two clusters and every pair of centroids has positive separation.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GD43</span></code> and <code class="docutils literal notranslate"><span class="pre">GD53</span></code></p></td>
+<td><p>There are at least two clusters and at least one cluster has positive dispersion.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PS</span></code></p></td>
+<td><p>There are at least two clusters and the cluster centroids have positive dispersion.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rCIP</span></code></p></td>
+<td><p>There are at least two clusters.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WB</span></code></p></td>
+<td><p>There are at least two clusters and between-cluster sum of squares is positive.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">XB</span></code></p></td>
+<td><p>There are at least two clusters and minimum centroid separation is positive.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The checks use exact zero comparisons. No small value is added to a
+denominator, so a very small nonzero denominator remains part of the metric’s
+result.</p>
+<p>For example, exclude undefined values when consuming a streaming score:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">cvi</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">index</span> <span class="o">=</span> <span class="n">cvi</span><span class="o">.</span><span class="n">CH</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">sample</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">get_cvi</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 
         </article>

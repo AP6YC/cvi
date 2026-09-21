@@ -326,7 +326,8 @@ Keep the following rules in mind:</p>
 <li><p>Batch initialization requires at least two distinct labels, and a second
 batch call on the same object is rejected.</p></li>
 <li><dl class="simple">
-<dt>Criterion values are <code class="docutils literal notranslate"><span class="pre">0.0</span></code> while an index is not defined, such as before enough clusters have been observed.</dt><dd><p>Do not interpret that sentinel as an optimal clustering result.</p>
+<dt>Criterion values are <code class="docutils literal notranslate"><span class="pre">numpy.nan</span></code> while an index is not defined, such as before enough clusters have been observed.</dt><dd><p>Use <code class="docutils literal notranslate"><span class="pre">numpy.isnan</span></code> before consuming a result; a valid score may be zero.
+An undefined batch evaluation emits a <code class="docutils literal notranslate"><span class="pre">RuntimeWarning</span></code>; incremental updates remain silent while an index is not yet defined.</p>
 </dd>
 </dl>
 </li>
