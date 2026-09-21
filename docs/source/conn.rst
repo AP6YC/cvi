@@ -31,7 +31,14 @@ Disable this only when the data are already on the intended scale.
 Incremental mode
 ----------------
 
-Incremental updates require the FuzzyART backend:
+Incremental updates require the optional FuzzyART backend. Install its extra
+before selecting it:
+
+.. code-block:: console
+
+   python -m pip install "cvi[art]"
+
+Then construct a Fuzzy-backed index:
 
 .. code-block:: python
 
@@ -45,8 +52,12 @@ bounds are unknown. They must normally already lie in ``[0, 1]``.
 The default ``check_incremental_normalized=True`` validates that assumption; disabling the
 check does not normalize the samples.
 
-The FuzzyART parameters ``rho``, ``alpha``, ``beta``, and ``match_tracking`` control prototype formation and are passed to the underlying ART model.
-Streamorder and those parameters can therefore affect the learned prototypes and the resulting criterion trajectory.
+The FuzzyART parameters ``rho``, ``alpha``, ``beta``, and ``match_tracking``
+control prototype formation and are passed to the underlying ART model. They
+are optional and initialized only for ``model_type="Fuzzy"``. Conversely,
+``kmeans_k`` and ``kmeans_kwargs`` are initialized only for a KMeans model.
+Stream order and those parameters can therefore affect the learned prototypes
+and the resulting criterion trajectory.
 
 Limitations
 -----------

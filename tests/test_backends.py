@@ -64,6 +64,49 @@ else:
     assert result.returncode == 0, result.stdout + result.stderr
 
 
+def test_kmeans_conn_import_and_execution_without_artlib():
+    # Block ARTlib in a fresh process to prove that only Fuzzy CONN requires
+    # the optional dependency, and that even Fuzzy construction remains lazy.
+    code = '''
+import importlib.abc
+import sys
+class NoArtlib(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == "artlib" or fullname.startswith("artlib."):
+            raise ModuleNotFoundError("ARTlib blocked for test", name="artlib")
+sys.meta_path.insert(0, NoArtlib())
+import numpy as np
+import src.cvi as cvi
+assert "artlib" not in sys.modules
+data = np.array([[0., 0.], [1., 1.], [4., 4.], [5., 5.]])
+labels = np.array([10, 10, 20, 20])
+index = cvi.CONN(
+    model_type="KMeans",
+    kmeans_k=1,
+    kmeans_kwargs={"random_state": 0, "n_init": 1},
+)
+assert index._artmap is None
+assert np.isfinite(index.get_cvi(data, labels))
+assert index._artmap is None
+assert "artlib" not in sys.modules
+fuzzy = cvi.CONN(model_type="Fuzzy")
+assert fuzzy._artmap is None
+try:
+    fuzzy.get_cvi(np.array([0., 0.]), 10)
+except ImportError as error:
+    assert 'pip install "cvi[art]"' in str(error)
+else:
+    raise AssertionError("Missing dependency must not silently select KMeans")
+assert fuzzy._is_setup is False
+assert fuzzy._label_map.map == {}
+'''
+    result = subprocess.run(
+        [sys.executable, "-c", code], cwd=Path(__file__).resolve().parents[1],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 @pytest.mark.parametrize("index_type", SUPPORTED)
 def test_backend_is_per_instance_and_survives_reset_and_serialization(
     index_type, backend,

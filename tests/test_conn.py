@@ -22,6 +22,53 @@ def _separated_data():
     return data, labels
 
 
+def test_only_selected_prototype_defaults_are_resolved():
+    fuzzy = cvi.CONN(model_type="Fuzzy")
+    assert fuzzy.rho == 0.9
+    assert fuzzy.alpha == 1e-10
+    assert fuzzy.beta == 1.0
+    assert fuzzy.match_tracking == "MT+"
+    assert fuzzy.kmeans_k is None
+    assert fuzzy.kmeans_kwargs is None
+
+    kmeans = cvi.CONN(model_type="KMeans")
+    assert kmeans.rho is None
+    assert kmeans.alpha is None
+    assert kmeans.beta is None
+    assert kmeans.match_tracking is None
+    assert kmeans.kmeans_k == 8
+    assert kmeans.kmeans_kwargs is None
+
+
+def test_kmeans_does_not_initialize_art_prototypes():
+    data, labels = _separated_data()
+    conn = cvi.CONN(
+        model_type="KMeans",
+        kmeans_k=2,
+        kmeans_kwargs=KMEANS_KWARGS,
+    )
+
+    assert conn._artmap is None
+    assert conn._kmeans_models is None
+
+    conn.get_cvi(data, labels)
+
+    assert conn._artmap is None
+    assert len(conn._kmeans_models) == 2
+
+
+def test_fuzzy_initializes_only_art_prototypes_on_first_use():
+    conn = cvi.CONN(model_type="Fuzzy", normalize_batch=False)
+
+    assert conn._artmap is None
+    assert conn._kmeans_models is None
+
+    conn.get_cvi(np.asarray([0.0, 0.0]), 0)
+
+    assert conn._artmap is not None
+    assert conn._kmeans_models is None
+
+
 @pytest.mark.parametrize("model_type", ["KMeans", "MiniBatchKMeans"])
 def test_centroid_backends_compute_expected_connectivity(model_type):
     data, labels = _separated_data()
