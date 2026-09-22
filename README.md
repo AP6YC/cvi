@@ -78,8 +78,8 @@ These animations track three familiar CVIs as labeled samples arrive: Calinskiâ€
 The same three well-separated clusters are streamed first in class order and then in a fixed random order.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-synthetic-class-order.gif" alt="Incremental CVIs on class-ordered synthetic Gaussian blobs" width="49%">
-  <img src="https://raw.githubusercontent.com/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-synthetic-shuffled.gif" alt="Incremental CVIs on shuffled synthetic Gaussian blobs" width="49%">
+  <img src="https://media.githubusercontent.com/media/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-synthetic-class-order.gif" alt="Incremental CVIs on class-ordered synthetic Gaussian blobs" width="49%">
+  <img src="https://media.githubusercontent.com/media/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-synthetic-shuffled.gif" alt="Incremental CVIs on shuffled synthetic Gaussian blobs" width="49%">
 </p>
 
 ### Iris Dataset
@@ -87,8 +87,8 @@ The same three well-separated clusters are streamed first in class order and the
 The CVIs use all four standardized Iris features. PCA is used only to make the samples visible in the two-dimensional scatter plot.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-iris-class-order.gif" alt="Incremental CVIs on the class-ordered Iris dataset" width="49%">
-  <img src="https://raw.githubusercontent.com/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-iris-shuffled.gif" alt="Incremental CVIs on the shuffled Iris dataset" width="49%">
+  <img src="https://media.githubusercontent.com/media/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-iris-class-order.gif" alt="Incremental CVIs on the class-ordered Iris dataset" width="49%">
+  <img src="https://media.githubusercontent.com/media/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-iris-shuffled.gif" alt="Incremental CVIs on the shuffled Iris dataset" width="49%">
 </p>
 
 ## Installation
