@@ -32,7 +32,13 @@ class DB(_base.CVI):
         name_short="DB",
         index_min=0.0,
         index_max=np.inf,
-        optimality="min"
+        optimality="min",
+        batch=True,
+        incremental=True,
+        merge=True,
+        remove=True,
+        split=True,
+        backends=("numpy", "numba"),
     )
     _supports_numba = True
     _supports_remove_merge = True

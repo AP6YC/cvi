@@ -32,7 +32,13 @@ class cSIL(_base.CVI):
         name_short="cSIL",
         index_min=-1.0,
         index_max=1.0,
-        optimality="max"
+        optimality="max",
+        batch=True,
+        incremental=True,
+        merge=True,
+        remove=True,
+        split=True,
+        backends=("numpy", "numba"),
     )
     _supports_numba = True
     _supports_remove_merge = True
