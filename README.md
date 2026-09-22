@@ -34,6 +34,9 @@ Please see the [documentation][docs-stable-url] for detailed usage.
 
 - [Table of Contents](#table-of-contents)
 - [What Are Cluster Validity Indices?](#what-are-cluster-validity-indices)
+- [Incremental CVIs in Action](#incremental-cvis-in-action)
+  - [Synthetic Gaussian Blobs](#synthetic-gaussian-blobs)
+  - [Iris Dataset](#iris-dataset)
 - [Installation](#installation)
 - [Quickstart](#quickstart)
   - [Updating an Existing Partition](#updating-an-existing-partition)
@@ -66,6 +69,28 @@ Each operates on only the information available (i.e., the provided samples of f
 Clustering well in this context means correctly partitioning (i.e., separating) the data rather than prescribing too many different clusters (over partitioning) or too few (under partitioning).
 Every CVI itself also behaves differently in terms of the range and scale of their numbers.
 **Furthermore, each CVI has an original batch implementation and incremental implementation that are equivalent**.
+
+## Incremental CVIs in Action
+
+These animations track three familiar CVIs as labeled samples arrive: Calinski–Harabasz (CH), Davies–Bouldin (DB), and centroid-based Silhouette (cSIL). Faded points have not arrived yet; opaque points are already part of the incremental partition. The solid traces show each incremental value, while the dashed lines show the value obtained by evaluating the complete dataset as one batch.
+
+### Synthetic Gaussian Blobs
+
+The same three well-separated clusters are streamed first in class order and then in a fixed random order.
+
+<p align="center">
+  <img src="https://media.githubusercontent.com/media/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-synthetic-class-order.gif" alt="Incremental CVIs on class-ordered synthetic Gaussian blobs" width="49%">
+  <img src="https://media.githubusercontent.com/media/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-synthetic-shuffled.gif" alt="Incremental CVIs on shuffled synthetic Gaussian blobs" width="49%">
+</p>
+
+### Iris Dataset
+
+The CVIs use all four standardized Iris features. PCA is used only to make the samples visible in the two-dimensional scatter plot.
+
+<p align="center">
+  <img src="https://media.githubusercontent.com/media/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-iris-class-order.gif" alt="Incremental CVIs on the class-ordered Iris dataset" width="49%">
+  <img src="https://media.githubusercontent.com/media/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-iris-shuffled.gif" alt="Incremental CVIs on the shuffled Iris dataset" width="49%">
+</p>
 
 ## Installation
 
