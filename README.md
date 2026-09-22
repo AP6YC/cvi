@@ -42,6 +42,7 @@ Please see the [documentation][docs-stable-url] for detailed usage.
   - [Updating an Existing Partition](#updating-an-existing-partition)
   - [Implemented Indices](#implemented-indices)
 - [Optimizations](#optimizations)
+  - [Optional FuzzyART CONN Backend](#optional-fuzzyart-conn-backend)
   - [Optional Numba Acceleration](#optional-numba-acceleration)
   - [Optional JAX Batch Backend](#optional-jax-batch-backend)
   - [Fixed-capacity JAX Streaming](#fixed-capacity-jax-streaming)
@@ -239,6 +240,27 @@ Removing the final sample of a cluster deletes that cluster, while `merge` retai
 The caller is responsible for ensuring that a removed sample belongs to the supplied label.
 `cvi` comes with some optimizations in the form of various backends that you can switch between for faster performance depending on your use-case.
 
+### Optional FuzzyART CONN Backend
+
+CONN uses KMeans prototypes by default and does not require ART dependencies.
+Install the ART extra to use its FuzzyART prototype model for incremental or
+batch evaluation:
+
+```console
+python -m pip install "cvi[art]"
+```
+
+```python
+import cvi
+
+index = cvi.CONN(model_type="Fuzzy")
+value = index.get_cvi(sample, label)
+```
+
+The ART model is imported and initialized only when the Fuzzy-backed index is
+first used. ART parameters and KMeans parameters are optional and only apply to
+their corresponding prototype model.
+
 ### Optional Numba Acceleration
 
 Install the extra and select the backend per index:
@@ -271,8 +293,8 @@ CH/WB streaming updates, are not accelerated by this selection.
 The first use of a kernel for an input type/layout incurs compilation; subsequent
 calls reuse compiled code, with a disk cache across processes. Measure warmed
 performance for your workload; small workloads may not repay compilation cost.
-Numba is imported by the numerical backend only when selected. The existing
-ART dependency may also install/use Numba independently when using CONN.
+Numba is imported by the numerical backend only when selected. The optional
+ART dependency may also install/use Numba independently when using Fuzzy CONN.
 See [backend benchmarks](benchmarks/README.md) for timings and reproduction steps.
 
 ### Optional JAX Batch Backend

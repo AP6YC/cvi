@@ -50,7 +50,7 @@ The first invocation for a new input type/layout incurs compilation. Later
 calls reuse compiled code, with a disk cache across processes. Include that
 initial latency when measuring short tasks, and warm up kernels before measuring
 steady-state throughput. Numba is imported for the numerical backend only when
-selected; CONN's existing ART dependency can independently install and use it.
+selected; CONN's optional ART dependency can independently install and use it.
 Selecting Numba without the dependency installed raises an installation hint
 rather than silently selecting another backend.
 
