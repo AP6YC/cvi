@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="API Reference" href="api.html"><link rel="prev" title="Choosing an Index" href="choosing.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
-        <title>Using CONN - cvi 0.7.1 documentation</title>
+        <title>Using CONN - cvi 0.7.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">cvi 0.7.1 documentation</div></a>
+      <a href="index.html"><div class="brand">cvi 0.7.2 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -184,7 +184,7 @@
       
       <div class="sidebar-sticky"><div class="sidebar-scroll"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">cvi 0.7.1 documentation</span>
+  <span class="sidebar-brand-text">cvi 0.7.2 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -287,7 +287,12 @@ Disable this only when the data are already on the intended scale.</p>
 </section>
 <section id="incremental-mode">
 <h2>Incremental mode<a class="headerlink" href="#incremental-mode" title="Link to this heading">¶</a></h2>
-<p>Incremental updates require the FuzzyART backend:</p>
+<p>Incremental updates require the optional FuzzyART backend. Install its extra
+before selecting it:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m pip install "cvi[art]"</span>
+</pre></div>
+</div>
+<p>Then construct a Fuzzy-backed index:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">index</span> <span class="o">=</span> <span class="n">cvi</span><span class="o">.</span><span class="n">CONN</span><span class="p">(</span><span class="n">model_type</span><span class="o">=</span><span class="s2">"Fuzzy"</span><span class="p">)</span>
 
 <span class="k">for</span> <span class="n">sample</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
@@ -298,8 +303,12 @@ Disable this only when the data are already on the intended scale.</p>
 bounds are unknown. They must normally already lie in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>.
 The default <code class="docutils literal notranslate"><span class="pre">check_incremental_normalized=True</span></code> validates that assumption; disabling the
 check does not normalize the samples.</p>
-<p>The FuzzyART parameters <code class="docutils literal notranslate"><span class="pre">rho</span></code>, <code class="docutils literal notranslate"><span class="pre">alpha</span></code>, <code class="docutils literal notranslate"><span class="pre">beta</span></code>, and <code class="docutils literal notranslate"><span class="pre">match_tracking</span></code> control prototype formation and are passed to the underlying ART model.
-Streamorder and those parameters can therefore affect the learned prototypes and the resulting criterion trajectory.</p>
+<p>The FuzzyART parameters <code class="docutils literal notranslate"><span class="pre">rho</span></code>, <code class="docutils literal notranslate"><span class="pre">alpha</span></code>, <code class="docutils literal notranslate"><span class="pre">beta</span></code>, and <code class="docutils literal notranslate"><span class="pre">match_tracking</span></code>
+control prototype formation and are passed to the underlying ART model. They
+are optional and initialized only for <code class="docutils literal notranslate"><span class="pre">model_type=&quot;Fuzzy&quot;</span></code>. Conversely,
+<code class="docutils literal notranslate"><span class="pre">kmeans_k</span></code> and <code class="docutils literal notranslate"><span class="pre">kmeans_kwargs</span></code> are initialized only for a KMeans model.
+Stream order and those parameters can therefore affect the learned prototypes
+and the resulting criterion trajectory.</p>
 </section>
 <section id="limitations">
 <h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading">¶</a></h2>
@@ -381,7 +390,7 @@ Use a new object when changing backend or evaluating another independent partiti
     </aside>
   </div>
 </div>
-<script src="_static/documentation_options.js?v=5a057da9"></script>
+<script src="_static/documentation_options.js?v=6dfdf7c3"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

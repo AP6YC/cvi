@@ -116,15 +116,20 @@ Index metadata
 --------------
 
 Every implementation exposes an ``info`` class attribute describing its name,
-range, and optimization direction:
+range, optimization direction, supported operations, and numerical backends:
 
 .. doctest::
 
    >>> import cvi
    >>> cvi.CH.info
-   CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max')
+   CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max', batch=True, incremental=True, merge=True, remove=True, split=True, backends=('numpy', 'numba', 'jax'))
 
 Use ``optimality`` rather than assuming that a larger value is always better.
+The ``batch``, ``incremental``, ``merge``, ``remove``, and ``split`` flags indicate
+support in at least one configuration. ``backends`` lists implemented numerical
+backends, even when their optional dependencies are not installed. JAX incremental
+updates require ``capacity``; JAX does not support merge, remove, or split. CONN
+incremental updates require an ART model.
 
 Acknowledgements
 ----------------

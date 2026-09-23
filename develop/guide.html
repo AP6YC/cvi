@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Backends" href="backends.html"><link rel="prev" title="Background" href="background.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
-        <title>Getting Started - cvi 0.7.1 documentation</title>
+        <title>Getting Started - cvi 0.7.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">cvi 0.7.1 documentation</div></a>
+      <a href="index.html"><div class="brand">cvi 0.7.2 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -184,7 +184,7 @@
       
       <div class="sidebar-sticky"><div class="sidebar-scroll"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">cvi 0.7.1 documentation</span>
+  <span class="sidebar-brand-text">cvi 0.7.2 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -367,13 +367,18 @@ Invalid labels, inconsistent statistics, changed feature dimensions, and attempt
 <section id="index-metadata">
 <h2>Index metadata<a class="headerlink" href="#index-metadata" title="Link to this heading">¶</a></h2>
 <p>Every implementation exposes an <code class="docutils literal notranslate"><span class="pre">info</span></code> class attribute describing its name,
-range, and optimization direction:</p>
+range, optimization direction, supported operations, and numerical backends:</p>
 <div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">cvi</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cvi</span><span class="o">.</span><span class="n">CH</span><span class="o">.</span><span class="n">info</span>
-<span class="go">CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max')</span>
+<span class="go">CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max', batch=True, incremental=True, merge=True, remove=True, split=True, backends=('numpy', 'numba', 'jax'))</span>
 </pre></div>
 </div>
-<p>Use <code class="docutils literal notranslate"><span class="pre">optimality</span></code> rather than assuming that a larger value is always better.</p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">optimality</span></code> rather than assuming that a larger value is always better.
+The <code class="docutils literal notranslate"><span class="pre">batch</span></code>, <code class="docutils literal notranslate"><span class="pre">incremental</span></code>, <code class="docutils literal notranslate"><span class="pre">merge</span></code>, <code class="docutils literal notranslate"><span class="pre">remove</span></code>, and <code class="docutils literal notranslate"><span class="pre">split</span></code> flags indicate
+support in at least one configuration. <code class="docutils literal notranslate"><span class="pre">backends</span></code> lists implemented numerical
+backends, even when their optional dependencies are not installed. JAX incremental
+updates require <code class="docutils literal notranslate"><span class="pre">capacity</span></code>; JAX does not support merge, remove, or split. CONN
+incremental updates require an ART model.</p>
 </section>
 <section id="acknowledgements">
 <h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Link to this heading">¶</a></h2>
@@ -483,7 +488,7 @@ range, and optimization direction:</p>
     </aside>
   </div>
 </div>
-<script src="_static/documentation_options.js?v=5a057da9"></script>
+<script src="_static/documentation_options.js?v=6dfdf7c3"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
