@@ -32,7 +32,13 @@ class rCIP(_base.CVI):
         name_short="rCIP",
         index_min=0.0,
         index_max=np.inf,
-        optimality="min"
+        optimality="min",
+        batch=True,
+        incremental=True,
+        merge=True,
+        remove=True,
+        split=True,
+        backends=("numpy",),
     )
     _supports_remove_merge = True
 
