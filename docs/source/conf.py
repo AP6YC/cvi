@@ -3,12 +3,12 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-import os
 import sys
 from datetime import date
 from importlib.metadata import version as package_version
+from pathlib import Path
 
-sys.path.insert(0, os.path.abspath('../../src'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 
 # -- Project information -----------------------------------------------------
