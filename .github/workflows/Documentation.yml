@@ -38,25 +38,21 @@ jobs:
           python -m pip show sphinx sphinx-multiversion
 
       - name: Build current docs strictly
-        run: |
-          cd docs
-          sphinx-build -b html source build/current -W --keep-going
+        working-directory: docs
+        run: make html
 
       - name: Test documentation examples
-        run: |
-          cd docs
-          sphinx-build -b doctest source build/doctest -W --keep-going
+        working-directory: docs
+        run: make doctest
 
       - name: Check documentation links
-        run: |
-          cd docs
-          sphinx-build -b linkcheck source build/linkcheck -W --keep-going
+        working-directory: docs
+        run: make linkcheck
 
       - name: Build versioned docs for deployment
         if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
-        run: |
-          cd docs
-          sphinx-multiversion source build/html
+        working-directory: docs
+        run: make multiversion
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
