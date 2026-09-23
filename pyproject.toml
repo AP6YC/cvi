@@ -103,7 +103,6 @@ classifiers = [  # Optional
 # https://packaging.python.org/discussions/install-requires-vs-requirements/
 dependencies = [ # Optional
   "numpy",
-  "artlib>=0.1.7",
   "scikit-learn",
 ]
 
@@ -116,6 +115,15 @@ dependencies = [ # Optional
 # Similar to `dependencies` above, these must be valid existing
 # projects.
 [project.optional-dependencies] # Optional
+art = [
+  "artlib>=0.1.7",
+]
+jax = [
+  "jax>=0.4.26",
+]
+numba = [
+  "numba>=0.60",
+]
 dev = [
   "check-manifest",
   "build",
@@ -129,6 +137,7 @@ test = [
   "coverage",
   "pandas",
   "flake8",
+  "artlib>=0.1.7",
 ]
 docs = [
   "sphinx<9",

@@ -5,18 +5,20 @@ Utilities that are common across all CVI objects.
 - Sasha Petrenko <sap625@mst.edu>
 """
 
-# Standard library imports
+import warnings
+from abc import abstractmethod
+from dataclasses import dataclass
 from typing import (
     Callable,
-    Union
+    ClassVar,
+    Optional,
+    Union,
 )
-from abc import abstractmethod
-
-from dataclasses import dataclass
-from typing import ClassVar
 
 # Custom imports
 import numpy as np
+
+from ..backends import get_backend
 
 # --------------------------------------------------------------------------- #
 # CLASSES
@@ -24,11 +26,26 @@ import numpy as np
 
 @dataclass
 class CVIInfo:
+    """Index metadata and implemented capabilities, independent of installation.
+
+    Operation flags indicate support in at least one configuration, not every
+    backend/model combination. JAX incremental updates require ``capacity``;
+    JAX does not support merge, remove, or split. CONN incremental updates
+    require an ART model. ``backends`` lists numerical backend names, including
+    optional backends whose dependencies may not be installed.
+    """
+
     name: str
     name_short: str
     index_min: float
     index_max: float
     optimality: str
+    batch: bool = False
+    incremental: bool = False
+    merge: bool = False
+    remove: bool = False
+    split: bool = False
+    backends: tuple[str, ...] = ("numpy",)
 
 class LabelMap():
     """
@@ -100,12 +117,38 @@ class CVI():
     info: ClassVar[CVIInfo]
     _supports_remove_merge: ClassVar[bool] = False
     _uses_compactness_stats: ClassVar[bool] = False
+    _supports_numba: ClassVar[bool] = False
+    _supports_jax: ClassVar[bool] = False
 
-    def __init__(self):
+    def __init__(self, *, backend="numpy", capacity=None):
         """
         CVI base class initialization method.
+
+        Parameters
+        ----------
+        backend : {"numpy", "numba", "jax"}, default="numpy"
+            Numerical implementation. Numba is optional and must be supported
+            by the concrete index. The choice remains fixed through resets.
+        capacity : int or None, default=None
+            Maximum distinct clusters for optional fixed-capacity JAX streaming.
         """
 
+        if backend == "numba" and not self._supports_numba:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not support the numba backend"
+            )
+        if backend == "jax" and not self._supports_jax:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not support the jax backend"
+            )
+        if capacity is not None:
+            if backend != "jax":
+                raise ValueError("capacity is available only with backend='jax'")
+            if isinstance(capacity, bool) or not isinstance(capacity, int) or capacity < 1:
+                raise ValueError("capacity must be a positive integer")
+        self._capacity = capacity
+        self._stream_state = None
+        self._backend = get_backend(backend)
         self._label_map = LabelMap()
         self._dim = 0
         self._n_samples = 0
@@ -114,8 +157,48 @@ class CVI():
         self._CP = []                # dim
         self._G = np.zeros([0, 0])   # n_clusters x dim
         self._n_clusters = 0
-        self.criterion_value = 0.0
+        self.criterion_value = np.nan
         self._is_setup = False
+
+    @property
+    def backend(self):
+        """Selected numerical backend (fixed for this object's lifetime)."""
+        return self._backend.name
+
+    @property
+    def capacity(self):
+        """Maximum distinct clusters for JAX streaming, or None for batch only."""
+        return self._capacity
+
+    @property
+    def stream_state(self):
+        """Immutable device state for JAX streaming; None until initialized."""
+        return self._stream_state
+
+    def update_many(self, data, labels, *, return_history=True):
+        """Add a chunk to a fixed-capacity JAX stream, atomically on input errors.
+
+        Return a NumPy score history, or a Python final score when
+        return_history=False. Empty chunks are no-ops, including on new objects.
+        The entire chunk must fit the remaining cluster capacity. This is an
+        incremental scan, distinct from the one-time batch get_cvi operation.
+        """
+        if self.backend != "jax" or self.capacity is None:
+            raise NotImplementedError("update_many requires JAX with capacity")
+        mapping, updates, output = self._backend.advance(
+            self, data, labels, return_history=return_history,
+        )
+        self.__dict__.update(updates)
+        self._label_map.map = mapping
+        return output
+
+    def __setstate__(self, state):
+        """Treat objects serialized before backend selection as NumPy objects."""
+        self.__dict__.update(state)
+        self.__dict__.setdefault("_capacity", None)
+        self.__dict__.setdefault("_stream_state", None)
+        if "_backend" not in state:
+            self._backend = get_backend("numpy")
 
     def _setup(self, sample: np.ndarray):
         """
@@ -164,6 +247,26 @@ class CVI():
 
         return unique_labels
 
+    def _setup_batch_statistics(self, data, labels, compactness=True):
+        """Initialize shared batch state and return stable cluster grouping."""
+        self._setup_batch(data)
+        self._n_clusters = len(self._setup_batch_labels(labels))
+        dense_labels = np.fromiter(
+            (self._label_map.map[label] for label in labels),
+            dtype=np.intp,
+            count=len(labels),
+        )
+        order, offsets = self._backend.grouped_rows(dense_labels, self._n_clusters)
+        counts, self._v, squared_errors = self._backend.batch_statistics(
+            data, order, offsets, compactness=compactness,
+        )
+        # Lists remain appendable by the existing incremental implementation.
+        self._n = counts.tolist()
+        if compactness:
+            self._CP = list(squared_errors)
+            self._G = np.zeros_like(self._v)
+        return order, offsets
+
     @abstractmethod
     def _param_inc(self, sample: np.ndarray, label: int):
         raise NotImplementedError
@@ -179,14 +282,19 @@ class CVI():
     def _require_operations(self):
         """Validate that structural operations are supported and available."""
 
+        if self.backend == "jax":
+            if self.capacity is not None:
+                raise NotImplementedError("JAX streaming does not support remove or merge")
+            raise NotImplementedError("The jax backend currently supports batch only")
+
         if not self._supports_remove_merge:
             raise NotImplementedError(
-                f"{type(self).__name__} does not support remove or merge"
+                f"{type(self).__name__} does not support remove, merge, or split"
             )
 
         if not self._is_setup:
             raise ValueError(
-                "Remove and merge require an initialized CVI"
+                "Remove, merge, and split require an initialized CVI"
             )
 
     def _validate_sample(self, sample: np.ndarray) -> np.ndarray:
@@ -232,6 +340,115 @@ class CVI():
             raise ValueError(
                 "The supplied sample does not match the singleton cluster"
             )
+
+    def _validate_split_inputs(
+        self,
+        retained_label: int,
+        new_label: int,
+        count: int,
+        centroid: np.ndarray,
+        compactness: Optional[float],
+        covariance: Optional[np.ndarray],
+    ):
+        """Validate and normalize the sufficient statistics for a split."""
+
+        retained_i = self._label_map.get_existing_label(retained_label)
+
+        if new_label in self._label_map.map:
+            raise ValueError(
+                f"Split requires an unused new cluster label: {new_label}"
+            )
+
+        if isinstance(count, (bool, np.bool_)) or not isinstance(
+            count,
+            (int, np.integer),
+        ):
+            raise ValueError("Split count must be a positive integer")
+
+        count = int(count)
+        if count < 1:
+            raise ValueError("Split count must be a positive integer")
+
+        if count >= self._n[retained_i]:
+            raise ValueError(
+                "Split count must be smaller than the retained cluster count"
+            )
+
+        centroid = np.asarray(centroid, dtype=float)
+        if centroid.ndim != 1:
+            raise ValueError("Split centroid must be one-dimensional")
+
+        if centroid.shape[0] != self._dim:
+            raise ValueError(
+                f"Expected a centroid with {self._dim} features, "
+                f"received {centroid.shape[0]}"
+            )
+
+        if not np.all(np.isfinite(centroid)):
+            raise ValueError("Split centroid must contain finite values")
+
+        if compactness is not None:
+            compactness_array = np.asarray(compactness, dtype=float)
+            if compactness_array.ndim != 0:
+                raise ValueError("Split compactness must be a scalar")
+
+            compactness = float(compactness_array)
+            if not np.isfinite(compactness):
+                raise ValueError("Split compactness must be finite")
+
+            compactness = self._nonnegative_or_error(
+                compactness,
+                compactness,
+                "split compactness",
+            )
+
+        if covariance is not None:
+            covariance = np.asarray(covariance, dtype=float)
+            expected_shape = (self._dim, self._dim)
+            if covariance.shape != expected_shape:
+                raise ValueError(
+                    f"Expected covariance with shape {expected_shape}, "
+                    f"received {covariance.shape}"
+                )
+
+            if not np.all(np.isfinite(covariance)):
+                raise ValueError("Split covariance must contain finite values")
+
+            if not np.allclose(
+                covariance,
+                covariance.T,
+                rtol=1e-10,
+                atol=1e-12,
+            ):
+                raise ValueError("Split covariance must be symmetric")
+
+            covariance = (covariance + covariance.T) / 2
+            eigenvalues, eigenvectors = np.linalg.eigh(covariance)
+            tolerance = 1e-10 * max(
+                1.0,
+                np.linalg.norm(covariance, ord=2),
+            )
+            if np.min(eigenvalues) < -tolerance:
+                raise ValueError(
+                    "Split covariance must be positive semidefinite"
+                )
+
+            eigenvalues = np.maximum(eigenvalues, 0.0)
+            covariance = (eigenvectors * eigenvalues) @ eigenvectors.T
+
+        if count == 1:
+            if compactness is not None and compactness > 1e-10:
+                raise ValueError("Singleton split compactness must be zero")
+            compactness = 0.0
+
+            if (
+                covariance is not None
+                and np.linalg.norm(covariance, ord=2) > 1e-10
+            ):
+                raise ValueError("Singleton split covariance must be zero")
+            covariance = np.zeros((self._dim, self._dim))
+
+        return retained_i, count, centroid, compactness, covariance
 
     @staticmethod
     def _delete_vector_entry(values, index: int):
@@ -282,11 +499,11 @@ class CVI():
         self._CP = []
         self._G = np.zeros([0, 0])
         self._n_clusters = 0
-        self.criterion_value = 0.0
+        self.criterion_value = np.nan
         self._is_setup = False
 
     def _rebuild_after_operation(self):
-        """Rebuild CVI-specific derived state after remove or merge."""
+        """Rebuild CVI-specific derived state after a structural operation."""
 
         raise NotImplementedError
 
@@ -377,6 +594,60 @@ class CVI():
         self._delete_common_cluster(source_label, source_i)
         self._rebuild_after_operation()
 
+    def _split(
+        self,
+        new_label: int,
+        retained_i: int,
+        count: int,
+        centroid: np.ndarray,
+        compactness: Optional[float],
+        covariance: Optional[np.ndarray],
+    ):
+        """Split sufficient statistics from a compactness-based CVI."""
+
+        if not self._uses_compactness_stats:
+            raise NotImplementedError
+
+        if compactness is None:
+            raise ValueError(
+                f"{type(self).__name__} split requires compactness"
+            )
+
+        n_parent = self._n[retained_i]
+        n_remainder = n_parent - count
+        v_parent = self._v[retained_i, :].copy()
+        v_remainder = (
+            n_parent * v_parent - count * centroid
+        ) / n_remainder
+        difference = centroid - v_parent
+        correction = (
+            n_parent * count / n_remainder
+        ) * np.inner(difference, difference)
+        CP_remainder = self._nonnegative_or_error(
+            self._CP[retained_i] - compactness - correction,
+            max(
+                abs(self._CP[retained_i]),
+                abs(compactness),
+                correction,
+            ),
+            "cluster compactness",
+        )
+
+        new_i = self._label_map.get_internal_label(new_label)
+        if new_i != self._n_clusters:
+            raise RuntimeError("New split label was not appended")
+
+        self._n[retained_i] = n_remainder
+        self._v[retained_i, :] = v_remainder
+        self._CP[retained_i] = CP_remainder
+        self._G[retained_i, :] = np.zeros(self._dim)
+        self._n.append(count)
+        self._v = np.vstack((self._v, centroid))
+        self._CP.append(compactness)
+        self._G = np.vstack((self._G, np.zeros(self._dim)))
+        self._n_clusters += 1
+        self._rebuild_after_operation()
+
     def remove(self, sample: np.ndarray, label: int) -> float:
         """
         Remove a sample from an initialized CVI.
@@ -452,6 +723,80 @@ class CVI():
         self._evaluate()
         return self.criterion_value
 
+    def split(
+        self,
+        retained_label: int,
+        new_label: int,
+        count: int,
+        centroid: np.ndarray,
+        *,
+        compactness: Optional[float] = None,
+        covariance: Optional[np.ndarray] = None,
+    ) -> float:
+        """
+        Split a tracked subset from an existing cluster.
+
+        The existing external label is retained by the residual cluster. The
+        supplied sufficient statistics are assigned to a new cluster with
+        ``new_label``. The total sample count and global mean do not change.
+
+        Parameters
+        ----------
+        retained_label : int
+            External label of the cluster retaining the residual statistics.
+        new_label : int
+            Unused external label assigned to the split-off subset.
+        count : int
+            Number of samples in the split-off subset.
+        centroid : numpy.ndarray
+            Mean vector of the split-off subset.
+        compactness : float, optional
+            Sum of squared distances from the subset centroid. Required by
+            compactness-based indices when ``count`` is greater than one.
+        covariance : numpy.ndarray, optional
+            Unregularized unbiased sample covariance of the subset. Required
+            by rCIP when ``count`` is greater than one.
+
+        Returns
+        -------
+        float
+            The updated CVI criterion value.
+
+        Raises
+        ------
+        NotImplementedError
+            If this index does not implement cluster splitting.
+        ValueError
+            If the index is uninitialized, labels or statistics are invalid,
+            or the supplied subset is inconsistent with the retained cluster.
+        """
+
+        self._require_operations()
+        (
+            retained_i,
+            count,
+            centroid,
+            compactness,
+            covariance,
+        ) = self._validate_split_inputs(
+            retained_label,
+            new_label,
+            count,
+            centroid,
+            compactness,
+            covariance,
+        )
+        self._split(
+            new_label,
+            retained_i,
+            count,
+            centroid,
+            compactness,
+            covariance,
+        )
+        self._evaluate()
+        return self.criterion_value
+
     def get_cvi(self, data: np.ndarray, label: Union[int, np.ndarray]) -> float:
         """
         Update the CVI and return its criterion value.
@@ -460,7 +805,8 @@ class CVI():
         incremental update, or a two-dimensional batch and label vector for
         batch initialization. The object is mutated in both modes. A batch may
         be followed by incremental updates, but a second batch is not
-        supported.
+        supported. JAX supports incremental additions when capacity is provided;
+        it rejects remove and merge.
 
         Parameters
         ----------
@@ -480,7 +826,49 @@ class CVI():
             If the input dimensionality is invalid, feature dimensionality
             changes after initialization, batch labels contain fewer than two
             distinct values, or a second batch update is requested.
+
+        Warns
+        -----
+        RuntimeWarning
+            If the criterion is undefined after a batch evaluation. The
+            returned value is still ``numpy.nan``.
         """
+
+        if self.backend == "jax":
+            data = np.asarray(data)
+            if data.ndim == 1 and self.capacity is not None:
+                labels = np.asarray(label)
+                if labels.ndim != 0:
+                    raise ValueError("Expected a scalar integer label")
+                mapping, updates, output = self._backend.advance(
+                    self, data[None, :], labels[None], return_history=False,
+                    single=True,
+                )
+                self.__dict__.update(updates)
+                self._label_map.map = mapping
+                return output
+            if data.ndim == 1:
+                raise NotImplementedError(
+                    "The jax backend currently supports batch only"
+                )
+            if self._is_setup:
+                raise ValueError("Repeated batch updates are not supported")
+            mapping, state = self._backend.initialize(
+                data, label, self.info.name_short, capacity=self.capacity,
+            )
+            label_map = LabelMap()
+            label_map.map = mapping
+            self.__dict__.update(state)
+            self._label_map = label_map
+            criterion_value = self.criterion_value
+            if data.ndim == 2 and np.isnan(criterion_value):
+                warnings.warn(
+                    f"{type(self).__name__} is undefined for the supplied batch; "
+                    "returning nan.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+            return criterion_value
 
         # If we got 1D data, do a quick update
         if (data.ndim == 1):
@@ -523,6 +911,14 @@ class CVI():
         # Regardless of path, evaluate and extract the criterion value
         self._evaluate()
         criterion_value = self.criterion_value
+
+        if data.ndim == 2 and np.isnan(criterion_value):
+            warnings.warn(
+                f"{type(self).__name__} is undefined for the supplied batch; "
+                "returning nan.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
 
         # Return the criterion value
         return criterion_value

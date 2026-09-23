@@ -30,17 +30,29 @@ class PS(_base.CVI):
         name_short="PS",
         index_min=0.0,
         index_max=1.0,
-        optimality="max"
+        optimality="max",
+        batch=True,
+        incremental=True,
+        merge=True,
+        remove=True,
+        split=True,
+        backends=("numpy", "numba"),
     )
+    _supports_numba = True
     _supports_remove_merge = True
 
-    def __init__(self):
+    def __init__(self, *, backend="numpy"):
         """
         Partition Separation (PS) initialization routine.
+
+        Parameters
+        ----------
+        backend : {"numpy", "numba"}, default="numpy"
+            Select the numerical backend. Numba is loaded on demand.
         """
 
         # Run the base initialization
-        super().__init__()
+        super().__init__(backend=backend)
 
         # PS-specific initialization
         self._D = np.zeros([0, 0])   # n_clusters x n_clusters
@@ -89,10 +101,9 @@ class PS(_base.CVI):
                 D_new = np.zeros((self._n_clusters + 1, self._n_clusters + 1))
                 D_new[0:self._n_clusters, 0:self._n_clusters] = self._D
                 d_column_new = np.zeros(self._n_clusters + 1)
-                for jx in range(self._n_clusters):
-                    d_column_new[jx] = (
-                        np.sum((v_new - self._v[jx, :]) ** 2)
-                    )
+                d_column_new[:-1] = self._backend.centroid_distances(
+                    self._v, v_new,
+                )
                 D_new[i_label, :] = d_column_new
                 D_new[:, i_label] = d_column_new
 
@@ -111,14 +122,10 @@ class PS(_base.CVI):
                 (1 - 1 / n_new) * self._v[i_label, :]
                 + (1 / n_new) * sample
             )
-            d_column_new = np.zeros(self._n_clusters)
-            for jx in range(self._n_clusters):
-                # Skip the current i_label index
-                if jx == i_label:
-                    continue
-                d_column_new[jx] = (
-                    np.sum((v_new - self._v[jx, :]) ** 2)
-                )
+            d_column_new = self._backend.centroid_distances(
+                self._v, v_new,
+            )
+            d_column_new[i_label] = 0.0
 
             # Update parameters
             self._n[i_label] = n_new
@@ -135,34 +142,11 @@ class PS(_base.CVI):
         Batch parameter update for the Partition Separation (PS) CVI.
         """
 
-        # Setup the CVI for batch mode
-        super()._setup_batch(data)
-
-        # Take the average across all samples, but cast to 1-D vector
+        self._setup_batch_statistics(data, labels, compactness=False)
         self._mu = np.mean(data, axis=0)
-        u = self._setup_batch_labels(labels)
-        self._n_clusters = len(u)
-        self._n = [0 for _ in range(self._n_clusters)]
-        self._v = np.zeros((self._n_clusters, self._dim))
-        self._D = np.zeros((self._n_clusters, self._n_clusters))
-
-        for ix, external_label in enumerate(u):
-            subset_indices = (
-                [x for x in range(len(labels))
-                 if labels[x] == external_label]
-            )
-            subset = data[subset_indices, :]
-            self._n[ix] = subset.shape[0]
-            self._v[ix, :] = np.mean(subset, axis=0)
-            # diff_x_v = subset - self._v[ix, :] * np.ones((self._n[ix], 1))
-
-        for ix in range(self._n_clusters - 1):
-            for jx in range(ix + 1, self._n_clusters):
-                self._D[ix, jx] = (
-                    np.sum((self._v[ix, :] - self._v[jx, :]) ** 2)
-                )
-
-        self._D = self._D + np.transpose(self._D)
+        self._D = self._backend.pairwise_centroid_distances(
+            self._v,
+        )
 
     def _remove(self, sample: np.ndarray, label: int, i_label: int):
         """Remove one sample from the PS centroid statistics."""
@@ -213,6 +197,35 @@ class PS(_base.CVI):
         self._delete_cluster(source_label, source_i)
         self._rebuild_after_operation()
 
+    def _split(
+        self,
+        new_label: int,
+        retained_i: int,
+        count: int,
+        centroid: np.ndarray,
+        compactness,
+        covariance,
+    ):
+        """Split count and centroid statistics from a PS cluster."""
+
+        n_parent = self._n[retained_i]
+        n_remainder = n_parent - count
+        v_parent = self._v[retained_i, :].copy()
+        v_remainder = (
+            n_parent * v_parent - count * centroid
+        ) / n_remainder
+
+        new_i = self._label_map.get_internal_label(new_label)
+        if new_i != self._n_clusters:
+            raise RuntimeError("New split label was not appended")
+
+        self._n[retained_i] = n_remainder
+        self._v[retained_i, :] = v_remainder
+        self._n.append(count)
+        self._v = np.vstack((self._v, centroid))
+        self._n_clusters += 1
+        self._rebuild_after_operation()
+
     def _rebuild_after_operation(self):
         """Rebuild pairwise centroid distances."""
 
@@ -223,11 +236,8 @@ class PS(_base.CVI):
             self._PS_i = np.zeros(0)
             return
 
-        self._D = self._pairwise_matrix(
-            self._n_clusters,
-            lambda ix, jx: np.sum(
-                (self._v[ix, :] - self._v[jx, :]) ** 2
-            ),
+        self._D = self._backend.pairwise_centroid_distances(
+            self._v,
         )
         self._v_bar = []
         self._beta_t = 0.0
@@ -247,14 +257,17 @@ class PS(_base.CVI):
                 delta_v = self._v[ix, :] - self._v_bar
                 self._beta_t = self._beta_t + np.inner(delta_v, delta_v)
             self._beta_t /= self._n_clusters
-            n_max = max(self._n)
-            for ix in range(self._n_clusters):
-                d = self._D[ix, :]
-                d = np.delete(d, ix)
-                self._PS_i[ix] = (
-                    (self._n[ix] / n_max)
-                    - np.exp(-np.min(d) / self._beta_t)
-                )
-            self.criterion_value = np.sum(self._PS_i)
+            if self._beta_t > 0.0:
+                n_max = max(self._n)
+                for ix in range(self._n_clusters):
+                    d = self._D[ix, :]
+                    d = np.delete(d, ix)
+                    self._PS_i[ix] = (
+                        (self._n[ix] / n_max)
+                        - np.exp(-np.min(d) / self._beta_t)
+                    )
+                self.criterion_value = np.sum(self._PS_i)
+            else:
+                self.criterion_value = np.nan
         else:
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan

@@ -5,6 +5,7 @@
 # IDE ignores
 .vscode/
 .idea/
+.DS_Store
 
 # Project ignores
 _dev/
@@ -143,4 +144,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-.idea/

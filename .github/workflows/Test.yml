@@ -23,7 +23,9 @@ jobs:
           - x64
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
@@ -33,7 +35,7 @@ jobs:
           python -m pip install --upgrade pip
           # pip install flake8 pytest
           # pip install -r requirements.txt
-          pip install -e .[test]
+          pip install -e ".[test,numba,jax]"
       # if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Lint with flake8
         run: |

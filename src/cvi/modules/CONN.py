@@ -34,12 +34,16 @@ import numbers
 import numpy as np
 from sklearn.cluster import KMeans, MiniBatchKMeans
 
-# ART imports
-from artlib import FuzzyART, SimpleARTMAP
-from artlib.common.utils import complement_code
-
 # Local imports
 from . import _base
+
+
+def __getattr__(name):
+    """Resolve legacy ART adapter paths lazily, including existing pickles."""
+    if name in ("_CONNFuzzyART", "_CONNSimpleARTMAP"):
+        from . import _conn_art
+        return getattr(_conn_art, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class _GrowingSquareArray:
@@ -130,88 +134,6 @@ class _GrowingArray1D:
         return repr(self.array)
 
 
-class _CONNFuzzyART(FuzzyART):
-    """
-    FuzzyART extension that exposes the first and second best matching
-    categories for CONN updates.
-    """
-
-    def step_pred_first_and_second(self, sample: np.ndarray):
-        """
-        Return the first and second best matching ART categories.
-
-        Parameters
-        ----------
-        sample : np.ndarray
-            Complement-coded sample.
-
-        Returns
-        -------
-        tuple[int, int]
-            First and second category indices.
-
-        Raises
-        ------
-        RuntimeError
-            If fewer than two ART categories exist.
-        """
-
-        if len(self.W) < 2:
-            raise RuntimeError(
-                "CONN requires at least two ART categories. "
-                "The second ART category should be forced during the "
-                "second-sample initialization step."
-            )
-
-        choices = [
-            self.category_choice(sample, w, params=self.params)[0]
-            for w in self.W
-        ]
-
-        choices = np.asarray(choices, dtype=float)
-
-        first = int(np.argmax(choices))
-        choices[first] = -np.inf
-        second = int(np.argmax(choices))
-
-        return first, second
-
-
-class _CONNSimpleARTMAP(SimpleARTMAP):
-    """
-    SimpleARTMAP extension with CONN-specific match reset behavior.
-    """
-
-    def match_reset_func(
-        self,
-        i: np.ndarray,
-        w: np.ndarray,
-        cluster_a,
-        params: dict,
-        extra: dict,
-        cache: Optional[dict] = None,
-    ) -> bool:
-        """
-        CONN-specific match reset.
-        """
-
-        cluster_b = extra["cluster_b"]
-
-        b_samples = sum(
-            self.module_a.weight_sample_counter_[a]
-            for a, b in self.map.items()
-            if b == cluster_b
-        )
-
-        if b_samples == 1:
-            return False
-
-        if cluster_a in self.map and self.map[cluster_a] != cluster_b:
-            return False
-
-        return True
-
-
 class CONN(_base.CVI):
     """
     CONN Cluster Validity Index.
@@ -232,35 +154,53 @@ class CONN(_base.CVI):
         index_min=0.0,
         index_max=1.0,
         optimality="max",
+        batch=True,
+        incremental=True,
+        merge=False,
+        remove=False,
+        split=False,
+        backends=("numpy",),
     )
+
+    _DEFAULT_RHO = 0.9
+    _DEFAULT_ALPHA = 1e-10
+    _DEFAULT_BETA = 1.0
+    _DEFAULT_MATCH_TRACKING = "MT+"
+    _DEFAULT_KMEANS_K = 8
 
     def __init__(
         self,
-        rho: float = 0.9,
-        alpha: float = 1e-10,
-        beta: float = 1.0,
-        match_tracking: str = "MT+",
+        rho: Optional[float] = None,
+        alpha: Optional[float] = None,
+        beta: Optional[float] = None,
+        match_tracking: Optional[str] = None,
         normalize_batch: bool = True,
         check_incremental_normalized: bool = True,
         model_type: Literal["Fuzzy", "KMeans", "MiniBatchKMeans"] = (
             "MiniBatchKMeans"
         ),
-        kmeans_k: Union[int, Dict[int, int]] = 8,
+        kmeans_k: Optional[Union[int, Dict[int, int]]] = None,
         kmeans_kwargs: Optional[dict] = None,
+        *,
+        backend: str = "numpy",
     ):
         """
         CONN initialization routine.
 
         Parameters
         ----------
-        rho : float, default=0.9
-            FuzzyART vigilance parameter.
-        alpha : float, default=1e-10
-            FuzzyART choice parameter.
-        beta : float, default=1.0
-            FuzzyART learning rate.
-        match_tracking : str, default="MT+"
-            Match-tracking mode passed to SimpleARTMAP.
+        rho : float, optional
+            FuzzyART vigilance parameter. Used only by ``model_type="Fuzzy"``
+            and defaults to 0.9 for that model.
+        alpha : float, optional
+            FuzzyART choice parameter. Used only by ``model_type="Fuzzy"``
+            and defaults to 1e-10 for that model.
+        beta : float, optional
+            FuzzyART learning rate. Used only by ``model_type="Fuzzy"`` and
+            defaults to 1.0 for that model.
+        match_tracking : str, optional
+            Match-tracking mode passed to SimpleARTMAP. Used only by
+            ``model_type="Fuzzy"`` and defaults to ``"MT+"`` for that model.
         normalize_batch : bool, default=True
             If True, batch data are min-max normalized before prototype
             fitting. Incremental data are not normalized online.
@@ -269,16 +209,21 @@ class CONN(_base.CVI):
             [0, 1].
         model_type : {"Fuzzy", "KMeans", "MiniBatchKMeans"}, default="MiniBatchKMeans"
             Prototype backend. KMeans backends support batch mode only.
-        kmeans_k : int or dict[int, int], default=8
-            Number of KMeans prototypes per input label. Dictionary values are
+        kmeans_k : int or dict[int, int], optional
+            Number of KMeans prototypes per input label. Used only by a KMeans
+            model and defaults to 8 for those models. Dictionary values are
             keyed by the original input labels. Counts are capped at the number
             of samples carrying each label.
         kmeans_kwargs : dict, optional
             Keyword arguments forwarded to the selected scikit-learn KMeans
-            estimator. ``n_clusters`` must be configured through ``kmeans_k``.
+            estimator. Used only by a KMeans model. ``n_clusters`` must be
+            configured through ``kmeans_k``.
+        backend : {"numpy"}, default="numpy"
+            Numerical backend. CONN currently supports NumPy only; this is
+            separate from the prototype algorithm selected by ``model_type``.
         """
 
-        super().__init__()
+        super().__init__(backend=backend)
 
         self.rho = rho
         self.alpha = alpha
@@ -292,9 +237,6 @@ class CONN(_base.CVI):
 
         self._validate_backend_params()
 
-        if self.kmeans_kwargs is not None:
-            self.kmeans_kwargs = dict(self.kmeans_kwargs)
-
         self._data_min = None
         self._data_max = None
 
@@ -302,15 +244,10 @@ class CONN(_base.CVI):
 
     def _init_conn_state(self):
         """
-        Initialize or reset all CONN-specific state.
+        Initialize or reset CONN state without constructing a prototype model.
         """
 
-        module_a = _CONNFuzzyART(
-            rho=self.rho,
-            alpha=self.alpha,
-            beta=self.beta,
-        )
-        self._artmap = _CONNSimpleARTMAP(module_a)
+        self._artmap = None
 
         # ART-category-level matrices.
         self._CADJ = _GrowingSquareArray(dtype=float)
@@ -330,9 +267,48 @@ class CONN(_base.CVI):
         self._cluster_cardinality = _GrowingArray1D(dtype=float)
 
         # Batch centroid-backend state.
-        self._kmeans_models = {}
-        self._cluster_centers = np.zeros((0, self._dim), dtype=float)
-        self._prototype_label_map = {}
+        self._kmeans_models = None
+        self._cluster_centers = None
+        self._prototype_label_map = None
+
+    def _ensure_artmap(self):
+        """Construct and return the ART prototype model on first use."""
+
+        if self.model_type != "Fuzzy":
+            raise RuntimeError("ART initialization requires model_type='Fuzzy'.")
+
+        if self._artmap is None:
+            try:
+                from ._conn_art import _CONNFuzzyART, _CONNSimpleARTMAP
+            except ModuleNotFoundError as error:
+                if (error.name or "").split(".")[0] != "artlib":
+                    raise
+                raise ImportError(
+                    "The Fuzzy CONN model requires the optional ART dependency; "
+                    'install it with pip install "cvi[art]".'
+                ) from error
+
+            module_a = _CONNFuzzyART(
+                rho=self.rho,
+                alpha=self.alpha,
+                beta=self.beta,
+            )
+            self._artmap = _CONNSimpleARTMAP(module_a)
+
+        return self._artmap
+
+    def _ensure_kmeans_state(self):
+        """Initialize and return the KMeans prototype state on first use."""
+
+        if self.model_type == "Fuzzy":
+            raise RuntimeError("KMeans initialization requires a KMeans model type.")
+
+        if self._kmeans_models is None:
+            self._kmeans_models = {}
+            self._cluster_centers = np.zeros((0, self._dim), dtype=float)
+            self._prototype_label_map = {}
+
+        return self._kmeans_models
 
     @staticmethod
     def _validate_positive_int(value, name: str) -> int:
@@ -349,7 +325,7 @@ class CONN(_base.CVI):
         return value
 
     def _validate_backend_params(self):
-        """Validate backend selection and KMeans configuration."""
+        """Resolve defaults and validate only the selected prototype model."""
 
         valid_model_types = {"Fuzzy", "KMeans", "MiniBatchKMeans"}
 
@@ -358,6 +334,20 @@ class CONN(_base.CVI):
                 "model_type must be one of "
                 "{'Fuzzy', 'KMeans', 'MiniBatchKMeans'}."
             )
+
+        if self.model_type == "Fuzzy":
+            if self.rho is None:
+                self.rho = self._DEFAULT_RHO
+            if self.alpha is None:
+                self.alpha = self._DEFAULT_ALPHA
+            if self.beta is None:
+                self.beta = self._DEFAULT_BETA
+            if self.match_tracking is None:
+                self.match_tracking = self._DEFAULT_MATCH_TRACKING
+            return
+
+        if self.kmeans_k is None:
+            self.kmeans_k = self._DEFAULT_KMEANS_K
 
         if isinstance(self.kmeans_k, dict):
             for label, value in self.kmeans_k.items():
@@ -382,6 +372,8 @@ class CONN(_base.CVI):
                 raise ValueError(
                     "Configure n_clusters through kmeans_k, not kmeans_kwargs."
                 )
+
+            self.kmeans_kwargs = dict(self.kmeans_kwargs)
 
     @_base._add_docs(_base._setup_doc)
     def _setup(self, sample: np.ndarray):
@@ -434,6 +426,8 @@ class CONN(_base.CVI):
         labels: np.ndarray,
     ):
         """Fit class-owned KMeans prototypes and populate their label maps."""
+
+        self._ensure_kmeans_state()
 
         estimator_type = (
             KMeans if self.model_type == "KMeans" else MiniBatchKMeans
@@ -690,7 +684,7 @@ class CONN(_base.CVI):
         """
 
         if prototype_label_map is None:
-            prototype_label_map = self._artmap.map
+            prototype_label_map = self._ensure_artmap().map
 
         self._rev_map[i_label].add(bmu1)
         self._cluster_cardinality.increment(i_label, 1)
@@ -725,6 +719,9 @@ class CONN(_base.CVI):
         Update ART state and CONN sufficient statistics using one sample.
         """
 
+        # Resolve the optional dependency before mutating any index state.
+        self._ensure_artmap()
+
         sample = np.asarray(sample, dtype=float)
         i_label = self._label_map.get_internal_label(int(label))
 
@@ -732,6 +729,8 @@ class CONN(_base.CVI):
             self._setup(sample)
 
         self._check_sample_normalized(sample)
+
+        from artlib.common.utils import complement_code
 
         # ART operates on complement-coded samples.
         sample_cc = complement_code(np.asarray([sample]))[0]
@@ -753,7 +752,7 @@ class CONN(_base.CVI):
             self._n_samples += 1
             self._sync_base_cluster_count()
 
-            self.criterion_value = 0.0
+            self.criterion_value = np.nan
             return
 
         # Second sample:
@@ -830,7 +829,7 @@ class CONN(_base.CVI):
         self._CP = []
         self._G = np.zeros([0, self._dim])
         self._n_clusters = 0
-        self.criterion_value = 0.0
+        self.criterion_value = np.nan
 
         self._init_conn_state()
 
@@ -849,5 +848,13 @@ class CONN(_base.CVI):
         requires the label pair touched by the most recent ART transition.
         """
 
-        if self._n_clusters <= 0:
-            self.criterion_value = 0.0
+        if self.model_type == "Fuzzy":
+            prototype_count = len(self._ensure_artmap().module_a.W)
+        else:
+            prototype_count = (
+                0 if self._cluster_centers is None
+                else len(self._cluster_centers)
+            )
+
+        if prototype_count <= 1:
+            self.criterion_value = np.nan

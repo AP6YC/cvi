@@ -71,8 +71,9 @@ Keep the following rules in mind:
    They need not be consecutive or start at zero.
 * Batch initialization requires at least two distinct labels, and a second
   batch call on the same object is rejected.
-* Criterion values are ``0.0`` while an index is not defined, such as before enough clusters have been observed.
-   Do not interpret that sentinel as an optimal clustering result.
+* Criterion values are ``numpy.nan`` while an index is not defined, such as before enough clusters have been observed.
+   Use ``numpy.isnan`` before consuming a result; a valid score may be zero.
+   An undefined batch evaluation emits a ``RuntimeWarning``; incremental updates remain silent while an index is not yet defined.
 * Use a fresh instance when comparing independent datasets or partitions.
 
 See :doc:`choosing` for differences between indices.
@@ -81,35 +82,54 @@ In particular, ``CONN`` has additional preprocessing and backend requirements de
 Updating a partition
 --------------------
 
-After batch or incremental initialization, a sample can be added with ``get_cvi`` and (except for ``CONN``) an existing sample can be removed or two clusters can be merged:
+After batch or incremental initialization, a sample can be added with ``get_cvi`` and (except for ``CONN``) samples or tracked sufficient statistics can be removed, merged, or split:
 
 .. code-block:: python
 
    value = index.get_cvi(new_sample, new_label)
    value = index.remove(existing_sample, existing_label)
    value = index.merge(target_label=20, source_label=10)
+   value = index.split(
+       retained_label=20,
+       new_label=30,
+       count=prototype_count,
+       centroid=prototype_centroid,
+       compactness=prototype_compactness,
+       covariance=prototype_covariance,
+   )
 
 These operations update the object in place and return its new criterion value.
 ``merge`` retains the target label and deletes the source label.
+``split`` retains the existing label for the residual cluster and assigns the split-off subset to an unused new label without changing the total sample count.
 Removing a cluster's final sample deletes that label; removing the final sample in the whole index returns the object to its initial empty state.
+
+Every split requires the subset's sample count and centroid.
+For non-singletons, compactness-based indices require the centered sum of squared distances, while ``rCIP`` requires the unregularized unbiased sample covariance; ``PS`` needs neither additional statistic.
+Singleton compactness and covariance are inferred as zero.
 
 The package stores sufficient statistics rather than the original dataset.
 Consequently, the caller must ensure that a sample passed to ``remove`` really belongs to the supplied label.
-Invalid labels, inconsistent samples, changed feature dimensions, and attempts to merge a label with itself raise an error.
+Similarly, split statistics must describe a true subset of the retained cluster.
+Invalid labels, inconsistent statistics, changed feature dimensions, and attempts to merge a label with itself raise an error.
 
 Index metadata
 --------------
 
 Every implementation exposes an ``info`` class attribute describing its name,
-range, and optimization direction:
+range, optimization direction, supported operations, and numerical backends:
 
 .. doctest::
 
    >>> import cvi
    >>> cvi.CH.info
-   CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max')
+   CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max', batch=True, incremental=True, merge=True, remove=True, split=True, backends=('numpy', 'numba', 'jax'))
 
 Use ``optimality`` rather than assuming that a larger value is always better.
+The ``batch``, ``incremental``, ``merge``, ``remove``, and ``split`` flags indicate
+support in at least one configuration. ``backends`` lists implemented numerical
+backends, even when their optional dependencies are not installed. JAX incremental
+updates require ``capacity``; JAX does not support merge, remove, or split. CONN
+incremental updates require an ART model.
 
 Acknowledgements
 ----------------

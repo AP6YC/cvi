@@ -35,10 +35,80 @@ Common methods
 --------------
 
 All indices inherit the common update interface from :class:`cvi.CVI`.
-``CONN`` does not currently implement ``remove`` or ``merge``.
+``CONN`` does not currently implement ``remove``, ``merge``, or ``split``.
 
 .. autosummary::
 
    cvi.CVI.get_cvi
+   cvi.CVI.update_many
    cvi.CVI.remove
    cvi.CVI.merge
+   cvi.CVI.split
+
+Undefined results
+-----------------
+
+Every index returns ``numpy.nan`` when its criterion is not mathematically
+defined. An undefined batch evaluation also emits a ``RuntimeWarning``.
+Incremental updates and functional JAX calls return NaN without warnings. For
+CH, WB, and XB, fewer than two clusters or an exactly zero denominator makes
+the score undefined: WGSS for CH, BGSS for WB, and minimum centroid separation
+for XB. Denominators are checked exactly, with no epsilon adjustment.
+
+Functional JAX batch interface
+------------------------------
+
+Install the optional ``jax`` extra and enable JAX x64 before using this module.
+See :doc:`guide` for label encoding, precision, and supported operations.
+
+.. py:module:: cvi.jax
+
+.. py:function:: batch_state(data, labels, *, n_clusters)
+
+   Return an immutable ``BatchState`` pytree of device-resident sufficient
+   statistics. Labels must be dense and every cluster must be represented.
+   ``n_clusters`` must be static under JIT.
+
+.. py:function:: evaluate(state, *, index)
+
+   Return a JAX scalar for ``index="CH"``, ``"WB"``, or ``"XB"``. The index
+   name must be static under JIT.
+
+.. py:function:: batch_cvi(data, labels, *, n_clusters, index)
+
+   Compute batch statistics and evaluate the chosen index in one functional
+   call. Suitable for composition with ``jit``, ``vmap``, and differentiation
+   with fixed labels. No host scalar conversion is performed.
+
+Functional JAX streaming interface
+----------------------------------
+
+.. py:function:: empty_stream(*, capacity, n_features, index)
+
+   Allocate an immutable ``StreamingState`` of fixed-shape device arrays.
+   Capacity and feature count must be positive static integers.
+
+.. py:function:: stream_from_batch(state, *, capacity, index)
+
+   Pad a valid ``BatchState`` into a stream without changing its statistics.
+   Capacity must accommodate all existing clusters.
+
+.. py:function:: stream_update(state, sample, slot, *, index)
+
+   Return ``(new_state, score)`` after one incremental addition. Slots are
+   integers in ``[0, capacity)``; they need not be contiguous.
+
+.. py:function:: stream_chunk(state, data, slots, *, index, return_history=True)
+
+   Return ``(new_state, history)`` using a compiled scan, or a final scalar
+   when ``return_history=False``. Empty chunks are no-ops. Invalid slot values
+   or nonfinite data return unchanged state and NaN output for the whole call.
+   Shape/dtype errors raise ``ValueError``. Options must be static under JIT.
+
+.. py:function:: evaluate_stream(state, *, index)
+
+   Evaluate active clusters. The result is NaN until at least two clusters are
+   active and the index's denominator is positive (WGSS for CH, BGSS for WB, or
+   minimum centroid separation for XB). Denominators are checked exactly, with
+   no epsilon adjustment. The index must match the state's distance layout
+   (CH/WB versus XB).
