@@ -26,6 +26,7 @@ from . import compat
 # Set these names to be imported
 __all__ = [
     "CVI",
+    "create_cvi",
     "CH",
     "CONN",
     "cSIL",
@@ -52,3 +53,33 @@ MODULES = [
     WB,
     XB,
 ]
+
+_CVI_BY_NAME = {index.info.name_short: index for index in MODULES}
+
+
+def create_cvi(name: str, **kwargs) -> CVI:
+    """Create a new CVI instance from its case-sensitive short name.
+
+    Keyword arguments are passed to the selected index constructor. For
+    example, ``create_cvi("CONN", model_type="KMeans")`` forwards
+    ``model_type`` to :class:`cvi.CONN`.
+
+    Raises
+    ------
+    TypeError
+        If ``name`` is not a string.
+    ValueError
+        If ``name`` is not a supported CVI short name.
+    """
+    if not isinstance(name, str):
+        raise TypeError("CVI name must be a string")
+
+    try:
+        index_type = _CVI_BY_NAME[name]
+    except KeyError:
+        names = ", ".join(_CVI_BY_NAME)
+        raise ValueError(
+            f"Unknown CVI {name!r}. Available names: {names}"
+        ) from None
+
+    return index_type(**kwargs)

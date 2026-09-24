@@ -60,6 +60,22 @@ The same object may also receive incremental samples after its initial batch
 call. Feature dimensionality must remain constant throughout the object's
 lifetime.
 
+Selecting an index by name
+--------------------------
+
+Use :func:`cvi.create_cvi` when the index name comes from configuration or a
+loop. Each call creates a fresh index object:
+
+.. code-block:: python
+
+   names = ["CH", "cSIL", "rCIP"]
+   indices = [cvi.create_cvi(name) for name in names]
+
+Names are case-sensitive and match the concrete class names. Constructor
+options pass through unchanged. For example,
+``cvi.create_cvi("CONN", model_type="KMeans")`` configures CONN just like
+``cvi.CONN(model_type="KMeans")``.
+
 State and Input Rules
 ---------------------
 
