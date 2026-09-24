@@ -35,8 +35,8 @@ Common methods
 --------------
 
 All indices inherit the common update interface from :class:`cvi.CVI`.
-``CONN`` supports ``merge`` and a prototype-based ``split`` with
-``model_type="Fuzzy"``. It does not support ``remove``.
+``CONN`` supports ``merge`` and a prototype-based ``split`` with all prototype
+models. It does not support ``remove``.
 
 .. autosummary::
 

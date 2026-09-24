@@ -274,6 +274,87 @@ def test_duplicate_centers_retain_full_prototype_matrices(model_type):
     assert len(conn._prototype_label_map) == 6
 
 
+@pytest.mark.parametrize("model_type", ["KMeans", "MiniBatchKMeans"])
+def test_centroid_split_and_merge_reassign_fixed_prototypes(model_type):
+    data, labels = _separated_data()
+    conn = cvi.CONN(
+        model_type=model_type,
+        kmeans_k=2,
+        kmeans_kwargs=KMEANS_KWARGS,
+    )
+    assert conn.get_cvi(data, labels) == pytest.approx(1.0)
+    assert conn.get_prototype_ids(10) == (0, 1)
+    np.testing.assert_array_equal(conn._prototype_cardinality, [1, 1, 1, 1])
+    centers_before = conn._cluster_centers.copy()
+    cadj_before = conn._CADJ.asarray()
+    conn_before = conn._CONN.asarray()
+
+    assert conn.split(10, 30, [0]) == pytest.approx(1 / 9)
+    assert conn.get_prototype_ids(10) == (1,)
+    assert conn.get_prototype_ids(30) == (0,)
+    np.testing.assert_array_equal(
+        conn._cluster_cardinality.asarray(), [1, 2, 1]
+    )
+    np.testing.assert_array_equal(conn._INTRA.asarray(), [0, 1, 0])
+    np.testing.assert_array_equal(
+        conn._INTER.asarray(), [[0, 0, 1], [0, 0, 0], [1, 0, 0]]
+    )
+    np.testing.assert_array_equal(conn._cluster_centers, centers_before)
+    np.testing.assert_array_equal(conn._CADJ.asarray(), cadj_before)
+    np.testing.assert_array_equal(conn._CONN.asarray(), conn_before)
+
+    assert conn.merge(10, 30) == pytest.approx(1.0)
+    assert conn._label_map.map == {10: 0, 20: 1}
+    assert conn.get_prototype_ids(10) == (0, 1)
+    np.testing.assert_array_equal(conn._cluster_cardinality.asarray(), [2, 2])
+
+
+@pytest.mark.parametrize("model_type", ["KMeans", "MiniBatchKMeans"])
+def test_centroid_merge_compacts_internal_labels(model_type):
+    data = np.asarray(
+        [[0.0, 0.0], [0.1, 0.0], [5.0, 5.0],
+         [5.1, 5.0], [10.0, 10.0], [10.1, 10.0]]
+    )
+    labels = np.asarray([10, 10, 20, 20, 30, 30])
+    conn = cvi.CONN(
+        model_type=model_type,
+        kmeans_k=2,
+        kmeans_kwargs=KMEANS_KWARGS,
+    )
+    conn.get_cvi(data, labels)
+
+    assert conn.merge(target_label=30, source_label=10) == pytest.approx(1.0)
+    assert conn._label_map.map == {20: 0, 30: 1}
+    assert conn.get_prototype_ids(20) == (2, 3)
+    assert conn.get_prototype_ids(30) == (0, 1, 4, 5)
+    np.testing.assert_array_equal(conn._cluster_cardinality.asarray(), [2, 4])
+
+
+@pytest.mark.filterwarnings("ignore:Number of distinct clusters")
+@pytest.mark.parametrize("model_type", ["KMeans", "MiniBatchKMeans"])
+def test_centroid_split_requires_sample_support_on_both_sides(model_type):
+    data = np.zeros((6, 2))
+    labels = np.asarray([10, 10, 10, 20, 20, 20])
+    conn = cvi.CONN(
+        model_type=model_type,
+        kmeans_k=3,
+        kmeans_kwargs=KMEANS_KWARGS,
+    )
+    conn.get_cvi(data, labels)
+    mapping_before = dict(conn._prototype_label_map)
+    score_before = conn.criterion_value
+    np.testing.assert_array_equal(
+        conn._prototype_cardinality, [3, 0, 0, 3, 0, 0]
+    )
+
+    for ids in ([1], [0]):
+        with pytest.raises(ValueError, match="assigned samples"):
+            conn.split(10, 30, ids)
+        assert conn._prototype_label_map == mapping_before
+        assert conn._label_map.map == {10: 0, 20: 1}
+        assert conn.criterion_value == score_before
+
+
 def test_conn_is_public_and_defaults_to_minibatch_kmeans():
     assert cvi.modules.CONN is cvi.CONN
     assert cvi.CONN in cvi.MODULES

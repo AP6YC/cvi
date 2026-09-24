@@ -168,7 +168,7 @@ value = index.merge(target_label=20, source_label=10)
 Both methods update the object in place and return its new criterion value.
 Removing the final sample of a cluster deletes that cluster, while `merge` retains `target_label` and deletes `source_label`.
 The caller is responsible for ensuring that a removed sample belongs to the supplied label.
-FuzzyART-backed `CONN` supports merge but does not support remove.
+`CONN` supports merge but does not support remove.
 
 For input rules, index-selection guidance, references, legacy API information, and the complete API, see the [documentation][docs-stable-url].
 
@@ -182,7 +182,7 @@ backend coverage is listed separately.
 | Index | Prefer | Range | Batch | Incremental | Remove/merge/split |
 |---|---|---|---|---|---|
 | `CH` | Larger | `[0, ∞)` | Yes | Yes | Yes |
-| `CONN` | Larger | `[0, 1]` | Yes | FuzzyART backend only | Merge/split with FuzzyART only |
+| `CONN` | Larger | `[0, 1]` | Yes | FuzzyART backend only | Merge/split; no remove |
 | `cSIL` | Larger | `[-1, 1]` | Yes | Yes | Yes |
 | `DB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
 | `GD43` | Larger | `[0, ∞)` | Yes | Yes | Yes |
@@ -247,8 +247,8 @@ value = index.split(
 These methods update the object in place and return its new criterion value.
 Removing the final sample of a cluster deletes that cluster, while `merge` retains `target_label` and deletes `source_label`.
 `split` retains `retained_label` for the residual cluster and assigns the split-off statistics to the unused `new_label`.
-FuzzyART-backed `CONN` also supports merge and split, with split selecting global
-ART prototype IDs instead of supplying sample statistics. See the [CONN guide][conn-guide].
+`CONN` also supports merge and split, with split selecting global prototype IDs
+instead of supplying sample statistics. See the [CONN guide][conn-guide].
 The caller is responsible for ensuring that a removed sample belongs to the supplied label.
 `cvi` comes with some optimizations in the form of various backends that you can switch between for faster performance depending on your use-case.
 

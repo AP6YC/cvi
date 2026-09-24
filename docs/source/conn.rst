@@ -62,10 +62,10 @@ and the resulting criterion trajectory.
 Moving prototypes
 -----------------
 
-FuzzyART-backed CONN can merge clusters or split off whole prototypes after
-batch or incremental initialization. Merge retains the target label and moves
-every source prototype into it. Split retains the original label for the
-remaining prototypes and assigns the selected prototypes to a new label:
+All CONN prototype models can merge clusters or split off whole prototypes
+after initialization. Merge retains the target label and moves every source
+prototype into it. Split retains the original label for the remaining
+prototypes and assigns the selected prototypes to a new label:
 
 .. code-block:: python
 
@@ -78,15 +78,15 @@ remaining prototypes and assigns the selected prototypes to a new label:
 
 Use ``index.get_prototype_ids(label)`` to find the global prototype IDs owned
 by a cluster. Each selected ID must belong to the retained cluster, and at
-least one prototype must remain there. Samples recorded under moved prototypes
-follow their new label.
-Prototype weights and connectivity counts are preserved, while CONN's
-cluster-level score is recalculated.
+least one prototype must remain there. For KMeans models, both resulting
+clusters must contain assigned samples; an unused center alone cannot form
+a cluster. Samples assigned to moved prototypes follow their new label.
+Prototype weights or centers and connectivity counts are preserved, while
+CONN's cluster-level score is recalculated. KMeans models are not refitted.
 
 Limitations
 -----------
 
 ``CONN`` does not implement :meth:`cvi.CVI.remove`.
-The KMeans and MiniBatchKMeans models do not support merge or split and reject
-incremental samples. Use a new object when changing backend or evaluating
-another independent partition.
+The KMeans and MiniBatchKMeans models reject incremental samples. Use a new
+object when changing backend or evaluating another independent partition.

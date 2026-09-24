@@ -82,11 +82,13 @@ data = np.array([[0., 0.], [1., 1.], [4., 4.], [5., 5.]])
 labels = np.array([10, 10, 20, 20])
 index = cvi.CONN(
     model_type="KMeans",
-    kmeans_k=1,
+    kmeans_k=2,
     kmeans_kwargs={"random_state": 0, "n_init": 1},
 )
 assert index._artmap is None
 assert np.isfinite(index.get_cvi(data, labels))
+assert np.isfinite(index.split(10, 30, index.get_prototype_ids(10)[:1]))
+assert np.isfinite(index.merge(10, 30))
 assert index._artmap is None
 assert "artlib" not in sys.modules
 fuzzy = cvi.CONN(model_type="Fuzzy")
