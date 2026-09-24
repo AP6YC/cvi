@@ -133,6 +133,11 @@ for i, (sample, label) in enumerate(zip(samples, labels)):
     values[i] = incremental_index.get_cvi(sample, int(label))
 ```
 
+To select an index by name, use `cvi.create_cvi("CH")` in place of `cvi.CH()`.
+Names are case-insensitive; for example, `"csil"` selects `cSIL`.
+Constructor options are forwarded to the selected index, for example
+`cvi.create_cvi("CONN", model_type="KMeans")`.
+
 CVI objects accumulate state.
 Use a fresh object for each independent dataset or partition.
 A batch call may be followed by incremental samples, but the same object cannot be initialized with a second batch.
