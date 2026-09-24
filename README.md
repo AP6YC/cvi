@@ -134,7 +134,7 @@ for i, (sample, label) in enumerate(zip(samples, labels)):
 ```
 
 To select an index by name, use `cvi.create_cvi("CH")` in place of `cvi.CH()`.
-Names match the class names exactly, including `cSIL` and `rCIP`.
+Names are case-insensitive; for example, `"csil"` selects `cSIL`.
 Constructor options are forwarded to the selected index, for example
 `cvi.create_cvi("CONN", model_type="KMeans")`.
 

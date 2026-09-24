@@ -9,9 +9,12 @@ import src.cvi as cvi
 def test_create_cvi_returns_matching_fresh_index(index_type):
     name = index_type.info.name_short
     first = cvi.create_cvi(name)
-    second = cvi.create_cvi(name)
+    second = cvi.create_cvi(name.lower())
+    third = cvi.create_cvi(name.upper())
 
     assert type(first) is index_type
+    assert type(second) is index_type
+    assert type(third) is index_type
     assert isinstance(first, cvi.CVI)
     assert first is not second
 
@@ -23,7 +26,7 @@ def test_create_cvi_forwards_constructor_options():
     assert conn.kmeans_k == 3
 
 
-@pytest.mark.parametrize("name", ["ch", "CSIL", "rCip", "missing"])
+@pytest.mark.parametrize("name", ["missing", "CH "])
 def test_create_cvi_rejects_unknown_names(name):
     with pytest.raises(ValueError, match="Available names:.*CH.*cSIL.*rCIP"):
         cvi.create_cvi(name)

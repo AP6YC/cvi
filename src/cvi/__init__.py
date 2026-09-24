@@ -54,11 +54,11 @@ MODULES = [
     XB,
 ]
 
-_CVI_BY_NAME = {index.info.name_short: index for index in MODULES}
+_CVI_BY_NAME = {index.info.name_short.casefold(): index for index in MODULES}
 
 
 def create_cvi(name: str, **kwargs) -> CVI:
-    """Create a new CVI instance from its case-sensitive short name.
+    """Create a new CVI instance from its case-insensitive short name.
 
     Keyword arguments are passed to the selected index constructor. For
     example, ``create_cvi("CONN", model_type="KMeans")`` forwards
@@ -75,9 +75,9 @@ def create_cvi(name: str, **kwargs) -> CVI:
         raise TypeError("CVI name must be a string")
 
     try:
-        index_type = _CVI_BY_NAME[name]
+        index_type = _CVI_BY_NAME[name.casefold()]
     except KeyError:
-        names = ", ".join(_CVI_BY_NAME)
+        names = ", ".join(index.info.name_short for index in MODULES)
         raise ValueError(
             f"Unknown CVI {name!r}. Available names: {names}"
         ) from None

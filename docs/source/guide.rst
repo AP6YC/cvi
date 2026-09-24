@@ -71,8 +71,8 @@ loop. Each call creates a fresh index object:
    names = ["CH", "cSIL", "rCIP"]
    indices = [cvi.create_cvi(name) for name in names]
 
-Names are case-sensitive and match the concrete class names. Constructor
-options pass through unchanged. For example,
+Names are case-insensitive, so ``cvi.create_cvi("csil")`` selects ``cSIL``.
+Constructor options pass through unchanged. For example,
 ``cvi.create_cvi("CONN", model_type="KMeans")`` configures CONN just like
 ``cvi.CONN(model_type="KMeans")``.
 
