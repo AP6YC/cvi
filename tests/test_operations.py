@@ -706,7 +706,7 @@ def test_inconsistent_split_is_atomic(cvi_type):
 
 
 def test_conn_operations_are_explicitly_unsupported():
-    """CONN exposes the common interface but defers reversible state."""
+    """Default KMeans CONN does not support prototype operations."""
 
     conn = CONN()
 
@@ -717,4 +717,4 @@ def test_conn_operations_are_explicitly_unsupported():
         conn.merge(0, 1)
 
     with pytest.raises(NotImplementedError, match="does not support"):
-        conn.split(0, 1, 1, np.asarray([0.1, 0.2]))
+        conn.split(0, 1, [0])

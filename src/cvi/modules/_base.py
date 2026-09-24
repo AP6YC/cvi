@@ -30,9 +30,9 @@ class CVIInfo:
 
     Operation flags indicate support in at least one configuration, not every
     backend/model combination. JAX incremental updates require ``capacity``;
-    JAX does not support merge, remove, or split. CONN incremental updates
-    require an ART model. ``backends`` lists numerical backend names, including
-    optional backends whose dependencies may not be installed.
+    JAX does not support merge, remove, or split. CONN incremental updates,
+    merge, and split require an ART model. ``backends`` lists numerical backend
+    names, including optional backends whose dependencies may not be installed.
     """
 
     name: str
