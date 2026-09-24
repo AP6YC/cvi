@@ -705,16 +705,16 @@ def test_inconsistent_split_is_atomic(cvi_type):
     assert_snapshot(local_cvi, snapshot)
 
 
-def test_conn_operations_are_explicitly_unsupported():
-    """CONN exposes the common interface but defers reversible state."""
+def test_conn_operations_require_initialization_and_remove_is_unsupported():
+    """CONN prototype operations require fitted state."""
 
     conn = CONN()
 
     with pytest.raises(NotImplementedError, match="does not support"):
         conn.remove(np.asarray([0.1, 0.2]), 0)
 
-    with pytest.raises(NotImplementedError, match="does not support"):
+    with pytest.raises(ValueError, match="initialized"):
         conn.merge(0, 1)
 
-    with pytest.raises(NotImplementedError, match="does not support"):
-        conn.split(0, 1, 1, np.asarray([0.1, 0.2]))
+    with pytest.raises(ValueError, match="initialized"):
+        conn.split(0, 1, [0])

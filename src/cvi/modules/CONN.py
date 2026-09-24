@@ -27,7 +27,7 @@ References
 
 # Standard library imports
 from collections import defaultdict
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Literal, Optional, Sequence, Union
 import numbers
 
 # Third-party imports
@@ -156,9 +156,9 @@ class CONN(_base.CVI):
         optimality="max",
         batch=True,
         incremental=True,
-        merge=False,
+        merge=True,
         remove=False,
-        split=False,
+        split=True,
         backends=("numpy",),
     )
 
@@ -249,7 +249,7 @@ class CONN(_base.CVI):
 
         self._artmap = None
 
-        # ART-category-level matrices.
+        # Prototype-level matrices.
         self._CADJ = _GrowingSquareArray(dtype=float)
         self._CONN = _GrowingSquareArray(dtype=float)
 
@@ -260,7 +260,7 @@ class CONN(_base.CVI):
         self._intra_conn = 0.0
         self._inter_conn = 0.0
 
-        # Internal label -> set of ART categories assigned to that label.
+        # Internal label -> set of prototypes assigned to that label.
         self._rev_map = defaultdict(set)
 
         # Number of samples per internal label.
@@ -270,6 +270,7 @@ class CONN(_base.CVI):
         self._kmeans_models = None
         self._cluster_centers = None
         self._prototype_label_map = None
+        self._prototype_cardinality = None
 
     def _ensure_artmap(self):
         """Construct and return the ART prototype model on first use."""
@@ -473,6 +474,9 @@ class CONN(_base.CVI):
             next_prototype += len(centers)
 
         self._cluster_centers = np.vstack(center_blocks)
+        self._prototype_cardinality = np.zeros(
+            len(self._cluster_centers), dtype=int
+        )
 
         last_prototype = len(self._cluster_centers) - 1
         self._CADJ._ensure_size(last_prototype, last_prototype)
@@ -511,6 +515,7 @@ class CONN(_base.CVI):
                 prototype_label_map=self._prototype_label_map,
                 update_metric=False,
             )
+            self._prototype_cardinality[bmu1] += 1
             self._n_samples += 1
 
         self._sync_base_cluster_count()
@@ -591,6 +596,228 @@ class CONN(_base.CVI):
         """
 
         self._n_clusters = len(self._label_map.map)
+
+    def _require_prototype_operation(self):
+        """Require an initialized model for prototype reassignment."""
+
+        if not self._is_setup:
+            raise ValueError("Merge and split require an initialized CVI")
+        if self.model_type == "Fuzzy" and not hasattr(
+            self._artmap, "move_A_prototype"
+        ):
+            raise ImportError(
+                "CONN prototype merge and split require ARTlib>=0.1.12"
+            )
+
+    def _prototype_mapping(self) -> dict:
+        """Return the selected backend's prototype-to-internal-label map."""
+
+        if self.model_type == "Fuzzy":
+            return self._artmap.map
+        return self._prototype_label_map
+
+    def get_prototype_ids(self, label: int) -> tuple[int, ...]:
+        """Return global prototype IDs assigned to an external label."""
+
+        if not self._is_setup:
+            raise ValueError("Prototype IDs require an initialized CVI")
+        internal_label = self._label_map.get_existing_label(label)
+        prototype_map = self._prototype_mapping()
+        return tuple(
+            sorted(
+                int(prototype_id)
+                for prototype_id, assigned_label in prototype_map.items()
+                if int(assigned_label) == internal_label
+            )
+        )
+
+    def _rebuild_after_operation(self):
+        """Recompute label-level CONN statistics from prototype assignments."""
+
+        n_clusters = len(self._label_map.map)
+        n_prototypes = (
+            len(self._artmap.module_a.W)
+            if self.model_type == "Fuzzy"
+            else len(self._cluster_centers)
+        )
+        prototype_map = self._prototype_mapping()
+        prototype_labels = np.asarray(
+            [int(prototype_map[idx]) for idx in range(n_prototypes)],
+            dtype=int,
+        )
+        if self.model_type == "Fuzzy":
+            a_labels = np.asarray(self._artmap.module_a.labels_, dtype=int)
+            if np.any(a_labels < 0) or np.any(a_labels >= n_prototypes):
+                raise RuntimeError(
+                    "ART sample labels refer to an unknown prototype"
+                )
+            cardinality = np.bincount(
+                prototype_labels[a_labels], minlength=n_clusters
+            ).astype(float)
+        else:
+            if len(self._prototype_cardinality) != n_prototypes:
+                raise RuntimeError("KMeans prototype counts are incomplete")
+            if self._prototype_cardinality.sum() != self._n_samples:
+                raise RuntimeError(
+                    "KMeans prototype counts disagree with samples"
+                )
+            cardinality = np.bincount(
+                prototype_labels,
+                weights=self._prototype_cardinality,
+                minlength=n_clusters,
+            ).astype(float)
+
+        rev_map = defaultdict(set)
+        for prototype_id, label in enumerate(prototype_labels):
+            rev_map[int(label)].add(prototype_id)
+        if set(rev_map) != set(range(n_clusters)):
+            raise RuntimeError("Prototype labels disagree with CONN clusters")
+
+        self._rev_map = rev_map
+        self._cluster_cardinality = _GrowingArray1D(dtype=float)
+        self._cluster_cardinality.array = cardinality
+
+        intra = np.zeros(n_clusters, dtype=float)
+        inter = np.zeros((n_clusters, n_clusters), dtype=float)
+        for label, prototypes in rev_map.items():
+            if cardinality[label] > 0:
+                ids = np.asarray(sorted(prototypes), dtype=int)
+                intra[label] = (
+                    self._CADJ[np.ix_(ids, ids)].sum() / cardinality[label]
+                )
+            for other in range(n_clusters):
+                if other != label:
+                    inter[label, other] = self._calc_inter(label, other)
+
+        self._INTRA = _GrowingArray1D(dtype=float)
+        self._INTRA.array = intra
+        self._INTER = _GrowingSquareArray(dtype=float)
+        self._INTER.array = inter
+        self._intra_conn = float(np.mean(intra))
+        self._inter_conn = (
+            float(np.mean(np.max(inter, axis=1))) if n_clusters > 1 else 0.0
+        )
+        self.criterion_value = self._intra_conn * (1.0 - self._inter_conn)
+        self._sync_base_cluster_count()
+
+    def merge(self, target_label: int, source_label: int) -> float:
+        """Move every source prototype into the target cluster.
+
+        The target external label is retained. Prototype-level connectivity
+        and prototype parameters remain unchanged; label metrics are rebuilt.
+        """
+
+        self._require_prototype_operation()
+        if target_label == source_label:
+            raise ValueError("Merge requires two different cluster labels")
+        target_i = self._label_map.get_existing_label(target_label)
+        source_i = self._label_map.get_existing_label(source_label)
+        prototype_map = self._prototype_mapping()
+        source_prototypes = sorted(
+            prototype_id
+            for prototype_id, label in prototype_map.items()
+            if int(label) == source_i
+        )
+
+        if self.model_type == "Fuzzy":
+            for prototype_id in source_prototypes:
+                self._artmap.move_A_prototype(source_i, prototype_id, target_i)
+
+            # LabelMap compacts internal labels when the source is removed.
+            # Apply the same shift through ARTlib to update its sample labels.
+            for prototype_id in sorted(self._artmap.map):
+                current_i = int(self._artmap.map[prototype_id])
+                if current_i > source_i:
+                    self._artmap.move_A_prototype(
+                        current_i, prototype_id, current_i - 1
+                    )
+        else:
+            remapped = {}
+            for prototype_id, label in prototype_map.items():
+                merged_label = target_i if label == source_i else label
+                remapped[prototype_id] = (
+                    merged_label - (merged_label > source_i)
+                )
+            self._prototype_label_map = remapped
+
+        self._label_map.remove_label(source_label)
+        self._rebuild_after_operation()
+        return self.criterion_value
+
+    def split(
+        self,
+        retained_label: int,
+        new_label: int,
+        prototype_ids: Sequence[int],
+    ) -> float:
+        """Move a proper subset of a cluster's prototypes to a new label.
+
+        ``prototype_ids`` are global indices into the selected backend's
+        prototype list. Samples assigned to moved prototypes follow their
+        new cluster label.
+        """
+
+        self._require_prototype_operation()
+        retained_i = self._label_map.get_existing_label(retained_label)
+        if new_label in self._label_map.map:
+            raise ValueError(
+                f"Split requires an unused new cluster label: {new_label}"
+            )
+
+        try:
+            prototype_ids = tuple(prototype_ids)
+        except TypeError as error:
+            raise ValueError(
+                "Split prototype IDs must be a sequence"
+            ) from error
+        if not prototype_ids:
+            raise ValueError("Split requires at least one prototype")
+        if any(
+            isinstance(idx, (bool, np.bool_))
+            or not isinstance(idx, numbers.Integral)
+            for idx in prototype_ids
+        ):
+            raise ValueError("Split prototype IDs must be integers")
+        prototype_ids = tuple(int(idx) for idx in prototype_ids)
+        if len(set(prototype_ids)) != len(prototype_ids):
+            raise ValueError("Split prototype IDs must be unique")
+
+        source_prototypes = {
+            int(prototype_id)
+            for prototype_id, label in self._prototype_mapping().items()
+            if int(label) == retained_i
+        }
+        if not set(prototype_ids) <= source_prototypes:
+            raise ValueError(
+                "Split prototypes must belong to the retained label"
+            )
+        if len(prototype_ids) == len(source_prototypes):
+            raise ValueError(
+                "Split must leave a prototype in the retained label"
+            )
+        if self.model_type != "Fuzzy":
+            moved_samples = int(
+                self._prototype_cardinality[list(prototype_ids)].sum()
+            )
+            retained_samples = int(
+                self._cluster_cardinality[retained_i] - moved_samples
+            )
+            if moved_samples == 0 or retained_samples == 0:
+                raise ValueError(
+                    "Split must leave assigned samples in both clusters"
+                )
+
+        new_i = len(self._label_map.map)
+        if self.model_type == "Fuzzy":
+            for prototype_id in prototype_ids:
+                self._artmap.move_A_prototype(retained_i, prototype_id, new_i)
+        else:
+            for prototype_id in prototype_ids:
+                self._prototype_label_map[prototype_id] = new_i
+
+        self._label_map.get_internal_label(new_label)
+        self._rebuild_after_operation()
+        return self.criterion_value
 
     def _calc_inter(self, i_label: int, j_label: int) -> float:
         """

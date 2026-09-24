@@ -274,6 +274,87 @@ def test_duplicate_centers_retain_full_prototype_matrices(model_type):
     assert len(conn._prototype_label_map) == 6
 
 
+@pytest.mark.parametrize("model_type", ["KMeans", "MiniBatchKMeans"])
+def test_centroid_split_and_merge_reassign_fixed_prototypes(model_type):
+    data, labels = _separated_data()
+    conn = cvi.CONN(
+        model_type=model_type,
+        kmeans_k=2,
+        kmeans_kwargs=KMEANS_KWARGS,
+    )
+    assert conn.get_cvi(data, labels) == pytest.approx(1.0)
+    assert conn.get_prototype_ids(10) == (0, 1)
+    np.testing.assert_array_equal(conn._prototype_cardinality, [1, 1, 1, 1])
+    centers_before = conn._cluster_centers.copy()
+    cadj_before = conn._CADJ.asarray()
+    conn_before = conn._CONN.asarray()
+
+    assert conn.split(10, 30, [0]) == pytest.approx(1 / 9)
+    assert conn.get_prototype_ids(10) == (1,)
+    assert conn.get_prototype_ids(30) == (0,)
+    np.testing.assert_array_equal(
+        conn._cluster_cardinality.asarray(), [1, 2, 1]
+    )
+    np.testing.assert_array_equal(conn._INTRA.asarray(), [0, 1, 0])
+    np.testing.assert_array_equal(
+        conn._INTER.asarray(), [[0, 0, 1], [0, 0, 0], [1, 0, 0]]
+    )
+    np.testing.assert_array_equal(conn._cluster_centers, centers_before)
+    np.testing.assert_array_equal(conn._CADJ.asarray(), cadj_before)
+    np.testing.assert_array_equal(conn._CONN.asarray(), conn_before)
+
+    assert conn.merge(10, 30) == pytest.approx(1.0)
+    assert conn._label_map.map == {10: 0, 20: 1}
+    assert conn.get_prototype_ids(10) == (0, 1)
+    np.testing.assert_array_equal(conn._cluster_cardinality.asarray(), [2, 2])
+
+
+@pytest.mark.parametrize("model_type", ["KMeans", "MiniBatchKMeans"])
+def test_centroid_merge_compacts_internal_labels(model_type):
+    data = np.asarray(
+        [[0.0, 0.0], [0.1, 0.0], [5.0, 5.0],
+         [5.1, 5.0], [10.0, 10.0], [10.1, 10.0]]
+    )
+    labels = np.asarray([10, 10, 20, 20, 30, 30])
+    conn = cvi.CONN(
+        model_type=model_type,
+        kmeans_k=2,
+        kmeans_kwargs=KMEANS_KWARGS,
+    )
+    conn.get_cvi(data, labels)
+
+    assert conn.merge(target_label=30, source_label=10) == pytest.approx(1.0)
+    assert conn._label_map.map == {20: 0, 30: 1}
+    assert conn.get_prototype_ids(20) == (2, 3)
+    assert conn.get_prototype_ids(30) == (0, 1, 4, 5)
+    np.testing.assert_array_equal(conn._cluster_cardinality.asarray(), [2, 4])
+
+
+@pytest.mark.filterwarnings("ignore:Number of distinct clusters")
+@pytest.mark.parametrize("model_type", ["KMeans", "MiniBatchKMeans"])
+def test_centroid_split_requires_sample_support_on_both_sides(model_type):
+    data = np.zeros((6, 2))
+    labels = np.asarray([10, 10, 10, 20, 20, 20])
+    conn = cvi.CONN(
+        model_type=model_type,
+        kmeans_k=3,
+        kmeans_kwargs=KMEANS_KWARGS,
+    )
+    conn.get_cvi(data, labels)
+    mapping_before = dict(conn._prototype_label_map)
+    score_before = conn.criterion_value
+    np.testing.assert_array_equal(
+        conn._prototype_cardinality, [3, 0, 0, 3, 0, 0]
+    )
+
+    for ids in ([1], [0]):
+        with pytest.raises(ValueError, match="assigned samples"):
+            conn.split(10, 30, ids)
+        assert conn._prototype_label_map == mapping_before
+        assert conn._label_map.map == {10: 0, 20: 1}
+        assert conn.criterion_value == score_before
+
+
 def test_conn_is_public_and_defaults_to_minibatch_kmeans():
     assert cvi.modules.CONN is cvi.CONN
     assert cvi.CONN in cvi.MODULES
@@ -282,3 +363,166 @@ def test_conn_is_public_and_defaults_to_minibatch_kmeans():
     assert cvi.CONN.info.index_min == 0.0
     assert cvi.CONN.info.index_max == 1.0
     assert cvi.CONN.info.optimality == "max"
+    assert cvi.CONN.info.merge
+    assert cvi.CONN.info.split
+    assert not cvi.CONN.info.remove
+
+
+def _fuzzy_operation_fixture():
+    data = np.asarray(
+        [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],
+         [0.05, 0.95], [0.95, 0.05]]
+    )
+    labels = np.asarray([10, 10, 20, 20, 10, 20])
+    conn = cvi.CONN(model_type="Fuzzy", normalize_batch=False, rho=0.9)
+    conn.get_cvi(data, labels)
+    return conn
+
+
+def test_fuzzy_split_moves_prototype_without_changing_connectivity():
+    conn = _fuzzy_operation_fixture()
+    assert conn.get_prototype_ids(10) == (0, 1)
+    cadj_before = conn._CADJ.asarray()
+    conn_before = conn._CONN.asarray()
+    weights_before = [weight.copy() for weight in conn._artmap.module_a.W]
+    a_labels_before = conn._artmap.module_a.labels_.copy()
+
+    value = conn.split(retained_label=10, new_label=30, prototype_ids=[1])
+
+    assert value == pytest.approx(0.0)
+    assert conn._label_map.map == {10: 0, 20: 1, 30: 2}
+    assert conn.get_prototype_ids(10) == (0,)
+    assert conn.get_prototype_ids(30) == (1,)
+    assert {key: set(value) for key, value in conn._rev_map.items()} == {
+        0: {0}, 1: {2, 3}, 2: {1}
+    }
+    np.testing.assert_array_equal(conn._cluster_cardinality.asarray(), [1, 3, 2])
+    np.testing.assert_array_equal(conn._artmap.labels_, [0, 2, 1, 1, 2, 1])
+    np.testing.assert_array_equal(conn._artmap.classes_, [0, 1, 2])
+    np.testing.assert_array_equal(conn._INTRA.asarray(), [0, 0, 0])
+    np.testing.assert_array_equal(
+        conn._INTER.asarray(), [[0, 0, 0], [1, 0, 1], [1, 0, 0]]
+    )
+    np.testing.assert_array_equal(conn._CADJ.asarray(), cadj_before)
+    np.testing.assert_array_equal(conn._CONN.asarray(), conn_before)
+    np.testing.assert_array_equal(conn._artmap.module_a.labels_, a_labels_before)
+    for before, after in zip(weights_before, conn._artmap.module_a.W):
+        np.testing.assert_array_equal(after, before)
+
+    conn.get_cvi(np.asarray([0.04, 0.96]), 30)
+    assert conn._artmap.map[int(conn._artmap.module_a.labels_[-1])] == 2
+    assert conn._cluster_cardinality.asarray()[2] == 3
+
+
+def test_fuzzy_split_then_merge_restores_score_and_assignments():
+    conn = _fuzzy_operation_fixture()
+    score_before = conn.criterion_value
+    intra_before = conn._INTRA.asarray()
+    inter_before = conn._INTER.asarray()
+
+    conn.split(10, 30, [1])
+    value = conn.merge(target_label=10, source_label=30)
+
+    assert value == pytest.approx(score_before)
+    assert conn._label_map.map == {10: 0, 20: 1}
+    np.testing.assert_array_equal(conn._INTRA.asarray(), intra_before)
+    np.testing.assert_array_equal(conn._INTER.asarray(), inter_before)
+    np.testing.assert_array_equal(conn._artmap.labels_, [0, 0, 1, 1, 0, 1])
+
+
+def test_fuzzy_split_can_move_multiple_prototypes():
+    data = np.asarray(
+        [[0.0, 0.0], [0.0, 1.0], [0.5, 0.5],
+         [1.0, 0.0], [1.0, 1.0], [0.95, 0.05]]
+    )
+    labels = np.asarray([10, 10, 10, 10, 20, 20])
+    conn = cvi.CONN(model_type="Fuzzy", normalize_batch=False, rho=0.99)
+    conn.get_cvi(data, labels)
+    source_ids = conn.get_prototype_ids(10)
+    assert len(source_ids) == 4
+
+    value = conn.split(10, 30, source_ids[:2])
+
+    assert value == pytest.approx(1 / 18)
+    assert conn.get_prototype_ids(10) == source_ids[2:]
+    assert conn.get_prototype_ids(30) == source_ids[:2]
+    np.testing.assert_array_equal(conn._cluster_cardinality.asarray(), [2, 2, 2])
+
+
+def test_fuzzy_merge_compacts_source_before_target():
+    data = np.asarray(
+        [[0.0, 0.0], [0.0, 1.0], [0.5, 0.5],
+         [0.55, 0.55], [1.0, 0.0], [1.0, 1.0]]
+    )
+    labels = np.asarray([10, 10, 20, 20, 30, 30])
+    conn = cvi.CONN(model_type="Fuzzy", normalize_batch=False, rho=0.9)
+    conn.get_cvi(data, labels)
+    prior_map = dict(conn._artmap.map)
+    cadj_before = conn._CADJ.asarray()
+    conn_before = conn._CONN.asarray()
+
+    value = conn.merge(target_label=30, source_label=10)
+
+    assert conn._label_map.map == {20: 0, 30: 1}
+    assert conn._n_clusters == 2
+    assert value == conn.criterion_value
+    assert np.isfinite(value)
+    for prototype_id, old_label in prior_map.items():
+        expected = 0 if old_label == 1 else 1
+        assert conn._artmap.map[prototype_id] == expected
+    np.testing.assert_array_equal(
+        conn._artmap.labels_,
+        [conn._artmap.map[idx] for idx in conn._artmap.module_a.labels_],
+    )
+    np.testing.assert_array_equal(conn._artmap.classes_, [0, 1])
+    np.testing.assert_array_equal(conn._CADJ.asarray(), cadj_before)
+    np.testing.assert_array_equal(conn._CONN.asarray(), conn_before)
+
+    conn.get_cvi(np.asarray([0.95, 0.95]), 30)
+    assert conn._cluster_cardinality.asarray().sum() == conn._n_samples
+
+
+def test_fuzzy_merge_to_single_cluster_keeps_connectivity_score():
+    conn = _fuzzy_operation_fixture()
+
+    value = conn.merge(target_label=20, source_label=10)
+
+    assert conn._label_map.map == {20: 0}
+    assert conn.get_prototype_ids(20) == (0, 1, 2, 3)
+    np.testing.assert_array_equal(conn._cluster_cardinality.asarray(), [6])
+    np.testing.assert_array_equal(conn._INTRA.asarray(), [5 / 6])
+    np.testing.assert_array_equal(conn._INTER.asarray(), [[0]])
+    assert value == pytest.approx(5 / 6)
+
+
+def test_fuzzy_split_rejects_invalid_inputs_without_mutation():
+    conn = _fuzzy_operation_fixture()
+    map_before = dict(conn._artmap.map)
+    labels_before = conn._artmap.labels_.copy()
+    external_before = dict(conn._label_map.map)
+    score_before = conn.criterion_value
+
+    invalid_cases = [
+        (10, 30, []),
+        (10, 30, [0, 0]),
+        (10, 30, [0, 1]),
+        (10, 30, [2]),
+        (10, 30, [999]),
+        (10, 30, [True]),
+        (10, 20, [1]),
+        (999, 30, [1]),
+    ]
+    for retained, new, prototypes in invalid_cases:
+        with pytest.raises(ValueError):
+            conn.split(retained, new, prototypes)
+        assert conn._artmap.map == map_before
+        np.testing.assert_array_equal(conn._artmap.labels_, labels_before)
+        assert conn._label_map.map == external_before
+        assert conn.criterion_value == score_before
+
+    with pytest.raises(ValueError):
+        conn.merge(10, 999)
+    with pytest.raises(ValueError):
+        conn.merge(10, 10)
+    assert conn._artmap.map == map_before
+    assert conn._label_map.map == external_before

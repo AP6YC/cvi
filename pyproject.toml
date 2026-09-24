@@ -116,7 +116,7 @@ dependencies = [ # Optional
 # projects.
 [project.optional-dependencies] # Optional
 art = [
-  "artlib>=0.1.7",
+  "artlib>=0.1.12",
 ]
 jax = [
   "jax>=0.4.26",
@@ -137,7 +137,7 @@ test = [
   "coverage",
   "pandas",
   "flake8",
-  "artlib>=0.1.7",
+  "artlib>=0.1.12",
 ]
 docs = [
   "sphinx<9",

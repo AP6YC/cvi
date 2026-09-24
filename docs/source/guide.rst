@@ -82,7 +82,9 @@ In particular, ``CONN`` has additional preprocessing and backend requirements de
 Updating a partition
 --------------------
 
-After batch or incremental initialization, a sample can be added with ``get_cvi`` and (except for ``CONN``) samples or tracked sufficient statistics can be removed, merged, or split:
+After batch or incremental initialization, a sample can be added with ``get_cvi``.
+Most indices also support removing samples, merging clusters, and splitting
+tracked sufficient statistics:
 
 .. code-block:: python
 
@@ -103,9 +105,11 @@ These operations update the object in place and return its new criterion value.
 ``split`` retains the existing label for the residual cluster and assigns the split-off subset to an unused new label without changing the total sample count.
 Removing a cluster's final sample deletes that label; removing the final sample in the whole index returns the object to its initial empty state.
 
-Every split requires the subset's sample count and centroid.
+For the other indices, every split requires the subset's sample count and centroid.
 For non-singletons, compactness-based indices require the centered sum of squared distances, while ``rCIP`` requires the unregularized unbiased sample covariance; ``PS`` needs neither additional statistic.
 Singleton compactness and covariance are inferred as zero.
+``CONN`` instead merges by moving all source prototypes and splits by passing
+global ``prototype_ids``; see :doc:`conn`.
 
 The package stores sufficient statistics rather than the original dataset.
 Consequently, the caller must ensure that a sample passed to ``remove`` really belongs to the supplied label.
