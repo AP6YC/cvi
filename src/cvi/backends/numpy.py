@@ -11,4 +11,5 @@ class NumpyBackend:
     batch_statistics = staticmethod(_kernels.batch_statistics)
     centroid_distances = staticmethod(_kernels.centroid_distances)
     pairwise_centroid_distances = staticmethod(_kernels.pairwise_centroid_distances)
+    minimum_off_diagonal = staticmethod(_kernels.minimum_off_diagonal)
     silhouette_batch_statistics = staticmethod(_kernels.silhouette_batch_statistics)
