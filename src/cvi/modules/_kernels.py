@@ -6,6 +6,7 @@ so that each cluster's reductions retain the original sample order.
 """
 
 import numpy as np
+from scipy.spatial.distance import pdist, squareform
 
 
 def grouped_rows(labels: np.ndarray, n_clusters: int):
@@ -43,16 +44,27 @@ def centroid_distances(centroids, centroid, squared=True):
 
 
 def pairwise_centroid_distances(centroids, squared=True):
-    """Symmetric distances with zero diagonal and at most O(K d) scratch."""
+    """Symmetric distances using SciPy's compiled direct-distance kernels."""
     n_clusters = len(centroids)
-    distances = np.zeros((n_clusters, n_clusters))
-    for ix in range(n_clusters - 1):
-        values = centroid_distances(
-            centroids[ix + 1:], centroids[ix], squared=squared,
-        )
-        distances[ix, ix + 1:] = values
-        distances[ix + 1:, ix] = values
-    return distances
+    if n_clusters < 2:
+        return np.zeros((n_clusters, n_clusters))
+    metric = "sqeuclidean" if squared else "euclidean"
+    return squareform(pdist(centroids, metric=metric))
+
+
+def minimum_off_diagonal(values):
+    """Return the minimum value outside a square matrix's diagonal.
+
+    The diagonal is replaced only for the duration of the reduction.  This
+    avoids allocating triangle indices or a full boolean mask on every CVI
+    evaluation while leaving the caller's matrix unchanged.
+    """
+    diagonal = np.diag(values).copy()
+    try:
+        np.fill_diagonal(values, np.inf)
+        return np.min(values)
+    finally:
+        np.fill_diagonal(values, diagonal)
 
 
 def silhouette_batch_statistics(data, order, offsets, centroids, compactness):

@@ -203,13 +203,7 @@ class GD43(_base.CVI):
         if self._n_clusters > 1:
             self._intra = 2 * np.max(np.divide(self._CP, self._n))
             # Between-group measure of separation/isolation
-            self._inter = (
-                np.min(self._D[
-                    np.triu(
-                        np.ones((self._n_clusters, self._n_clusters), bool), 1
-                    ),
-                ])
-            )
+            self._inter = self._backend.minimum_off_diagonal(self._D)
             # GD43 index value
             if self._intra > 0.0:
                 self.criterion_value = self._inter / self._intra

@@ -208,13 +208,7 @@ class XB(_base.CVI):
             self._WGSS = sum(self._CP)
             # # Between groups sum of scatters
             # self._BGSS = sum(self._SEP)
-            # Assume a symmetric dimension
-            dim = self._D.shape[0]
-            # self.values = (
-            #     [self._D[i, j] for i in range(dim) for j in range(dim) if j > i]
-            # )
-            values = self._D[np.triu_indices(dim, k=1)]
-            self._SEP = np.min(values)
+            self._SEP = self._backend.minimum_off_diagonal(self._D)
             if self._SEP > 0.0:
                 # XB index value
                 self.criterion_value = (

@@ -79,6 +79,22 @@ class GD53(_base.CVI):
         # GD53-specific setup
         self._mu = sample
 
+    @staticmethod
+    def _dispersion_row(compactness, counts, compactness_new, count_new):
+        """Return GD53 dispersion from one cluster to every cluster."""
+        return ((compactness_new + np.asarray(compactness))
+                / (count_new + np.asarray(counts)))
+
+    @classmethod
+    def _dispersion_matrix(cls, compactness, counts):
+        """Return the symmetric GD53 dispersion matrix with a zero diagonal."""
+        compactness = np.asarray(compactness)
+        counts = np.asarray(counts)
+        matrix = ((compactness[:, None] + compactness[None, :])
+                  / (counts[:, None] + counts[None, :]))
+        np.fill_diagonal(matrix, 0.0)
+        return matrix
+
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
         """
@@ -113,9 +129,14 @@ class GD53(_base.CVI):
                 D_new = np.zeros((self._n_clusters + 1, self._n_clusters + 1))
                 D_new[0:self._n_clusters, 0:self._n_clusters] = self._D
                 d_column_new = np.zeros(self._n_clusters + 1)
-                for jx in range(self._n_clusters):
-                    d_column_new[jx] = (
-                        (CP_new + self._CP[jx]) / (n_new + self._n[jx])
+                if self._n_clusters < 64:
+                    for jx in range(self._n_clusters):
+                        d_column_new[jx] = (
+                            (CP_new + self._CP[jx]) / (n_new + self._n[jx])
+                        )
+                else:
+                    d_column_new[:-1] = self._dispersion_row(
+                        self._CP, self._n, CP_new, n_new,
                     )
                 D_new[i_label, :] = d_column_new
                 D_new[:, i_label] = d_column_new
@@ -150,14 +171,18 @@ class GD53(_base.CVI):
                 + diff_x_v
                 + self._n[i_label] * delta_v
             )
-            d_column_new = np.zeros(self._n_clusters)
-            for jx in range(self._n_clusters):
-                # Skip the current i_label index
-                if jx == i_label:
-                    continue
-                d_column_new[jx] = (
-                    (CP_new + self._CP[jx]) / (n_new + self._n[jx])
+            if self._n_clusters < 64:
+                d_column_new = np.zeros(self._n_clusters)
+                for jx in range(self._n_clusters):
+                    if jx != i_label:
+                        d_column_new[jx] = (
+                            (CP_new + self._CP[jx]) / (n_new + self._n[jx])
+                        )
+            else:
+                d_column_new = self._dispersion_row(
+                    self._CP, self._n, CP_new, n_new,
                 )
+                d_column_new[i_label] = 0.0
 
             # Update parameters
             self._n[i_label] = n_new
@@ -178,12 +203,7 @@ class GD53(_base.CVI):
 
         self._setup_batch_statistics(data, labels)
         self._mu = np.mean(data, axis=0)
-        self._D = self._pairwise_matrix(
-            self._n_clusters,
-            lambda ix, jx: (
-                (self._CP[ix] + self._CP[jx]) / (self._n[ix] + self._n[jx])
-            ),
-        )
+        self._D = self._dispersion_matrix(self._CP, self._n)
 
     def _rebuild_after_operation(self):
         """Rebuild pairwise dispersion after a structural operation."""
@@ -195,13 +215,7 @@ class GD53(_base.CVI):
             self._intra = 0.0
             return
 
-        self._D = self._pairwise_matrix(
-            self._n_clusters,
-            lambda ix, jx: (
-                (self._CP[ix] + self._CP[jx])
-                / (self._n[ix] + self._n[jx])
-            ),
-        )
+        self._D = self._dispersion_matrix(self._CP, self._n)
         if self._n_clusters < 2:
             self._inter = 0.0
             self._intra = 0.0
@@ -215,13 +229,7 @@ class GD53(_base.CVI):
         if self._n_clusters > 1:
             self._intra = 2 * np.max(np.divide(self._CP, self._n))
             # Between-group measure of separation/isolation
-            self._inter = (
-                np.min(self._D[
-                    np.triu(
-                        np.ones((self._n_clusters, self._n_clusters), bool), 1
-                    ),
-                ])
-            )
+            self._inter = self._backend.minimum_off_diagonal(self._D)
             # GD53 index value
             if self._intra > 0.0:
                 self.criterion_value = self._inter / self._intra
