@@ -1,5 +1,36 @@
 # Numerical kernel benchmarks
 
+## Batch versus incremental timing figure
+
+Generate a 12-panel figure for all ten public CVIs, a scatter plot of the
+synthetic dataset, and a final-size timing ratio summary:
+
+```sh
+OPENBLAS_NUM_THREADS=1 python3 -m benchmarks.benchmark_batch_incremental
+```
+
+This needs Matplotlib and `artlib` (the optional ART extra). It writes
+`benchmarks/results/batch_incremental/timing_figure.png`, `timings.csv`, and
+`run.json`; `benchmarks/results/index.json` points to the run record. The
+dataset has ten balanced, well-separated 2D Gaussian clusters. Every plotted
+size is a prefix of the same 10,000 samples, from 100 to 10,000. CONN uses
+Fuzzy ART for both paths with a shared pre-normalized input; its default
+KMeans path cannot update one sample at a time. CH and DB include their
+scikit-learn score functions. **The DB definitions differ:** this package uses
+mean squared within-cluster distances and squared centroid distances, whereas
+scikit-learn uses mean Euclidean within-cluster distances and Euclidean centroid
+distances. Its DB curve is a related reference, not an equivalent implementation.
+The centroid-based cSIL differs from
+scikit-learn's sample silhouette score, so that is not plotted as an equivalent.
+
+Each point is the geometric mean of five complete computations on a fresh
+object, including construction and final scoring. Shading shows a two-sided
+95% Student t interval computed from the five log timings. These intervals
+describe timing variation under this run's conditions; five trials do not
+eliminate machine-load effects. Raw times and scores are in the CSV.
+
+## Kernel and backend timings
+
 Run from the repository root with the project's dependencies installed:
 
 ```sh
@@ -43,8 +74,33 @@ The NumPy implementation groups dense internal labels once and preserves the
 original order of samples within each cluster. Means retain NumPy's original
 input-dtype reduction followed by assignment into float64 centroid storage.
 Centered compactness, appendable count/compactness lists, and first-seen external
-label order are preserved. Distances use coordinate differences, avoiding Gram
-matrix cancellation, and only require one row's temporary distance data.
+label order are preserved. The NumPy backend computes centroid distances with
+SciPy's compiled direct-coordinate kernels, avoiding Gram-matrix cancellation;
+the optional Numba backend retains its compiled loop.
+
+Integer batch labels use one stable sort to validate, encode, and group samples
+while restoring first-appearance label order. Other label dtypes retain the
+dictionary path. DB evaluates distinct
+cluster pairs with array operations in the same evaluator used by batch and
+incremental calls. Its squared-distance definition, zero diagonal, and
+undefined-score handling are preserved.
+
+CH and WB use the same centroid-distance kernel for separation after batch,
+incremental, and structural updates. GD53 builds its dispersion matrix and
+large updated rows with array operations, retaining the cheaper scalar loop for
+fewer than 64 clusters, and uses the shared off-diagonal minimum reduction when
+scoring. PS computes centroid spread, nearest-cluster
+distances, and per-cluster terms as arrays in its shared evaluator.
+
+cSIL computes changed dissimilarity rows and columns with array operations and
+evaluates all cluster coefficients in one reduction. Structural rebuilds use
+the same raw-moment definition in matrix form. rCIP groups batch samples once
+and evaluates covariance pairs in bounded vectorized chunks; streaming reuses
+the same pair evaluator for the changed row. It retains the existing explicit
+inverse and determinant definition so the optimization does not also change the
+numerical method. XB and GD43 share an off-diagonal minimum reduction that
+temporarily masks and then restores the distance-matrix diagonal, avoiding new
+triangle indices or a full mask for every score.
 
 cSIL batch mode retains its raw moments for subsequent add/remove/merge operations
 but computes its dissimilarity matrix using centered statistics. For cluster
