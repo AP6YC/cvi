@@ -69,6 +69,30 @@ class cSIL(_base.CVI):
         # Run the generic setup routine
         super()._setup(sample)
 
+    @staticmethod
+    def _cluster_to_centroids(raw_compactness, raw_sum, count, centroids):
+        """Mean squared distances from one cluster to every centroid."""
+        centroid_norms = np.einsum("ij,ij->i", centroids, centroids)
+        return (
+            raw_compactness
+            + count * centroid_norms
+            - 2 * (centroids @ raw_sum)
+        ) / count
+
+    @staticmethod
+    def _clusters_to_centroid(
+        raw_compactness, raw_sums, counts, centroid,
+    ):
+        """Mean squared distances from every cluster to one centroid."""
+        raw_compactness = np.asarray(raw_compactness)
+        counts = np.asarray(counts)
+        centroid_norm = np.inner(centroid, centroid)
+        return (
+            raw_compactness
+            + counts * centroid_norm
+            - 2 * (raw_sums @ centroid)
+        ) / counts
+
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
         """
@@ -101,19 +125,12 @@ class cSIL(_base.CVI):
                 S_new[0:self._n_clusters, 0:self._n_clusters] = self._S
                 S_row_new = np.zeros(self._n_clusters + 1)
                 S_col_new = np.zeros(self._n_clusters + 1)
-                for cl in range(self._n_clusters):
-                    # Dissimilarity of the new cluster to an old centroid.
-                    S_col_new[cl] = (
-                        CP_new
-                        + np.inner(self._v[cl, :], self._v[cl, :])
-                        - 2 * np.inner(G_new, self._v[cl, :])
-                    )
-                    # Dissimilarity of an old cluster to the new centroid.
-                    S_row_new[cl] = (
-                        self._CP[cl]
-                        + self._n[cl] * np.inner(v_new, v_new)
-                        - 2 * np.inner(self._G[cl, :], v_new)
-                    ) / self._n[cl]
+                S_col_new[:-1] = self._cluster_to_centroids(
+                    CP_new, G_new, n_new, self._v,
+                )
+                S_row_new[:-1] = self._clusters_to_centroid(
+                    self._CP, self._G, self._n, v_new,
+                )
                 S_col_new[i_label] = 0
                 S_row_new[i_label] = S_col_new[i_label]
                 S_new[i_label, :] = S_col_new
@@ -147,20 +164,12 @@ class cSIL(_base.CVI):
                 + sample
             )
             # Compute S_new
-            S_row_new = np.zeros(self._n_clusters)
-            S_col_new = np.zeros(self._n_clusters)
-            for cl in range(self._n_clusters):
-                centroid = v_new if cl == i_label else self._v[cl, :]
-                S_col_new[cl] = (
-                    CP_new
-                    + n_new * np.inner(centroid, centroid)
-                    - 2 * np.inner(G_new, centroid)
-                ) / n_new
-                S_row_new[cl] = (
-                    self._CP[cl]
-                    + self._n[cl] * np.inner(v_new, v_new)
-                    - 2 * np.inner(self._G[cl, :], v_new)
-                ) / self._n[cl]
+            S_col_new = self._cluster_to_centroids(
+                CP_new, G_new, n_new, self._v,
+            )
+            S_row_new = self._clusters_to_centroid(
+                self._CP, self._G, self._n, v_new,
+            )
 
             diagonal = (
                 CP_new
@@ -321,17 +330,14 @@ class cSIL(_base.CVI):
             self._sil_coefs = []
             return
 
-        self._S = np.zeros((self._n_clusters, self._n_clusters))
-        for cluster_i in range(self._n_clusters):
-            for centroid_i in range(self._n_clusters):
-                value = (
-                    self._CP[cluster_i]
-                    + self._n[cluster_i]
-                    * np.inner(self._v[centroid_i, :], self._v[centroid_i, :])
-                    - 2
-                    * np.inner(self._G[cluster_i, :], self._v[centroid_i, :])
-                ) / self._n[cluster_i]
-                self._S[cluster_i, centroid_i] = max(0.0, float(value))
+        counts = np.asarray(self._n)
+        centroid_norms = np.einsum("ij,ij->i", self._v, self._v)
+        values = (
+            np.asarray(self._CP)[:, None]
+            + counts[:, None] * centroid_norms[None, :]
+            - 2 * (self._G @ self._v.T)
+        ) / counts[:, None]
+        self._S = np.fmax(values, 0.0)
         self._sil_coefs = np.zeros(self._n_clusters)
 
     @_base._add_docs(_base._evaluate_doc)
@@ -340,22 +346,21 @@ class cSIL(_base.CVI):
         Criterion value evaluation method for the Centroid-based Silhouette (cSIL) CVI.
         """
 
-        self._sil_coefs = np.zeros(self._n_clusters)
-
         if self._n_clusters > 1:
-            for ix in range(self._n_clusters):
-                # Same cluster
-                a = self._S[ix, ix]
-                # Other clusters
-                local_S = np.delete(self._S[:, ix], ix)
-                b = np.min(local_S)
-                denominator = np.maximum(a, b)
-                if denominator == 0.0:
-                    self._sil_coefs[ix] = 0.0
-                else:
-                    self._sil_coefs[ix] = (b - a) / denominator
+            a = np.diag(self._S)
+            other = self._S.copy()
+            np.fill_diagonal(other, np.inf)
+            b = np.min(other, axis=0)
+            denominator = np.maximum(a, b)
+            self._sil_coefs = np.divide(
+                b - a,
+                denominator,
+                out=np.zeros(self._n_clusters),
+                where=denominator != 0.0,
+            )
             # cSIL index value
             self.criterion_value = np.sum(self._sil_coefs) / self._n_clusters
 
         else:
+            self._sil_coefs = np.zeros(self._n_clusters)
             self.criterion_value = np.nan
