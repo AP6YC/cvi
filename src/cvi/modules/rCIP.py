@@ -78,6 +78,67 @@ class rCIP(_base.CVI):
         delta = 10.0 ** (-epsilon / self._dim)
         self._delta_term = np.eye(self._dim) * delta
 
+    @staticmethod
+    def _information_potentials(
+        left_centroids,
+        left_covariances,
+        right_centroids,
+        right_covariances,
+        constant,
+    ):
+        """Evaluate one or more representative information potentials."""
+        differences = left_centroids - right_centroids
+        covariance_sums = left_covariances + right_covariances
+        determinants = np.linalg.det(covariance_sums)
+        inverses = np.linalg.inv(covariance_sums)
+        quadratic = np.einsum(
+            "...i,...ij,...j->...",
+            differences,
+            inverses,
+            differences,
+            optimize=False,
+        )
+        return (
+            constant
+            * np.exp(-0.5 * quadratic)
+            / np.sqrt(determinants)
+        )
+
+    def _information_row(self, centroid, covariance):
+        """Evaluate one cluster against every current cluster."""
+        covariances = np.moveaxis(self._sigma, 2, 0)
+        return self._information_potentials(
+            centroid,
+            covariance,
+            self._v,
+            covariances,
+            self._constant,
+        )
+
+    def _information_matrix(self):
+        """Build the symmetric matrix in bounded vectorized chunks."""
+        matrix = np.zeros((self._n_clusters, self._n_clusters))
+        left, right = np.triu_indices(self._n_clusters, k=1)
+        if len(left) == 0:
+            return matrix
+
+        covariances = np.moveaxis(self._sigma, 2, 0)
+        bytes_per_pair = max(1, 3 * self._dim * self._dim * 8)
+        chunk_size = max(1, (32 * 1024 * 1024) // bytes_per_pair)
+        for start in range(0, len(left), chunk_size):
+            stop = start + chunk_size
+            i, j = left[start:stop], right[start:stop]
+            values = self._information_potentials(
+                self._v[i],
+                covariances[i],
+                self._v[j],
+                covariances[j],
+                self._constant,
+            )
+            matrix[i, j] = values
+            matrix[j, i] = values
+        return matrix
+
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
         """
@@ -108,16 +169,9 @@ class rCIP(_base.CVI):
                 D_new = np.zeros((self._n_clusters + 1, self._n_clusters + 1))
                 D_new[0:self._n_clusters, 0:self._n_clusters] = self._D
                 d_column_new = np.zeros(self._n_clusters + 1)
-                for jx in range(self._n_clusters):
-                    diff_m = v_new - self._v[jx, :]
-                    sigma_q = sigma_new + self._sigma[:, :, jx]
-                    d_column_new[jx] = (
-                        self._constant
-                        * (1 / np.sqrt(np.linalg.det(sigma_q)))
-                        * np.exp(
-                            -0.5 * diff_m @ np.linalg.inv(sigma_q) @ diff_m
-                        )
-                    )
+                d_column_new[:-1] = self._information_row(
+                    v_new, sigma_new,
+                )
                 D_new[i_label, :] = d_column_new
                 D_new[:, i_label] = d_column_new
 
@@ -146,20 +200,8 @@ class rCIP(_base.CVI):
                 + (1 / n_new) * (np.outer(diff_x_v, diff_x_v))
                 + self._delta_term
             )
-            d_column_new = np.zeros(self._n_clusters)
-            for jx in range(self._n_clusters):
-                # Skip the current i_label index
-                if jx == i_label:
-                    continue
-                diff_m = v_new - self._v[jx, :]
-                sigma_q = sigma_new + self._sigma[:, :, jx]
-                d_column_new[jx] = (
-                    self._constant
-                    * (1 / np.sqrt(np.linalg.det(sigma_q)))
-                    * np.exp(
-                        -0.5 * diff_m @ np.linalg.inv(sigma_q) @ diff_m
-                    )
-                )
+            d_column_new = self._information_row(v_new, sigma_new)
+            d_column_new[i_label] = 0.0
 
             # Update parameters
             self._n[i_label] = n_new
@@ -185,23 +227,19 @@ class rCIP(_base.CVI):
         self._delta_term = np.eye(self._dim) * delta
         self._constant = 1 / np.sqrt((2 * np.pi) ** self._dim)
 
-        # Take the average across all samples, but cast to 1-D vector
-        u = self._setup_batch_labels(labels)
+        # Group samples once while retaining first-seen cluster order.
+        u, order, offsets = self._setup_batch_groups(labels)
         self._n_clusters = len(u)
-        self._n = [0 for _ in range(self._n_clusters)]
-        self._v = np.zeros((self._n_clusters, self._dim))
+        counts, self._v, _ = self._backend.batch_statistics(
+            data, order, offsets, compactness=False,
+        )
+        self._n = counts.tolist()
         self._G = np.zeros((0, self._dim))
+        self._CP = None
         self._sigma = np.zeros((self._dim, self._dim, self._n_clusters))
-        self._D = np.zeros((self._n_clusters, self._n_clusters))
 
-        for ix, external_label in enumerate(u):
-            subset_indices = (
-                [x for x in range(len(labels))
-                 if labels[x] == external_label]
-            )
-            subset = data[subset_indices, :]
-            self._n[ix] = subset.shape[0]
-            self._v[ix, :] = np.mean(subset, axis=0)
+        for ix in range(self._n_clusters):
+            subset = data[order[offsets[ix]:offsets[ix + 1]], :]
             if self._n[ix] > 1:
                 self._sigma[:, :, ix] = (
                     (1 / (self._n[ix] - 1)) * (
@@ -212,19 +250,7 @@ class rCIP(_base.CVI):
             else:
                 self._sigma[:, :, ix] = self._delta_term
 
-        for ix in range(self._n_clusters - 1):
-            for jx in range(ix + 1, self._n_clusters):
-                diff_m = self._v[ix, :] - self._v[jx, :]
-                sigma_q = self._sigma[:, :, ix] + self._sigma[:, :, jx]
-                self._D[ix, jx] = (
-                    self._constant
-                    * (1 / np.sqrt(np.linalg.det(sigma_q)))
-                    * np.exp(
-                        -0.5 * diff_m @ np.linalg.inv(sigma_q) @ diff_m
-                    )
-                )
-
-        self._D = self._D + np.transpose(self._D)
+        self._D = self._information_matrix()
 
     @staticmethod
     def _stabilize_covariance(covariance: np.ndarray) -> np.ndarray:
@@ -410,24 +436,7 @@ class rCIP(_base.CVI):
             self._D = np.zeros((0, 0))
             return
 
-        def information_potential(ix, jx):
-            difference = self._v[ix, :] - self._v[jx, :]
-            sigma_q = self._sigma[:, :, ix] + self._sigma[:, :, jx]
-            return (
-                self._constant
-                * (1 / np.sqrt(np.linalg.det(sigma_q)))
-                * np.exp(
-                    -0.5
-                    * difference
-                    @ np.linalg.inv(sigma_q)
-                    @ difference
-                )
-            )
-
-        self._D = self._pairwise_matrix(
-            self._n_clusters,
-            information_potential,
-        )
+        self._D = self._information_matrix()
 
     @_base._add_docs(_base._evaluate_doc)
     def _evaluate(self):
@@ -435,11 +444,8 @@ class rCIP(_base.CVI):
         Criterion value evaluation method for the (Renyi's) representative Cross Information Potential (rCIP) CVI.
         """
 
-        dim = self._D.shape[0]
-
-        if dim > 1:
-            values = self._D[np.triu_indices(dim, k=1)]
-            self.criterion_value = np.sum(values)
+        if self._D.shape[0] > 1:
+            self.criterion_value = 0.5 * np.sum(self._D)
 
         else:
             self.criterion_value = np.nan

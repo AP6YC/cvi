@@ -148,6 +148,47 @@ def test_csil_stream_state_and_score_match_sample_definition(backend):
                                    rtol=2e-12, atol=2e-12)
 
 
+def direct_rcip_matrix(index):
+    matrix = np.zeros((index._n_clusters, index._n_clusters))
+    for left in range(index._n_clusters - 1):
+        for right in range(left + 1, index._n_clusters):
+            difference = index._v[left] - index._v[right]
+            covariance = (
+                index._sigma[:, :, left] + index._sigma[:, :, right]
+            )
+            matrix[left, right] = (
+                index._constant
+                * np.exp(
+                    -0.5
+                    * difference
+                    @ np.linalg.inv(covariance)
+                    @ difference
+                )
+                / np.sqrt(np.linalg.det(covariance))
+            )
+            matrix[right, left] = matrix[left, right]
+    return matrix
+
+
+@pytest.mark.parametrize("mode", ["batch", "stream"])
+def test_rcip_information_potentials_match_scalar_definition(mode):
+    points, labels = stream_case()
+    index = cvi.rCIP()
+    if mode == "batch":
+        value = index.get_cvi(points, labels)
+    else:
+        for point, label in zip(points, labels):
+            value = index.get_cvi(point, int(label))
+    expected = direct_rcip_matrix(index)
+    np.testing.assert_allclose(index._D, expected, rtol=2e-12, atol=2e-12)
+    np.testing.assert_allclose(
+        value,
+        np.sum(expected[np.triu_indices(index._n_clusters, k=1)]),
+        rtol=2e-12,
+        atol=2e-12,
+    )
+
+
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_minimum_off_diagonal_restores_matrix(backend):
     if backend == "numba":
