@@ -15,6 +15,68 @@ def stream_case(n_clusters=10):
     return points, labels
 
 
+@pytest.mark.parametrize("cvi_type", [cvi.CH, cvi.WB])
+def test_separation_state_matches_direct_definition(backend, cvi_type):
+    points, labels = stream_case()
+    index = cvi_type(backend=backend)
+    for point, label in zip(points, labels):
+        index.get_cvi(point, int(label))
+        expected = np.asarray(index._n) * np.sum(
+            (index._v - index._mu) ** 2, axis=1,
+        )
+        np.testing.assert_allclose(index._SEP, expected, rtol=2e-15, atol=0)
+
+
+def direct_ps(index):
+    centroid_mean = np.mean(index._v, axis=0)
+    beta = np.mean(np.sum((index._v - centroid_mean) ** 2, axis=1))
+    pairwise = np.sum(
+        (index._v[:, None, :] - index._v[None, :, :]) ** 2, axis=2,
+    )
+    np.fill_diagonal(pairwise, np.inf)
+    scores = (
+        np.asarray(index._n) / np.max(index._n)
+        - np.exp(-np.min(pairwise, axis=1) / beta)
+    )
+    return centroid_mean, beta, scores
+
+
+def test_ps_shared_evaluator_matches_direct_definition(backend):
+    points, labels = stream_case()
+    index = cvi.PS(backend=backend)
+    for point, label in zip(points, labels):
+        value = index.get_cvi(point, int(label))
+        if index._n_clusters < 2 or index._beta_t == 0:
+            continue
+        centroid_mean, beta, scores = direct_ps(index)
+        np.testing.assert_allclose(index._v_bar, centroid_mean, rtol=2e-15)
+        np.testing.assert_allclose(index._beta_t, beta, rtol=2e-15)
+        np.testing.assert_allclose(index._PS_i, scores, rtol=2e-15)
+        np.testing.assert_allclose(value, np.sum(scores), rtol=2e-15)
+
+
+def test_ps_batch_and_incremental_state_layout_match(backend):
+    """PS retains the common empty fields in both initialization modes."""
+    points, labels = stream_case()
+    batch = cvi.PS(backend=backend)
+    incremental = cvi.PS(backend=backend)
+
+    batch_value = batch.get_cvi(points, labels)
+    for point, label in zip(points, labels):
+        incremental_value = incremental.get_cvi(point, int(label))
+
+    for index in (batch, incremental):
+        assert index._CP == []
+        assert index._G.shape == (0, points.shape[1])
+
+    assert batch._label_map.map == incremental._label_map.map
+    np.testing.assert_array_equal(batch._n, incremental._n)
+    np.testing.assert_allclose(batch._v, incremental._v, rtol=2e-15)
+    np.testing.assert_allclose(batch._D, incremental._D, rtol=2e-15)
+    np.testing.assert_allclose(batch._PS_i, incremental._PS_i, rtol=2e-15)
+    np.testing.assert_allclose(batch_value, incremental_value, rtol=2e-15)
+
+
 def direct_gd53_matrix(index):
     compactness = np.asarray(index._CP)
     counts = np.asarray(index._n)

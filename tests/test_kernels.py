@@ -37,6 +37,10 @@ def reference_batch(cvi_type, data, labels):
         index._CP = [np.sum((group - index._v[i]) ** 2)
                      for i, group in enumerate(groups)]
         index._G = np.zeros_like(index._v)
+    else:
+        index._CP = []
+        index._G = np.zeros((0, data.shape[1]))
+
     if cvi_type in (cvi.CH, cvi.WB):
         index._SEP = np.array([
             len(group) * np.sum((index._v[i] - index._mu) ** 2)
