@@ -149,10 +149,9 @@ class CH(_base.CVI):
         # Update the parameters that do not depend on label novelty
         self._n_samples = n_samples_new
         # self._mu = mu_new
-        self._SEP = np.array([
-            self._n[ix] * sum((self._v[ix, :] - self._mu) ** 2)
-            for ix in range(self._n_clusters)
-        ])
+        self._SEP = np.asarray(self._n) * self._backend.centroid_distances(
+            self._v, self._mu,
+        )
 
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
@@ -176,10 +175,9 @@ class CH(_base.CVI):
             self._WGSS = 0.0
             return
 
-        self._SEP = np.asarray([
-            self._n[ix] * np.sum((self._v[ix, :] - self._mu) ** 2)
-            for ix in range(self._n_clusters)
-        ])
+        self._SEP = np.asarray(self._n) * self._backend.centroid_distances(
+            self._v, self._mu,
+        )
         self._WGSS = sum(self._CP)
         self._BGSS = sum(self._SEP)
 
