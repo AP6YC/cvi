@@ -37,7 +37,6 @@ def reference_batch(cvi_type, data, labels):
         index._CP = [np.sum((group - index._v[i]) ** 2)
                      for i, group in enumerate(groups)]
         index._G = np.zeros_like(index._v)
-
     if cvi_type in (cvi.CH, cvi.WB):
         index._SEP = np.array([
             len(group) * np.sum((index._v[i] - index._mu) ** 2)
@@ -199,11 +198,26 @@ def test_pairwise_kernel_empty_singleton_and_large_offsets(
     np.testing.assert_array_equal(actual, expected)
 
 
-def test_grouping_retains_sample_order_and_first_seen_cluster_order(backend):
-    data, labels = batch_case("random", np.float64)
+@pytest.mark.parametrize("label_values", [
+    np.array([90, -7, 400, 12345], dtype=np.int64),
+    np.array([2**64 - 1, 0, 2**63 + 1, 12345], dtype=np.uint64),
+    np.array([True, False, True, False]),
+    np.array([2**80, -7, 400, -(2**80)], dtype=object),
+    np.array([9.5, -0.5, 400.25, 123.75]),
+    np.array(["z", "b", "aa", "c"]),
+], ids=["signed", "unsigned", "boolean", "object", "float", "string"])
+def test_grouping_retains_sample_order_and_first_seen_cluster_order(
+    backend, label_values,
+):
+    labels = label_values[[2, 2, 0, 1, 3, 0, 2, 1, 0]][::-1]
+    data = np.random.default_rng(318).normal(size=(len(labels), 3))
     index = cvi.XB(backend=backend)
+    expected_labels = list(dict.fromkeys(labels.tolist()))
+    # The labels-only call is also used by rCIP and retains its list API.
+    assert index._setup_batch_labels(labels) == expected_labels
     order, offsets = index._setup_batch_statistics(data, labels)
-    assert list(index._label_map.map) == list(dict.fromkeys(labels))
+    assert list(index._label_map.map) == expected_labels
+    assert list(index._label_map.map.values()) == list(range(len(expected_labels)))
     for label, cluster in index._label_map.map.items():
         np.testing.assert_array_equal(
             order[offsets[cluster]:offsets[cluster + 1]],
