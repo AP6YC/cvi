@@ -105,6 +105,49 @@ def test_gd53_dispersion_state_matches_direct_definition(
                                    rtol=2e-15)
 
 
+def direct_csil_state(groups, centroids):
+    matrix = np.zeros((len(groups), len(groups)))
+    for cluster, samples in enumerate(groups):
+        for centroid in range(len(centroids)):
+            matrix[cluster, centroid] = np.mean(np.sum(
+                (samples - centroids[centroid]) ** 2,
+                axis=1,
+            ))
+    diagonal = np.diag(matrix)
+    coefficients = np.zeros(len(groups))
+    for cluster in range(len(groups)):
+        between = np.min(np.delete(matrix[:, cluster], cluster))
+        denominator = max(diagonal[cluster], between)
+        if denominator != 0.0:
+            coefficients[cluster] = (
+                between - diagonal[cluster]
+            ) / denominator
+    return matrix, coefficients
+
+
+def test_csil_stream_state_and_score_match_sample_definition(backend):
+    points, labels = stream_case()
+    index = cvi.cSIL(backend=backend)
+    groups = []
+    label_map = {}
+    for point, label in zip(points, labels):
+        label = int(label)
+        if label not in label_map:
+            label_map[label] = len(groups)
+            groups.append([])
+        groups[label_map[label]].append(point)
+        value = index.get_cvi(point, label)
+        if index._n_clusters < 2:
+            continue
+        arrays = [np.asarray(group) for group in groups]
+        matrix, coefficients = direct_csil_state(arrays, index._v)
+        np.testing.assert_allclose(index._S, matrix, rtol=2e-12, atol=2e-12)
+        np.testing.assert_allclose(index._sil_coefs, coefficients,
+                                   rtol=2e-12, atol=2e-12)
+        np.testing.assert_allclose(value, np.mean(coefficients),
+                                   rtol=2e-12, atol=2e-12)
+
+
 @pytest.mark.parametrize("backend", ["numpy", "numba"])
 def test_minimum_off_diagonal_restores_matrix(backend):
     if backend == "numba":
