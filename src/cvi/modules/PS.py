@@ -60,20 +60,6 @@ class PS(_base.CVI):
         self._beta_t = 0.0
         self._PS_i = np.zeros(0)
 
-    @_base._add_docs(_base._setup_doc)
-    def _setup(self, sample: np.ndarray):
-        """
-        Partition Separation (PS) setup routine.
-        """
-
-        # Run the generic setup routine
-        super()._setup(sample)
-
-        # CH-specific setup
-        # Delete unused members
-        del self._G
-        del self._CP
-
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
         """
@@ -143,6 +129,9 @@ class PS(_base.CVI):
         """
 
         self._setup_batch_statistics(data, labels, compactness=False)
+        # Keep the unused common fields consistent with incremental setup.
+        self._CP = []
+        self._G = np.zeros((0, self._dim))
         self._mu = np.mean(data, axis=0)
         self._D = self._backend.pairwise_centroid_distances(
             self._v,
@@ -251,23 +240,20 @@ class PS(_base.CVI):
 
         if self._n_clusters > 1:
             self._v_bar = np.mean(self._v, axis=0)
-            self._beta_t = 0.0
-            self._PS_i = np.zeros(self._n_clusters)
-            for ix in range(self._n_clusters):
-                delta_v = self._v[ix, :] - self._v_bar
-                self._beta_t = self._beta_t + np.inner(delta_v, delta_v)
-            self._beta_t /= self._n_clusters
+            self._beta_t = np.mean(self._backend.centroid_distances(
+                self._v, self._v_bar,
+            ))
             if self._beta_t > 0.0:
-                n_max = max(self._n)
-                for ix in range(self._n_clusters):
-                    d = self._D[ix, :]
-                    d = np.delete(d, ix)
-                    self._PS_i[ix] = (
-                        (self._n[ix] / n_max)
-                        - np.exp(-np.min(d) / self._beta_t)
-                    )
+                counts = np.asarray(self._n)
+                nearest = self._D.copy()
+                np.fill_diagonal(nearest, np.inf)
+                self._PS_i = (
+                    counts / np.max(counts)
+                    - np.exp(-np.min(nearest, axis=1) / self._beta_t)
+                )
                 self.criterion_value = np.sum(self._PS_i)
             else:
+                self._PS_i = np.zeros(self._n_clusters)
                 self.criterion_value = np.nan
         else:
             self.criterion_value = np.nan

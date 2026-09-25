@@ -206,16 +206,16 @@ class DB(_base.CVI):
 
         if self._n_clusters > 1:
             self._R = np.zeros((self._n_clusters, self._n_clusters))
-            separations = self._D[
-                np.triu_indices(self._n_clusters, k=1)
-            ]
+            rows, columns = np.triu_indices(self._n_clusters, k=1)
+            separations = self._D[rows, columns]
             if np.all(separations > 0.0):
-                for ix in range(self._n_clusters - 1):
-                    for jx in range(ix + 1, self._n_clusters):
-                        self._R[jx, ix] = (
-                            (self._S[ix] + self._S[jx]) / self._D[jx, ix]
-                        )
-                self._R = self._R + np.transpose(self._R)
+                # Evaluate only distinct pairs: the diagonal stays exactly zero,
+                # without computing unused self-ratios or overflowing S_i + S_i.
+                scatter = np.asarray(self._S)
+                ratios = ((scatter[rows] + scatter[columns])
+                          / self._D[columns, rows])
+                self._R[columns, rows] = ratios
+                self._R[rows, columns] = ratios
                 self.criterion_value = (
                     np.sum(np.max(self._R, axis=0)) / self._n_clusters
                 )
