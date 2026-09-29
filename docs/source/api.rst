@@ -1,8 +1,13 @@
 API Reference
 =============
 
-The classes below are the supported top-level interface. Import them directly
-from ``cvi`` rather than from their implementation modules.
+The interfaces below are supported at the top level. Import them directly from
+``cvi`` rather than from their implementation modules.
+
+Factory
+-------
+
+.. autofunction:: cvi.create_cvi
 
 Base class
 ----------
