@@ -40,8 +40,6 @@ class WB(_base.CVI):
         remove=True,
         backends=("numpy", "numba", "jax"),
     )
-    _supports_numba = True
-    _supports_jax = True
     _supports_remove_merge = True
     _uses_compactness_stats = True
 

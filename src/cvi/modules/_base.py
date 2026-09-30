@@ -18,13 +18,13 @@ from typing import (
 # Custom imports
 import numpy as np
 
-from ..backends import get_backend
+from ..backends import BACKEND_NAMES, get_backend
 
 # --------------------------------------------------------------------------- #
 # CLASSES
 # --------------------------------------------------------------------------- #
 
-@dataclass
+@dataclass(frozen=True)
 class CVIInfo:
     """Index metadata and implemented capabilities, independent of installation.
 
@@ -112,8 +112,6 @@ class CVI():
     info: ClassVar[CVIInfo]
     _supports_remove_merge: ClassVar[bool] = False
     _uses_compactness_stats: ClassVar[bool] = False
-    _supports_numba: ClassVar[bool] = False
-    _supports_jax: ClassVar[bool] = False
 
     def __init__(self, *, backend="numpy", capacity=None):
         """
@@ -128,13 +126,9 @@ class CVI():
             Maximum distinct clusters for optional fixed-capacity JAX streaming.
         """
 
-        if backend == "numba" and not self._supports_numba:
+        if backend in BACKEND_NAMES and backend not in self.info.backends:
             raise NotImplementedError(
-                f"{type(self).__name__} does not support the numba backend"
-            )
-        if backend == "jax" and not self._supports_jax:
-            raise NotImplementedError(
-                f"{type(self).__name__} does not support the jax backend"
+                f"{type(self).__name__} does not support the {backend} backend"
             )
         if capacity is not None:
             if backend != "jax":

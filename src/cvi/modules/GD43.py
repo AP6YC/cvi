@@ -40,7 +40,6 @@ class GD43(_base.CVI):
         remove=True,
         backends=("numpy", "numba"),
     )
-    _supports_numba = True
     _supports_remove_merge = True
     _uses_compactness_stats = True
 

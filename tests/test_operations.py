@@ -42,7 +42,7 @@ def backend_cases(indices):
         pytest.param((index, backend), id=f"{index.__name__}-{backend}")
         for index in indices
         for backend in ("numpy", "numba")
-        if backend == "numpy" or index._supports_numba
+        if backend in index.info.backends
     ]
 
 

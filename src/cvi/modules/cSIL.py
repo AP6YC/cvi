@@ -36,7 +36,6 @@ class cSIL(_base.CVI):
         remove=True,
         backends=("numpy", "numba"),
     )
-    _supports_numba = True
     _supports_remove_merge = True
 
     def __init__(self, *, backend="numpy"):

@@ -14,7 +14,7 @@ import src.cvi as cvi
 from src.cvi.backends import get_backend
 
 
-SUPPORTED = [index for index in cvi.MODULES if index._supports_numba]
+SUPPORTED = [index for index in cvi.MODULES if "numba" in index.info.backends]
 
 
 @pytest.mark.parametrize("index_type", cvi.MODULES)
