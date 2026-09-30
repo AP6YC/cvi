@@ -127,7 +127,6 @@ class CVI():
     """
 
     info: ClassVar[CVIInfo]
-    _supports_remove_merge: ClassVar[bool] = False
     _uses_compactness_stats: ClassVar[bool] = False
 
     def __init__(self, *, backend="numpy", capacity=None):
@@ -175,12 +174,12 @@ class CVI():
     def capabilities(self) -> CVICapabilities:
         """Operations supported by this instance's configuration."""
 
-        structural = self.backend != "jax" and self._supports_remove_merge
+        structural = self.backend != "jax" and self.info.remove
         return CVICapabilities(
             batch=True,
             incremental=self.backend != "jax" or self.capacity is not None,
             merge=structural,
-            remove=structural and self.info.remove,
+            remove=structural,
             split=structural,
         )
 
@@ -368,7 +367,7 @@ class CVI():
                 raise NotImplementedError("JAX streaming does not support remove or merge")
             raise NotImplementedError("The jax backend currently supports batch only")
 
-        if not self._supports_remove_merge:
+        if not self.info.remove:
             raise NotImplementedError(
                 f"{type(self).__name__} does not support remove, merge, or split"
             )

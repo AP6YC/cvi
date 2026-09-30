@@ -37,7 +37,6 @@ class CH(_base.CVI):
         remove=True,
         backends=("numpy", "numba", "jax"),
     )
-    _supports_remove_merge = True
     _uses_compactness_stats = True
 
     def __init__(self, *, backend="numpy", capacity=None):

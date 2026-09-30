@@ -36,8 +36,6 @@ class cSIL(_base.CVI):
         remove=True,
         backends=("numpy", "numba"),
     )
-    _supports_remove_merge = True
-
     def __init__(self, *, backend="numpy"):
         """
         Centroid-based Silhouette (cSIL) initialization routine.
