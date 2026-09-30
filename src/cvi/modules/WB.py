@@ -37,7 +37,6 @@ class WB(_base.CVI):
         index_min=0.0,
         index_max=np.inf,
         optimality="min",
-        remove=True,
         backends=("numpy", "numba", "jax"),
     )
     _uses_compactness_stats = True

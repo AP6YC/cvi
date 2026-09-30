@@ -33,7 +33,6 @@ class cSIL(_base.CVI):
         index_min=-1.0,
         index_max=1.0,
         optimality="max",
-        remove=True,
         backends=("numpy", "numba"),
     )
     def __init__(self, *, backend="numpy"):

@@ -26,12 +26,10 @@ from ..backends import BACKEND_NAMES, get_backend
 
 @dataclass(frozen=True)
 class CVIInfo:
-    """Index metadata and implemented capabilities, independent of installation.
+    """Index metadata, independent of installation.
 
-    ``remove`` indicates support in at least one configuration, not every
-    backend/model combination. JAX does not support removal, and CONN does not
-    implement it. ``backends`` lists numerical backend names, including optional
-    backends whose dependencies may not be installed.
+    ``backends`` lists numerical backend names, including optional backends
+    whose dependencies may not be installed.
     """
 
     name: str
@@ -39,7 +37,6 @@ class CVIInfo:
     index_min: float
     index_max: float
     optimality: str
-    remove: bool = False
     backends: tuple[str, ...] = ("numpy",)
 
 
@@ -174,7 +171,7 @@ class CVI():
     def capabilities(self) -> CVICapabilities:
         """Operations supported by this instance's configuration."""
 
-        structural = self.backend != "jax" and self.info.remove
+        structural = self.backend != "jax"
         return CVICapabilities(
             batch=True,
             incremental=self.backend != "jax" or self.capacity is not None,
@@ -359,18 +356,17 @@ class CVI():
     def _evaluate(self):
         raise NotImplementedError
 
-    def _require_operations(self):
-        """Validate that structural operations are supported and available."""
+    def _require_operation(self, operation: str):
+        """Validate that one structural operation is supported and available."""
 
-        if self.backend == "jax":
+        if not getattr(self.capabilities, operation):
+            if self.backend != "jax":
+                raise NotImplementedError(
+                    f"{type(self).__name__} does not support {operation}"
+                )
             if self.capacity is not None:
                 raise NotImplementedError("JAX streaming does not support remove or merge")
             raise NotImplementedError("The jax backend currently supports batch only")
-
-        if not self.info.remove:
-            raise NotImplementedError(
-                f"{type(self).__name__} does not support remove, merge, or split"
-            )
 
         if not self._is_setup:
             raise ValueError(
@@ -758,7 +754,7 @@ class CVI():
             stored sufficient statistics.
         """
 
-        self._require_operations()
+        self._require_operation("remove")
         sample = self._validate_sample(sample)
         i_label = self._label_map.get_existing_label(label)
         self._remove(sample, label, i_label)
@@ -792,7 +788,7 @@ class CVI():
             two labels are equal.
         """
 
-        self._require_operations()
+        self._require_operation("merge")
 
         if target_label == source_label:
             raise ValueError("Merge requires two different cluster labels")
@@ -851,7 +847,7 @@ class CVI():
             or the supplied subset is inconsistent with the retained cluster.
         """
 
-        self._require_operations()
+        self._require_operation("split")
         (
             retained_i,
             count,

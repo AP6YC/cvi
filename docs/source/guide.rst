@@ -136,18 +136,17 @@ Index metadata
 --------------
 
 Every implementation exposes an ``info`` class attribute describing its name,
-range, optimization direction, supported operations, and numerical backends:
+range, optimization direction, and numerical backends:
 
 .. doctest::
 
    >>> import cvi
    >>> cvi.CH.info
-   CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max', remove=True, backends=('numpy', 'numba', 'jax'))
+   CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max', backends=('numpy', 'numba', 'jax'))
 
 Use ``optimality`` rather than assuming that a larger value is always better.
-The ``remove`` flag indicates support in at least one configuration. ``backends``
-lists implemented numerical backends, even when their optional dependencies are
-not installed. JAX does not support removal, and CONN does not implement it.
+``backends`` lists implemented numerical backends, even when their optional
+dependencies are not installed.
 
 Use an instance's ``capabilities`` property for configuration-specific operation
 support:

@@ -33,7 +33,6 @@ class rCIP(_base.CVI):
         index_min=0.0,
         index_max=np.inf,
         optimality="min",
-        remove=True,
         backends=("numpy",),
     )
     def __init__(self, *, backend="numpy"):

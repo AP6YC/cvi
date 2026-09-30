@@ -37,7 +37,6 @@ class GD43(_base.CVI):
         index_min=0.0,
         index_max=np.inf,
         optimality="max",
-        remove=True,
         backends=("numpy", "numba"),
     )
     _uses_compactness_stats = True
