@@ -238,6 +238,18 @@ class CONN(_base.CVI):
 
         self._init_conn_state()
 
+    @property
+    def capabilities(self) -> _base.CVICapabilities:
+        """Operations supported by the selected prototype model."""
+
+        return _base.CVICapabilities(
+            batch=True,
+            incremental=self.model_type == "Fuzzy",
+            merge=True,
+            remove=False,
+            split=True,
+        )
+
     def _init_conn_state(self):
         """
         Initialize or reset CONN state without constructing a prototype model.

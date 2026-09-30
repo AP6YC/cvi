@@ -42,6 +42,23 @@ class CVIInfo:
     remove: bool = False
     backends: tuple[str, ...] = ("numpy",)
 
+
+@dataclass(frozen=True)
+class CVICapabilities:
+    """Operations supported by one configured CVI instance.
+
+    Capabilities describe the selected numerical and prototype backends. They
+    do not indicate whether the object has been initialized or whether optional
+    dependencies are installed.
+    """
+
+    batch: bool
+    incremental: bool
+    merge: bool
+    remove: bool
+    split: bool
+
+
 class LabelMap():
     """
     Internal map between labels and the incremental CVI categories.
@@ -153,6 +170,19 @@ class CVI():
     def backend(self):
         """Selected numerical backend (fixed for this object's lifetime)."""
         return self._backend.name
+
+    @property
+    def capabilities(self) -> CVICapabilities:
+        """Operations supported by this instance's configuration."""
+
+        structural = self.backend != "jax" and self._supports_remove_merge
+        return CVICapabilities(
+            batch=True,
+            incremental=self.backend != "jax" or self.capacity is not None,
+            merge=structural,
+            remove=structural and self.info.remove,
+            split=structural,
+        )
 
     @property
     def capacity(self):

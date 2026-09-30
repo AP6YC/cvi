@@ -8,6 +8,7 @@ __version__ = "0.7.2"
 # Import CVI modules to the top level
 from .modules import (
     CVI,
+    CVICapabilities,
     CH,
     CONN,
     cSIL,
@@ -26,6 +27,7 @@ from . import compat
 # Set these names to be imported
 __all__ = [
     "CVI",
+    "CVICapabilities",
     "create_cvi",
     "CH",
     "CONN",

@@ -18,6 +18,12 @@ Base class
 
    cvi.CVI
 
+Capability metadata
+-------------------
+
+.. autoclass:: cvi.CVICapabilities
+   :members:
+
 Indices
 -------
 
@@ -45,6 +51,7 @@ models. It does not support ``remove``.
 
 .. autosummary::
 
+   cvi.CVI.capabilities
    cvi.CVI.get_cvi
    cvi.CVI.update_many
    cvi.CVI.remove

@@ -159,6 +159,18 @@ The `remove` flag describes support in at least one configuration of the index.
 `backends` includes optional backends regardless of whether their dependencies
 are installed. JAX does not support removal, and CONN does not implement it.
 
+Use an instance's `capabilities` property for configuration-specific operation
+support:
+
+```python
+>>> cvi.CONN(model_type="KMeans").capabilities
+CVICapabilities(batch=True, incremental=False, merge=True, remove=False, split=True)
+```
+
+Capabilities describe the selected numerical and prototype backends. They do
+not indicate whether the object has been initialized or whether an optional
+dependency is installed.
+
 ### Updating an Existing Partition
 
 Initialized indices support adding samples. Most also support removing samples

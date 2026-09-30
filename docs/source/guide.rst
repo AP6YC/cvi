@@ -149,6 +149,18 @@ The ``remove`` flag indicates support in at least one configuration. ``backends`
 lists implemented numerical backends, even when their optional dependencies are
 not installed. JAX does not support removal, and CONN does not implement it.
 
+Use an instance's ``capabilities`` property for configuration-specific operation
+support:
+
+.. doctest::
+
+   >>> cvi.CONN(model_type="KMeans").capabilities
+   CVICapabilities(batch=True, incremental=False, merge=True, remove=False, split=True)
+
+Capabilities describe the selected numerical and prototype backends. They do
+not indicate whether the object has been initialized or whether an optional
+dependency is installed.
+
 Acknowledgements
 ----------------
 
