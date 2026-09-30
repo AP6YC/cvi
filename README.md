@@ -42,10 +42,12 @@ Please see the [documentation][docs-stable-url] for detailed usage.
   - [Updating an Existing Partition](#updating-an-existing-partition)
   - [Implemented Indices](#implemented-indices)
 - [Optimizations](#optimizations)
+- [Merge, Remove, and Split Operations](#merge-remove-and-split-operations)
   - [Optional FuzzyART CONN Backend](#optional-fuzzyart-conn-backend)
   - [Optional Numba Acceleration](#optional-numba-acceleration)
   - [Optional JAX Batch Backend](#optional-jax-batch-backend)
   - [Fixed-capacity JAX Streaming](#fixed-capacity-jax-streaming)
+  - [Benchmarks](#benchmarks)
 - [Acknowledgements](#acknowledgements)
   - [Derivation](#derivation)
   - [Authors](#authors)
@@ -231,6 +233,17 @@ See the [CONN guide][conn-guide] before using it.
 
 ## Optimizations
 
+The `cvi` package has been developed with care for its computational complexity and efficiency because of its use in clustering (and subsequently incremental clustering) applications.
+These optimizations include:
+
+1. [Updating existing CVIs with merge, remove, and split operations rather than rebuilding from scratch](#merge-remove-and-split-operations)
+2. [Varying algorithmic backends where applicable](#optional-fuzzyart-conn-backend)
+3. [A Numba computational backend](#optional-numba-acceleration)
+4. [A JAX computational backend (where applicable)](#optional-jax-batch-backend)
+5. [Benchmarks to get baselines of real performance](#benchmarks)
+
+## Merge, Remove, and Split Operations
+
 Most initialized indices support adding samples, removing samples, merging
 clusters, and splitting clusters from tracked sufficient statistics without
 replaying the full dataset:
@@ -387,6 +400,16 @@ The functional `empty_stream`, `stream_update`, `stream_chunk`, and
 Choose capacity near the expected maximum: XB reserves a capacity-by-capacity
 distance matrix. Chunk processing amortizes Python and device synchronization
 costs; per-sample JAX calls can be slower than NumPy.
+
+### Benchmarks
+
+Because the *incremental* part of this is a package concerns *incremental and online* algorithms, special care has been done to optimize that functionality.
+How did we do?
+Check it out some benchmarking results in the figure below, which you can reproduce yourself with the experiments in the `benchmarks/` directory of the `cvi` repository itself:
+
+[benchmark-img]: https://media.githubusercontent.com/media/AP6YC/cvi/develop/benchmarks/results/batch_incremental/timing_figure.png
+
+![`cvi` Benchmarking][benchmark-img]
 
 ## Acknowledgements
 
