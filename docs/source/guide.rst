@@ -142,14 +142,12 @@ range, optimization direction, supported operations, and numerical backends:
 
    >>> import cvi
    >>> cvi.CH.info
-   CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max', batch=True, incremental=True, merge=True, remove=True, split=True, backends=('numpy', 'numba', 'jax'))
+   CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max', remove=True, backends=('numpy', 'numba', 'jax'))
 
 Use ``optimality`` rather than assuming that a larger value is always better.
-The ``batch``, ``incremental``, ``merge``, ``remove``, and ``split`` flags indicate
-support in at least one configuration. ``backends`` lists implemented numerical
-backends, even when their optional dependencies are not installed. JAX incremental
-updates require ``capacity``; JAX does not support merge, remove, or split. CONN
-incremental updates require an ART model.
+The ``remove`` flag indicates support in at least one configuration. ``backends``
+lists implemented numerical backends, even when their optional dependencies are
+not installed. JAX does not support removal, and CONN does not implement it.
 
 Acknowledgements
 ----------------

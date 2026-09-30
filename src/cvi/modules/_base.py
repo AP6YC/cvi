@@ -28,11 +28,10 @@ from ..backends import get_backend
 class CVIInfo:
     """Index metadata and implemented capabilities, independent of installation.
 
-    Operation flags indicate support in at least one configuration, not every
-    backend/model combination. JAX incremental updates require ``capacity``;
-    JAX does not support merge, remove, or split. CONN incremental updates
-    require an ART model. ``backends`` lists numerical backend
-    names, including optional backends whose dependencies may not be installed.
+    ``remove`` indicates support in at least one configuration, not every
+    backend/model combination. JAX does not support removal, and CONN does not
+    implement it. ``backends`` lists numerical backend names, including optional
+    backends whose dependencies may not be installed.
     """
 
     name: str
@@ -40,11 +39,7 @@ class CVIInfo:
     index_min: float
     index_max: float
     optimality: str
-    batch: bool = False
-    incremental: bool = False
-    merge: bool = False
     remove: bool = False
-    split: bool = False
     backends: tuple[str, ...] = ("numpy",)
 
 class LabelMap():

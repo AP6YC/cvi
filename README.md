@@ -152,14 +152,12 @@ Users can also query the `.info` property of the CVI objects to obtain scaling, 
 
 ```
 >>> print(my_cvi.info)
-CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max', batch=True, incremental=True, merge=True, remove=True, split=True, backends=('numpy', 'numba', 'jax'))
+CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max', remove=True, backends=('numpy', 'numba', 'jax'))
 ```
 
-The `batch`, `incremental`, `merge`, `remove`, and `split` flags describe support
-in at least one configuration of the index. `backends` includes optional backends
-regardless of whether their dependencies are installed. JAX incremental updates
-require `capacity`; JAX does not support merge, remove, or split. CONN incremental
-updates require an ART model.
+The `remove` flag describes support in at least one configuration of the index.
+`backends` includes optional backends regardless of whether their dependencies
+are installed. JAX does not support removal, and CONN does not implement it.
 
 ### Updating an Existing Partition
 

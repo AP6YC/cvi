@@ -154,11 +154,7 @@ class CONN(_base.CVI):
         index_min=0.0,
         index_max=1.0,
         optimality="max",
-        batch=True,
-        incremental=True,
-        merge=True,
         remove=False,
-        split=True,
         backends=("numpy",),
     )
 

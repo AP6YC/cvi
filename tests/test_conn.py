@@ -363,8 +363,6 @@ def test_conn_is_public_and_defaults_to_minibatch_kmeans():
     assert cvi.CONN.info.index_min == 0.0
     assert cvi.CONN.info.index_max == 1.0
     assert cvi.CONN.info.optimality == "max"
-    assert cvi.CONN.info.merge
-    assert cvi.CONN.info.split
     assert not cvi.CONN.info.remove
 
 

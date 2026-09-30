@@ -33,11 +33,7 @@ class DB(_base.CVI):
         index_min=0.0,
         index_max=np.inf,
         optimality="min",
-        batch=True,
-        incremental=True,
-        merge=True,
         remove=True,
-        split=True,
         backends=("numpy", "numba"),
     )
     _supports_numba = True

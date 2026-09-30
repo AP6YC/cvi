@@ -31,11 +31,7 @@ class PS(_base.CVI):
         index_min=0.0,
         index_max=1.0,
         optimality="max",
-        batch=True,
-        incremental=True,
-        merge=True,
         remove=True,
-        split=True,
         backends=("numpy", "numba"),
     )
     _supports_numba = True
