@@ -234,29 +234,91 @@ class CVI():
         self._n_samples, self._dim = data.shape
         self._is_setup = True
 
-    def _setup_batch_labels(self, labels: np.ndarray):
-        """Populate the label map and return labels in first-seen order."""
+    def _setup_batch_labels(self, labels: np.ndarray, *, return_inverse=False):
+        """Populate first-seen labels, optionally returning dense sample labels.
+
+        Integer labels are encoded by NumPy; only distinct labels enter Python.
+        Other dtypes retain the dictionary path and its equality semantics.
+        """
 
         self._label_map = LabelMap()
+        labels = np.asarray(labels)
+        if labels.dtype.kind in "biu":
+            encoded = np.unique(labels, return_index=True,
+                                return_inverse=return_inverse)
+            unique, first = encoded[:2]
+            first_seen = np.argsort(first)
+            unique_labels = unique[first_seen].tolist()
+            self._label_map.map = dict(zip(unique_labels, range(len(unique))))
+            if return_inverse:
+                remap = np.empty(len(unique), dtype=np.intp)
+                remap[first_seen] = np.arange(len(unique))
+                return unique_labels, remap[encoded[2]]
+            return unique_labels
+
         unique_labels = []
-        for label in np.asarray(labels):
+        for label in labels:
             external_label = label.item() if hasattr(label, "item") else label
             if external_label not in self._label_map.map:
                 self._label_map.get_internal_label(external_label)
                 unique_labels.append(external_label)
 
+        if return_inverse:
+            dense_labels = np.fromiter(
+                (self._label_map.map[label] for label in labels),
+                dtype=np.intp, count=len(labels),
+            )
+            return unique_labels, dense_labels
         return unique_labels
+
+    @staticmethod
+    def _prepare_integer_batch_groups(labels: np.ndarray):
+        """Group integer labels with one stable sort in first-seen order."""
+        labels = np.asarray(labels)
+        order_by_label = np.argsort(labels, kind="stable")
+        if len(labels) == 0:
+            return [], order_by_label, np.zeros(1, dtype=np.intp)
+
+        sorted_labels = labels[order_by_label]
+        starts = np.r_[
+            0,
+            np.flatnonzero(sorted_labels[1:] != sorted_labels[:-1]) + 1,
+        ]
+        stops = np.r_[starts[1:], len(labels)]
+        first_seen = np.argsort(order_by_label[starts])
+        unique_labels = sorted_labels[starts[first_seen]].tolist()
+        counts = (stops - starts)[first_seen]
+        order = np.concatenate([
+            order_by_label[starts[group]:stops[group]]
+            for group in first_seen
+        ])
+        offsets = np.r_[0, np.cumsum(counts)]
+        return unique_labels, order, offsets
+
+    def _setup_batch_groups(self, labels: np.ndarray):
+        """Populate the label map and return stable first-seen groups."""
+        prepared = getattr(self, "_prepared_batch_groups", None)
+        if prepared is None:
+            unique_labels, dense_labels = self._setup_batch_labels(
+                labels, return_inverse=True,
+            )
+            order, offsets = self._backend.grouped_rows(
+                dense_labels, len(unique_labels),
+            )
+            return unique_labels, order, offsets
+
+        unique_labels, order, offsets = prepared
+        self._label_map = LabelMap()
+        self._label_map.map = dict(
+            zip(unique_labels, range(len(unique_labels)))
+        )
+        return unique_labels, order, offsets
 
     def _setup_batch_statistics(self, data, labels, compactness=True):
         """Initialize shared batch state and return stable cluster grouping."""
         self._setup_batch(data)
-        self._n_clusters = len(self._setup_batch_labels(labels))
-        dense_labels = np.fromiter(
-            (self._label_map.map[label] for label in labels),
-            dtype=np.intp,
-            count=len(labels),
-        )
-        order, offsets = self._backend.grouped_rows(dense_labels, self._n_clusters)
+        unique_labels, order, offsets = self._setup_batch_groups(labels)
+        self._n_clusters = len(unique_labels)
         counts, self._v, squared_errors = self._backend.batch_statistics(
             data, order, offsets, compactness=compactness,
         )
@@ -884,15 +946,26 @@ class CVI():
 
             # If we haven't done a batch update yet
             if not self._is_setup:
-
-                # Check that there are at least two unique labels
-                if not len(np.unique(label)) > 1:
+                labels = np.asarray(label)
+                prepared = None
+                if labels.ndim == 1 and labels.dtype.kind in "biu":
+                    prepared = self._prepare_integer_batch_groups(labels)
+                    n_labels = len(prepared[0])
+                else:
+                    n_labels = len(np.unique(labels))
+                if n_labels < 2:
                     raise ValueError(
                         "Batch CVI mode requires at least two unique labels"
                     )
 
-                # Do a batch update
-                self._param_batch(data, label)
+                if prepared is None:
+                    self._param_batch(data, label)
+                else:
+                    self._prepared_batch_groups = prepared
+                    try:
+                        self._param_batch(data, label)
+                    finally:
+                        del self._prepared_batch_groups
 
             # Otherwise, a second batch update was requested
             else:
