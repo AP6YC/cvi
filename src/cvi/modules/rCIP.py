@@ -33,15 +33,8 @@ class rCIP(_base.CVI):
         index_min=0.0,
         index_max=np.inf,
         optimality="min",
-        batch=True,
-        incremental=True,
-        merge=True,
-        remove=True,
-        split=True,
         backends=("numpy",),
     )
-    _supports_remove_merge = True
-
     def __init__(self, *, backend="numpy"):
         """
         (Renyi's) representative Cross Information Potential (rCIP) initialization routine.

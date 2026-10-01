@@ -136,20 +136,29 @@ Index metadata
 --------------
 
 Every implementation exposes an ``info`` class attribute describing its name,
-range, optimization direction, supported operations, and numerical backends:
+range, optimization direction, and numerical backends:
 
 .. doctest::
 
    >>> import cvi
    >>> cvi.CH.info
-   CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max', batch=True, incremental=True, merge=True, remove=True, split=True, backends=('numpy', 'numba', 'jax'))
+   CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max', backends=('numpy', 'numba', 'jax'))
 
 Use ``optimality`` rather than assuming that a larger value is always better.
-The ``batch``, ``incremental``, ``merge``, ``remove``, and ``split`` flags indicate
-support in at least one configuration. ``backends`` lists implemented numerical
-backends, even when their optional dependencies are not installed. JAX incremental
-updates require ``capacity``; JAX does not support merge, remove, or split. CONN
-incremental updates require an ART model.
+``backends`` lists implemented numerical backends, even when their optional
+dependencies are not installed.
+
+Use an instance's ``capabilities`` property for configuration-specific operation
+support:
+
+.. doctest::
+
+   >>> cvi.CONN(model_type="KMeans").capabilities
+   CVICapabilities(batch=True, incremental=False, merge=True, remove=False, split=True)
+
+Capabilities describe the selected numerical and prototype backends. They do
+not indicate whether the object has been initialized or whether an optional
+dependency is installed.
 
 Acknowledgements
 ----------------

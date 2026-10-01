@@ -154,11 +154,6 @@ class CONN(_base.CVI):
         index_min=0.0,
         index_max=1.0,
         optimality="max",
-        batch=True,
-        incremental=True,
-        merge=True,
-        remove=False,
-        split=True,
         backends=("numpy",),
     )
 
@@ -241,6 +236,18 @@ class CONN(_base.CVI):
         self._data_max = None
 
         self._init_conn_state()
+
+    @property
+    def capabilities(self) -> _base.CVICapabilities:
+        """Operations supported by the selected prototype model."""
+
+        return _base.CVICapabilities(
+            batch=True,
+            incremental=self.model_type == "Fuzzy",
+            merge=True,
+            remove=False,
+            split=True,
+        )
 
     def _init_conn_state(self):
         """

@@ -34,16 +34,8 @@ class CH(_base.CVI):
         index_min=0.0,
         index_max=np.inf,
         optimality="max",
-        batch=True,
-        incremental=True,
-        merge=True,
-        remove=True,
-        split=True,
         backends=("numpy", "numba", "jax"),
     )
-    _supports_numba = True
-    _supports_jax = True
-    _supports_remove_merge = True
     _uses_compactness_stats = True
 
     def __init__(self, *, backend="numpy", capacity=None):

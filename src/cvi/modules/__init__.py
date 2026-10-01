@@ -8,6 +8,7 @@ The :mod:`modules` gathers all CVI implementations.
 from ._base import (
     LabelMap,
     CVI,
+    CVICapabilities,
     _add_docs,
     _param_inc_doc,
     _param_batch_doc,
@@ -27,6 +28,7 @@ from .XB import XB
 __all__ = [
     "LabelMap",
     "CVI",
+    "CVICapabilities",
     "_add_docs",
     "_param_inc_doc",
     "_param_batch_doc",

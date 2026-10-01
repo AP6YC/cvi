@@ -148,18 +148,28 @@ A batch call may be followed by incremental samples, but the same object cannot 
 > The `cvi` package assumes the Numpy **row-major** convention where rows are individual samples and columns are features.
 > A batch dataset is then `[n_samples, n_features]` large, and their corresponding labels are `[n_samples]` large.
 
-Users can also query the `.info` property of the CVI objects to obtain scaling, naming, supported operations, and implemented numerical backends.
+Users can also query the `.info` property of the CVI objects to obtain scaling,
+naming, and implemented numerical backends.
 
 ```
 >>> print(my_cvi.info)
-CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max', batch=True, incremental=True, merge=True, remove=True, split=True, backends=('numpy', 'numba', 'jax'))
+CVIInfo(name='Calinski-Harabasz', name_short='CH', index_min=0.0, index_max=inf, optimality='max', backends=('numpy', 'numba', 'jax'))
 ```
 
-The `batch`, `incremental`, `merge`, `remove`, and `split` flags describe support
-in at least one configuration of the index. `backends` includes optional backends
-regardless of whether their dependencies are installed. JAX incremental updates
-require `capacity`; JAX does not support merge, remove, or split. CONN incremental
-updates require an ART model.
+`backends` includes optional backends regardless of whether their dependencies
+are installed.
+
+Use an instance's `capabilities` property for configuration-specific operation
+support:
+
+```python
+>>> cvi.CONN(model_type="KMeans").capabilities
+CVICapabilities(batch=True, incremental=False, merge=True, remove=False, split=True)
+```
+
+Capabilities describe the selected numerical and prototype backends. They do
+not indicate whether the object has been initialized or whether an optional
+dependency is installed.
 
 ### Updating an Existing Partition
 

@@ -31,16 +31,8 @@ class PS(_base.CVI):
         index_min=0.0,
         index_max=1.0,
         optimality="max",
-        batch=True,
-        incremental=True,
-        merge=True,
-        remove=True,
-        split=True,
         backends=("numpy", "numba"),
     )
-    _supports_numba = True
-    _supports_remove_merge = True
-
     def __init__(self, *, backend="numpy"):
         """
         Partition Separation (PS) initialization routine.

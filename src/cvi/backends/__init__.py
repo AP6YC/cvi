@@ -3,6 +3,9 @@
 from .numpy import NumpyBackend
 
 
+BACKEND_NAMES = ("numpy", "numba", "jax")
+
+
 def get_backend(name):
     """Resolve an explicit backend without importing Numba for NumPy users."""
     if name == "numpy":

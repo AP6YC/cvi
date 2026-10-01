@@ -18,21 +18,18 @@ from typing import (
 # Custom imports
 import numpy as np
 
-from ..backends import get_backend
+from ..backends import BACKEND_NAMES, get_backend
 
 # --------------------------------------------------------------------------- #
 # CLASSES
 # --------------------------------------------------------------------------- #
 
-@dataclass
+@dataclass(frozen=True)
 class CVIInfo:
-    """Index metadata and implemented capabilities, independent of installation.
+    """Index metadata, independent of installation.
 
-    Operation flags indicate support in at least one configuration, not every
-    backend/model combination. JAX incremental updates require ``capacity``;
-    JAX does not support merge, remove, or split. CONN incremental updates
-    require an ART model. ``backends`` lists numerical backend
-    names, including optional backends whose dependencies may not be installed.
+    ``backends`` lists numerical backend names, including optional backends
+    whose dependencies may not be installed.
     """
 
     name: str
@@ -40,12 +37,24 @@ class CVIInfo:
     index_min: float
     index_max: float
     optimality: str
-    batch: bool = False
-    incremental: bool = False
-    merge: bool = False
-    remove: bool = False
-    split: bool = False
     backends: tuple[str, ...] = ("numpy",)
+
+
+@dataclass(frozen=True)
+class CVICapabilities:
+    """Operations supported by one configured CVI instance.
+
+    Capabilities describe the selected numerical and prototype backends. They
+    do not indicate whether the object has been initialized or whether optional
+    dependencies are installed.
+    """
+
+    batch: bool
+    incremental: bool
+    merge: bool
+    remove: bool
+    split: bool
+
 
 class LabelMap():
     """
@@ -115,10 +124,7 @@ class CVI():
     """
 
     info: ClassVar[CVIInfo]
-    _supports_remove_merge: ClassVar[bool] = False
     _uses_compactness_stats: ClassVar[bool] = False
-    _supports_numba: ClassVar[bool] = False
-    _supports_jax: ClassVar[bool] = False
 
     def __init__(self, *, backend="numpy", capacity=None):
         """
@@ -133,13 +139,9 @@ class CVI():
             Maximum distinct clusters for optional fixed-capacity JAX streaming.
         """
 
-        if backend == "numba" and not self._supports_numba:
+        if backend in BACKEND_NAMES and backend not in self.info.backends:
             raise NotImplementedError(
-                f"{type(self).__name__} does not support the numba backend"
-            )
-        if backend == "jax" and not self._supports_jax:
-            raise NotImplementedError(
-                f"{type(self).__name__} does not support the jax backend"
+                f"{type(self).__name__} does not support the {backend} backend"
             )
         if capacity is not None:
             if backend != "jax":
@@ -164,6 +166,19 @@ class CVI():
     def backend(self):
         """Selected numerical backend (fixed for this object's lifetime)."""
         return self._backend.name
+
+    @property
+    def capabilities(self) -> CVICapabilities:
+        """Operations supported by this instance's configuration."""
+
+        structural = self.backend != "jax"
+        return CVICapabilities(
+            batch=True,
+            incremental=self.backend != "jax" or self.capacity is not None,
+            merge=structural,
+            remove=structural,
+            split=structural,
+        )
 
     @property
     def capacity(self):
@@ -341,18 +356,17 @@ class CVI():
     def _evaluate(self):
         raise NotImplementedError
 
-    def _require_operations(self):
-        """Validate that structural operations are supported and available."""
+    def _require_operation(self, operation: str):
+        """Validate that one structural operation is supported and available."""
 
-        if self.backend == "jax":
+        if not getattr(self.capabilities, operation):
+            if self.backend != "jax":
+                raise NotImplementedError(
+                    f"{type(self).__name__} does not support {operation}"
+                )
             if self.capacity is not None:
                 raise NotImplementedError("JAX streaming does not support remove or merge")
             raise NotImplementedError("The jax backend currently supports batch only")
-
-        if not self._supports_remove_merge:
-            raise NotImplementedError(
-                f"{type(self).__name__} does not support remove, merge, or split"
-            )
 
         if not self._is_setup:
             raise ValueError(
@@ -740,7 +754,7 @@ class CVI():
             stored sufficient statistics.
         """
 
-        self._require_operations()
+        self._require_operation("remove")
         sample = self._validate_sample(sample)
         i_label = self._label_map.get_existing_label(label)
         self._remove(sample, label, i_label)
@@ -774,7 +788,7 @@ class CVI():
             two labels are equal.
         """
 
-        self._require_operations()
+        self._require_operation("merge")
 
         if target_label == source_label:
             raise ValueError("Merge requires two different cluster labels")
@@ -833,7 +847,7 @@ class CVI():
             or the supplied subset is inconsistent with the retained cluster.
         """
 
-        self._require_operations()
+        self._require_operation("split")
         (
             retained_i,
             count,

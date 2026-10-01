@@ -37,15 +37,8 @@ class GD43(_base.CVI):
         index_min=0.0,
         index_max=np.inf,
         optimality="max",
-        batch=True,
-        incremental=True,
-        merge=True,
-        remove=True,
-        split=True,
         backends=("numpy", "numba"),
     )
-    _supports_numba = True
-    _supports_remove_merge = True
     _uses_compactness_stats = True
 
     def __init__(self, *, backend="numpy"):
