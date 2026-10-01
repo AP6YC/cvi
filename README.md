@@ -154,7 +154,8 @@ for start in range(0, len(samples), 1024):
                                labels[start:start + 1024])
 ```
 
-CH, WB, DB, XB, GD43, GD53, and PS support this with NumPy and Numba.
+CH, WB, DB, XB, GD43, GD53, PS, and cSIL support this with NumPy and Numba;
+rCIP supports it with NumPy.
 Each chunk adds new observations and returns one score for all observations
 accumulated so far. Fresh, batch-initialized, and incrementally initialized
 objects are supported. Empty chunks are no-ops, new integer labels are allowed,
@@ -164,8 +165,13 @@ data with a fixed feature count. Failed updates leave state unchanged.
 Chunk statistics accumulate in float64; reduction order and legacy float32
 batch precision can cause differences from batch or sample-by-sample results.
 Larger chunks trade memory and scoring frequency for throughput. No per-sample
-history is produced. cSIL, rCIP, CONN, and JAX configurations do not support
+history is produced. CONN and JAX configurations do not support
 `update_batch`; JAX's `update_many` retains its sequential scan semantics.
+
+cSIL maintains centered statistics through subsequent sample and structural
+updates to avoid raw-moment cancellation. rCIP combines centered covariance
+summaries and applies its regularization once per merged covariance; its
+one-shot batch calculation also uses centered float64 covariance reductions.
 
 > [!NOTE] NOTE
 > The `cvi` package assumes the Numpy **row-major** convention where rows are individual samples and columns are features.
@@ -225,12 +231,12 @@ backend coverage is listed separately.
 |---|---|---|---|---|---|---|
 | `CH` | Larger | `[0, ∞)` | Yes | Yes | Yes | Yes |
 | `CONN` | Larger | `[0, 1]` | Yes | No | FuzzyART backend only | Merge/split; no remove |
-| `cSIL` | Larger | `[-1, 1]` | Yes | No | Yes | Yes |
+| `cSIL` | Larger | `[-1, 1]` | Yes | Yes | Yes | Yes |
 | `DB` | Smaller | `[0, ∞)` | Yes | Yes | Yes | Yes |
 | `GD43` | Larger | `[0, ∞)` | Yes | Yes | Yes | Yes |
 | `GD53` | Larger | `[0, ∞)` | Yes | Yes | Yes | Yes |
 | `PS` | Larger | `[0, 1]` | Yes | Yes | Yes | Yes |
-| `rCIP` | Smaller | `[0, ∞)` | Yes | No | Yes | Yes |
+| `rCIP` | Smaller | `[0, ∞)` | Yes | Yes | Yes | Yes |
 | `WB` | Smaller | `[0, ∞)` | Yes | Yes | Yes | Yes |
 | `XB` | Smaller | `[0, ∞)` | Yes | Yes | Yes | Yes |
 
@@ -240,7 +246,7 @@ backend coverage is listed separately.
 |---|---|---|---|---|---|
 | `CH` | Yes | Unchanged | Unchanged | Yes | Capacity |
 | `CONN` | Unavailable | Unavailable | Unavailable | Unavailable | Unavailable |
-| `cSIL` | Yes | Unchanged | Unchanged | Unavailable | Unavailable |
+| `cSIL` | Yes | Unchanged | Dissimilarities | Unavailable | Unavailable |
 | `DB` | Yes | Distances | Distances | Unavailable | Unavailable |
 | `GD43` | Yes | Distances | Distances | Unavailable | Unavailable |
 | `GD53` | Yes | Unchanged | Unchanged | Unavailable | Unavailable |
@@ -254,6 +260,8 @@ compiled. **Distances** means centroid-distance kernels are compiled; other
 update logic remains in Python/NumPy. **Unchanged** means the operation is
 supported with `backend="numba"` but uses its existing NumPy implementation.
 **Unavailable** means that index rejects the selected numerical backend.
+**Dissimilarities** means cSIL's centered cluster-to-centroid matrix rebuild is
+compiled, including after mini-batch updates.
 
 **Capacity** means JAX sample updates and `update_many` chunks require a positive
 `capacity` at construction. CH, WB, and XB also expose functional JAX batch and

@@ -12,7 +12,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base
+from . import _base, _batch
 
 
 # cSIL object definition
@@ -35,6 +35,8 @@ class cSIL(_base.CVI):
         optimality="max",
         backends=("numpy", "numba"),
     )
+    _supports_batch_update = True
+
     def __init__(self, *, backend="numpy"):
         """
         Centroid-based Silhouette (cSIL) initialization routine.
@@ -51,6 +53,8 @@ class cSIL(_base.CVI):
         # cSIL-specific initialization
         self._S = np.empty([0, 0])   # n_clusters x dim
         self._sil_coefs = []         # dim
+        self._centered_CP = []
+        self._residuals = np.empty((0, 0))
 
     @_base._add_docs(_base._setup_doc)
     def _setup(self, sample: np.ndarray):
@@ -61,129 +65,78 @@ class cSIL(_base.CVI):
         # Run the generic setup routine
         super()._setup(sample)
 
-    @staticmethod
-    def _cluster_to_centroids(raw_compactness, raw_sum, count, centroids):
-        """Mean squared distances from one cluster to every centroid."""
-        centroid_norms = np.einsum("ij,ij->i", centroids, centroids)
-        return (
-            raw_compactness
-            + count * centroid_norms
-            - 2 * (centroids @ raw_sum)
-        ) / count
+    def _ensure_centered_state(self):
+        """Recover available centered state from older serialized objects."""
+        if not len(self._CP):
+            self._centered_CP = []
+            self._residuals = np.empty((0, self._dim))
+            return
+        if len(getattr(self, "_centered_CP", [])) == len(self._CP):
+            if hasattr(self, "_residuals"):
+                return
+        counts = np.asarray(self._n[:len(self._CP)])
+        self._centered_CP = (counts * np.diag(self._S)).tolist()
+        self._residuals = self._G - counts[:, None] * self._v[:len(counts)]
 
-    @staticmethod
-    def _clusters_to_centroid(
-        raw_compactness, raw_sums, counts, centroid,
-    ):
-        """Mean squared distances from every cluster to one centroid."""
-        raw_compactness = np.asarray(raw_compactness)
-        counts = np.asarray(counts)
-        centroid_norm = np.inner(centroid, centroid)
-        return (
-            raw_compactness
-            + counts * centroid_norm
-            - 2 * (raw_sums @ centroid)
-        ) / counts
+    def _sync_raw_moments(self):
+        """Retain the legacy raw fields; all evaluation uses centered state."""
+        counts = np.asarray(self._n)
+        self._G = counts[:, None] * self._v + self._residuals
+        self._CP = (np.asarray(self._centered_CP)
+                    + counts * np.sum(self._v ** 2, axis=1)
+                    + 2 * np.sum(self._v * self._residuals, axis=1)).tolist()
+
+    def _merge_batch_statistics(self, data, order, offsets, slots):
+        """Merge centered moments into a staged mini-batch candidate."""
+        self._ensure_centered_state()
+        compactness, self._residuals = _batch.merge_moments(
+            self, data, order, offsets, slots, self._centered_CP, self._residuals,
+        )
+        self._centered_CP = compactness.tolist()
 
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
-        """
-        Incremental parameter update for the Centroid-based Silhouette (cSIL) CVI.
-        """
-
-        # Get the internal label corresponding to the provided label
-        i_label = self._label_map.get_internal_label(label)
-
-        # Increment the local number of samples count
-        n_samples_new = self._n_samples + 1
-
-        # Check if the module has been setup, then set the mu accordingly
+        """Update centered moments and just the affected dissimilarity row/column."""
+        self._ensure_centered_state()
+        sample = np.asarray(sample, dtype=np.float64)
+        i = self._label_map.get_internal_label(label)
         if self._n_samples == 0:
             self._setup(sample)
-
-        # IF NEW CLUSTER LABEL
-        # Correct for python 0-indexing
-        if i_label > self._n_clusters - 1:
-            n_new = 1
-            v_new = sample
-            CP_new = np.inner(sample, sample)
-            G_new = sample
-
-            # Compute S_new
-            if self._n_clusters == 0:
-                S_new = np.zeros([1, 1])
-            else:
-                S_new = np.zeros((self._n_clusters + 1, self._n_clusters + 1))
-                S_new[0:self._n_clusters, 0:self._n_clusters] = self._S
-                S_row_new = np.zeros(self._n_clusters + 1)
-                S_col_new = np.zeros(self._n_clusters + 1)
-                S_col_new[:-1] = self._cluster_to_centroids(
-                    CP_new, G_new, n_new, self._v,
-                )
-                S_row_new[:-1] = self._clusters_to_centroid(
-                    self._CP, self._G, self._n, v_new,
-                )
-                S_col_new[i_label] = 0
-                S_row_new[i_label] = S_col_new[i_label]
-                S_new[i_label, :] = S_col_new
-                S_new[:, i_label] = S_row_new
-
-            # Update 1-D parameters with list appends
+            self._residuals = np.empty((0, self._dim))
+        if i == self._n_clusters:
+            self._n.append(1)
+            self._v = np.vstack((self._v, sample))
+            self._centered_CP.append(0.0)
+            self._residuals = np.vstack((self._residuals, np.zeros(self._dim)))
+            self._CP.append(np.inner(sample, sample))
+            self._G = np.vstack((self._G, sample))
+            matrix = np.zeros((i + 1, i + 1))
+            matrix[:i, :i] = self._S
+            self._S = matrix
             self._n_clusters += 1
-            self._n.append(n_new)
-            self._CP.append(CP_new)
-
-            # Update 2-D parameters with numpy vstacks
-            self._v = np.vstack([self._v, v_new])
-            self._G = np.vstack([self._G, G_new])
-            self._S = S_new
-
-        # ELSE OLD CLUSTER LABEL
         else:
-            n_new = self._n[i_label] + 1
-            v_new = (
-                (1 - 1 / n_new) * self._v[i_label, :]
-                + (1 / n_new) * sample
+            n = self._n[i]
+            center = self._v[i] + (sample - self._v[i]) / (n + 1)
+            shift = self._v[i] - center
+            difference = sample - center
+            self._centered_CP[i] += (
+                np.dot(difference, difference) + n * np.dot(shift, shift)
+                + 2 * np.dot(shift, self._residuals[i])
             )
-            # delta_v = self._v[i_label, :] - v_new
-            # diff_x_v = sample - v_new
-            CP_new = (
-                self._CP[i_label]
-                + np.inner(sample, sample)
-            )
-            G_new = (
-                self._G[i_label, :]
-                + sample
-            )
-            # Compute S_new
-            S_col_new = self._cluster_to_centroids(
-                CP_new, G_new, n_new, self._v,
-            )
-            S_row_new = self._clusters_to_centroid(
-                self._CP, self._G, self._n, v_new,
-            )
-
-            diagonal = (
-                CP_new
-                + n_new * np.inner(v_new, v_new)
-                - 2 * np.inner(G_new, v_new)
-            ) / n_new
-            S_col_new[i_label] = diagonal
-            S_row_new[i_label] = diagonal
-
-            # Update parameters
-            self._n[i_label] = n_new
-            self._v[i_label, :] = v_new
-            self._CP[i_label] = CP_new
-            self._G[i_label, :] = G_new
-
-            # self._S[:, i_label] = S_col_new
-            # self._S[i_label, :] = S_row_new
-            self._S[i_label, :] = S_col_new
-            self._S[:, i_label] = S_row_new
-
-        # Update the parameters that do not depend on label novelty
-        self._n_samples = n_samples_new
+            self._residuals[i] += difference + n * shift
+            self._n[i], self._v[i] = n + 1, center
+            self._CP[i] += np.inner(sample, sample)
+            self._G[i] += sample
+        self._n_samples += 1
+        differences = self._v[i] - self._v
+        distances = np.einsum("ij,ij->i", differences, differences)
+        self._S[i, :] = distances + (
+            self._centered_CP[i] + 2 * (differences @ self._residuals[i])
+        ) / self._n[i]
+        self._S[:, i] = distances + (
+            np.asarray(self._centered_CP)
+            - 2 * np.einsum("ij,ij->i", differences, self._residuals)
+        ) / np.asarray(self._n)
 
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
@@ -192,144 +145,109 @@ class cSIL(_base.CVI):
         """
 
         order, offsets = self._setup_batch_statistics(data, labels)
-        self._CP, self._G, self._S = self._backend.silhouette_batch_statistics(
+        self._centered_CP = list(self._CP)
+        self._CP, self._G, self._S, self._residuals = self._backend.silhouette_batch_statistics(
             data, order, offsets, self._v, self._CP,
         )
 
     def _delete_cluster(self, label: int, i_label: int):
         """Delete one cSIL cluster and compact its internal label."""
 
+        self._centered_CP = self._delete_vector_entry(self._centered_CP, i_label)
+        self._residuals = np.delete(self._residuals, i_label, axis=0)
         self._CP = self._delete_vector_entry(self._CP, i_label)
         self._G = np.delete(self._G, i_label, axis=0)
         super()._delete_cluster(label, i_label)
 
     def _remove(self, sample: np.ndarray, label: int, i_label: int):
-        """Remove a sample from cSIL's zero-centered raw moments."""
-
+        """Subtract a sample using centered moments, without raw cancellation."""
+        self._ensure_centered_state()
         n_old = self._n[i_label]
-        v_old = self._v[i_label, :].copy()
-        n_samples_new = self._n_samples - 1
-
+        center = self._v[i_label].copy()
         if n_old == 1:
-            self._validate_singleton_removal(sample, v_old)
-
+            self._validate_singleton_removal(sample, center)
             self._delete_cluster(label, i_label)
-            self._n_samples = n_samples_new
-
-            if n_samples_new == 0:
+            self._n_samples -= 1
+            if self._n_samples == 0:
                 self._clear_common_state()
-
             self._rebuild_after_operation()
             return
-
         n_new = n_old - 1
-        G_new = self._G[i_label, :] - sample
-        v_new = G_new / n_new
-        raw_CP_new = self._CP[i_label] - np.inner(sample, sample)
-        centered_CP_new = raw_CP_new - n_new * np.inner(v_new, v_new)
-        centered_CP_new = self._nonnegative_or_error(
-            centered_CP_new,
-            max(abs(self._CP[i_label]), abs(raw_CP_new)),
-            "cluster compactness",
-        )
-        raw_CP_new = centered_CP_new + n_new * np.inner(v_new, v_new)
-
-        self._n[i_label] = n_new
-        self._v[i_label, :] = v_new
-        self._CP[i_label] = raw_CP_new
-        self._G[i_label, :] = G_new
-        self._n_samples = n_samples_new
+        difference = sample - center
+        remaining_residual = self._residuals[i_label] - difference
+        new_center = center + remaining_residual / n_new
+        shift = center - new_center
+        q = self._centered_CP[i_label]
+        new_q = (q - np.dot(difference, difference)
+                 + n_new * np.dot(shift, shift)
+                 + 2 * np.dot(shift, remaining_residual))
+        new_q = self._nonnegative_or_error(new_q, q, "cluster compactness")
+        if n_new == 1:
+            new_q = 0.0
+        self._n[i_label], self._v[i_label] = n_new, new_center
+        self._centered_CP[i_label] = new_q
+        self._residuals[i_label] = remaining_residual + n_new * shift
+        if n_new == 1:
+            self._residuals[i_label] = 0.0
+        self._n_samples -= 1
         self._rebuild_after_operation()
 
-    def _merge(
-        self,
-        target_label: int,
-        source_label: int,
-        target_i: int,
-        source_i: int,
-    ):
-        """Merge two cSIL raw-moment summaries."""
-
-        n_new = self._n[target_i] + self._n[source_i]
-        G_new = self._G[target_i, :] + self._G[source_i, :]
-        CP_new = self._CP[target_i] + self._CP[source_i]
-
-        self._n[target_i] = n_new
-        self._v[target_i, :] = G_new / n_new
-        self._CP[target_i] = CP_new
-        self._G[target_i, :] = G_new
+    def _merge(self, target_label, source_label, target_i, source_i):
+        """Merge two centered cluster summaries."""
+        self._ensure_centered_state()
+        n, v, q, r = self._backend.merge_statistics(
+            np.array([self._n[target_i]]), self._v[[target_i]],
+            np.array([self._centered_CP[target_i]]), self._residuals[[target_i]],
+            np.array([self._n[source_i]]), self._v[[source_i]],
+            np.array([self._centered_CP[source_i]]), self._residuals[[source_i]],
+        )
+        self._n[target_i], self._v[target_i] = int(n[0]), v[0]
+        self._centered_CP[target_i], self._residuals[target_i] = float(q[0]), r[0]
         self._delete_cluster(source_label, source_i)
         self._rebuild_after_operation()
 
-    def _split(
-        self,
-        new_label: int,
-        retained_i: int,
-        count: int,
-        centroid: np.ndarray,
-        compactness,
-        covariance,
-    ):
-        """Split centered statistics from cSIL's raw moments."""
-
+    def _split(self, new_label, retained_i, count, centroid, compactness, covariance):
+        """Subtract a centered subset summary from its parent cluster."""
         if compactness is None:
             raise ValueError("cSIL split requires compactness")
-
-        n_parent = self._n[retained_i]
-        n_remainder = n_parent - count
-        G_split = count * centroid
-        raw_CP_split = (
-            compactness + count * np.inner(centroid, centroid)
+        self._ensure_centered_state()
+        n = self._n[retained_i] - count
+        center = self._v[retained_i].copy()
+        difference = centroid - center
+        residual = self._residuals[retained_i] - count * difference
+        remaining_center = center + residual / n
+        shift = center - remaining_center
+        parent_q = self._centered_CP[retained_i]
+        remaining_q = (parent_q - compactness - count * np.dot(difference, difference)
+                       + n * np.dot(shift, shift) + 2 * np.dot(shift, residual))
+        remaining_q = self._nonnegative_or_error(
+            remaining_q, max(parent_q, compactness), "cluster compactness",
         )
-        G_remainder = self._G[retained_i, :] - G_split
-        v_remainder = G_remainder / n_remainder
-        raw_CP_remainder = self._CP[retained_i] - raw_CP_split
-        centered_CP_remainder = self._nonnegative_or_error(
-            raw_CP_remainder
-            - n_remainder * np.inner(v_remainder, v_remainder),
-            max(
-                abs(self._CP[retained_i]),
-                abs(raw_CP_split),
-                abs(raw_CP_remainder),
-            ),
-            "cluster compactness",
-        )
-        raw_CP_remainder = (
-            centered_CP_remainder
-            + n_remainder * np.inner(v_remainder, v_remainder)
-        )
-
         new_i = self._label_map.get_internal_label(new_label)
         if new_i != self._n_clusters:
             raise RuntimeError("New split label was not appended")
-
-        self._n[retained_i] = n_remainder
-        self._v[retained_i, :] = v_remainder
-        self._CP[retained_i] = raw_CP_remainder
-        self._G[retained_i, :] = G_remainder
+        self._n[retained_i], self._v[retained_i] = n, remaining_center
+        self._centered_CP[retained_i] = remaining_q
+        self._residuals[retained_i] = residual + n * shift
         self._n.append(count)
         self._v = np.vstack((self._v, centroid))
-        self._CP.append(raw_CP_split)
-        self._G = np.vstack((self._G, G_split))
+        self._centered_CP.append(compactness)
+        self._residuals = np.vstack((self._residuals, np.zeros(self._dim)))
         self._n_clusters += 1
         self._rebuild_after_operation()
 
     def _rebuild_after_operation(self):
-        """Rebuild the centroid-to-cluster dissimilarity matrix."""
-
+        """Rebuild dissimilarities directly from centered moments."""
         if self._n_clusters == 0:
             self._S = np.empty((0, 0))
             self._sil_coefs = []
+            self._centered_CP = []
+            self._residuals = np.empty((0, self._dim))
             return
-
-        counts = np.asarray(self._n)
-        centroid_norms = np.einsum("ij,ij->i", self._v, self._v)
-        values = (
-            np.asarray(self._CP)[:, None]
-            + counts[:, None] * centroid_norms[None, :]
-            - 2 * (self._G @ self._v.T)
-        ) / counts[:, None]
-        self._S = np.fmax(values, 0.0)
+        self._sync_raw_moments()
+        self._S = self._backend.silhouette_from_moments(
+            self._v, np.asarray(self._centered_CP), self._residuals, np.asarray(self._n),
+        )
         self._sil_coefs = np.zeros(self._n_clusters)
 
     @_base._add_docs(_base._evaluate_doc)

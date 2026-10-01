@@ -99,6 +99,7 @@ class NumbaBackend(NumpyBackend):
 
     name = "numba"
     grouped_rows = staticmethod(_grouped_rows)
+    silhouette_from_moments = staticmethod(_silhouette_distances)
 
     @staticmethod
     def batch_statistics(data, order, offsets, compactness=True):
@@ -142,4 +143,4 @@ class NumbaBackend(NumpyBackend):
         distances = _silhouette_distances(
             centroids, np.asarray(compactness), residuals, np.diff(offsets),
         )
-        return raw_compactness, raw_sums, distances
+        return raw_compactness, raw_sums, distances, residuals

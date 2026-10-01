@@ -11,7 +11,17 @@ import src.cvi as cvi
 from src.cvi.modules import _base
 
 
-SUPPORTED = [cvi.CH, cvi.WB, cvi.DB, cvi.XB, cvi.GD43, cvi.GD53, cvi.PS]
+SUPPORTED = [cvi.CH, cvi.WB, cvi.DB, cvi.XB, cvi.GD43, cvi.GD53, cvi.PS,
+             cvi.cSIL, cvi.rCIP]
+
+
+@pytest.fixture(params=["numpy", "numba"])
+def backend(request):
+    if request.param not in request.node.callspec.params["index_type"].info.backends:
+        pytest.skip("Index does not support this backend")
+    if request.param == "numba":
+        pytest.importorskip("numba")
+    return request.param
 
 
 def dataset():
@@ -35,8 +45,11 @@ def assert_partition(index, data, labels, *, rtol=2e-11, atol=2e-11):
     assert index._n_clusters == len(set(labels))
     assert isinstance(index._n, list)
     for key in ("_n", "_v", "_CP", "_D", "_S", "_R", "_SEP",
-                "criterion_value"):
+                "_sigma", "criterion_value"):
         if hasattr(reference, key):
+            if getattr(reference, key) is None:
+                assert getattr(index, key) is None
+                continue
             np.testing.assert_allclose(getattr(index, key), getattr(reference, key),
                                        rtol=rtol, atol=atol, equal_nan=True,
                                        err_msg=key)
@@ -109,7 +122,8 @@ def test_updates_continue_after_structural_operations(index_type, backend):
     subset = np.flatnonzero(labels == 90)[:4]
     centroid = data[subset].mean(axis=0)
     compactness = np.sum((data[subset] - centroid) ** 2)
-    index.split(90, -20, len(subset), centroid, compactness=compactness)
+    index.split(90, -20, len(subset), centroid, compactness=compactness,
+                covariance=np.cov(data[subset], rowvar=False))
     labels[subset] = -20
     # Public label order follows operation history, not the regrouped data.
     new_data = np.array([[1., 2., 3., 4., 5.], [-2., -1., 0., 1., 2.]])
@@ -208,12 +222,6 @@ def test_overflow_leaves_state_unchanged():
     with pytest.raises(ValueError, match="float64 range"):
         index.update_batch([[1e200, 0.], [-1e200, 0.]], [100, 100])
     assert pickle.dumps(index) == before
-
-
-@pytest.mark.parametrize("index_type", [cvi.cSIL, cvi.rCIP])
-def test_unsupported_indices(index_type):
-    with pytest.raises(NotImplementedError, match="update_batch"):
-        index_type().update_batch([[0., 1.]], [0])
 
 
 @pytest.mark.parametrize("model_type", ["Fuzzy", "KMeans", "MiniBatchKMeans"])

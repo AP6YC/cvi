@@ -216,8 +216,9 @@ class CVI():
     def update_batch(self, data: np.ndarray, labels: np.ndarray) -> float:
         """Append a labeled chunk and return the cumulative final score.
 
-        Supported by CH, WB, DB, XB, GD43, GD53, and PS with the NumPy or
-        Numba backend. Groups are summarized in float64 and merged directly;
+        Supported by all indices except CONN with NumPy, and by all indices
+        supporting Numba with that backend. JAX is not supported. Groups are
+        summarized in float64 and merged directly;
         intermediate per-sample scores are not computed. Existing batch,
         sample, and chunk state can all be continued with this method.
 
@@ -258,6 +259,10 @@ class CVI():
                 f"with backend={self.backend!r}"
             )
         return _batch.update_batch(self, data, labels)
+
+    def _merge_batch_statistics(self, data, order, offsets, slots):
+        """Merge a chunk into a staged object's sufficient statistics."""
+        _batch.merge_default(self, data, order, offsets, slots)
 
     def __setstate__(self, state):
         """Treat objects serialized before backend selection as NumPy objects."""

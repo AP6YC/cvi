@@ -144,6 +144,7 @@ def silhouette_batch_statistics(data, order, offsets, centroids, compactness):
     n_clusters = len(centroids)
     raw_compactness = []
     raw_sums = np.zeros_like(centroids)
+    residuals = np.zeros_like(centroids)
     dissimilarities = pairwise_centroid_distances(centroids)
     for ix in range(n_clusters):
         subset = data[order[offsets[ix]:offsets[ix + 1]], :]
@@ -151,8 +152,53 @@ def silhouette_batch_statistics(data, order, offsets, centroids, compactness):
         raw_compactness.append(np.sum(subset ** 2))
         raw_sums[ix] = np.sum(subset, axis=0)
         residual = np.sum(subset - centroids[ix], axis=0)
+        residuals[ix] = residual
         correction = 2 * np.sum(
             (centroids[ix] - centroids) * residual, axis=1,
         )
         dissimilarities[ix] += (compactness[ix] + correction) / count
-    return raw_compactness, raw_sums, dissimilarities
+    return raw_compactness, raw_sums, dissimilarities, residuals
+
+
+def silhouette_from_moments(centroids, compactness, residuals, counts):
+    """Mean squared cluster-to-centroid distances from centered summaries."""
+    values = pairwise_centroid_distances(centroids)
+    for i in range(len(centroids)):
+        correction = 2 * np.sum((centroids[i] - centroids) * residuals[i], axis=1)
+        values[i] += (compactness[i] + correction) / counts[i]
+    return values
+
+
+def covariance_statistics(data, order, offsets):
+    """Float64 means and unregularized sample covariances of nonempty groups."""
+    counts = np.diff(offsets)
+    centroids = np.empty((len(counts), data.shape[1]))
+    covariances = np.zeros((len(counts), data.shape[1], data.shape[1]))
+    for i, count in enumerate(counts):
+        subset = np.asarray(data[order[offsets[i]:offsets[i + 1]]], dtype=np.float64)
+        shifted = subset - subset[0]
+        mean = np.mean(shifted, axis=0)
+        centroids[i] = subset[0] + mean
+        if count > 1:
+            centered = shifted - mean
+            covariances[i] = (centered.T @ centered) / (count - 1)
+    return counts, centroids, covariances
+
+
+def merge_covariances(counts, centroids, covariances,
+                      chunk_counts, chunk_centroids, chunk_covariances):
+    """Merge unregularized covariances by combining their centered scatter."""
+    combined_counts = counts + chunk_counts
+    combined_centroids = chunk_centroids.copy()
+    combined_covariances = chunk_covariances.copy()
+    existing = counts > 0
+    a, b, n = counts[existing], chunk_counts[existing], combined_counts[existing]
+    difference = chunk_centroids[existing] - centroids[existing]
+    combined_centroids[existing] = centroids[existing] + difference * (b / n)[:, None]
+    combined_covariances[existing] = (
+        (a - 1)[:, None, None] * covariances[existing]
+        + (b - 1)[:, None, None] * chunk_covariances[existing]
+        + (a * (b / n))[:, None, None]
+        * difference[:, :, None] * difference[:, None, :]
+    ) / (n - 1)[:, None, None]
+    return combined_counts, combined_centroids, combined_covariances

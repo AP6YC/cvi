@@ -9,7 +9,8 @@ number directly with another's.
 The following operation support describes the default NumPy backend. Every
 listed index supports batch evaluation.
 Aggregate mini-batch updates through ``update_batch`` are supported by ``CH``,
-``WB``, ``DB``, ``XB``, ``GD43``, ``GD53``, and ``PS`` with NumPy or Numba.
+``WB``, ``DB``, ``XB``, ``GD43``, ``GD53``, ``PS``, and ``cSIL`` with NumPy or
+Numba, and by ``rCIP`` with NumPy.
 Check ``index.capabilities.mini_batch`` before using them; see :doc:`guide`.
 
 .. list-table:: Implemented indices

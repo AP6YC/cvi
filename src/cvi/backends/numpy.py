@@ -15,3 +15,6 @@ class NumpyBackend:
     pairwise_centroid_distances = staticmethod(_kernels.pairwise_centroid_distances)
     minimum_off_diagonal = staticmethod(_kernels.minimum_off_diagonal)
     silhouette_batch_statistics = staticmethod(_kernels.silhouette_batch_statistics)
+    silhouette_from_moments = staticmethod(_kernels.silhouette_from_moments)
+    covariance_statistics = staticmethod(_kernels.covariance_statistics)
+    merge_covariances = staticmethod(_kernels.merge_covariances)

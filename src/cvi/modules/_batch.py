@@ -39,55 +39,70 @@ def _stage(index, data, labels):
     centroids = np.zeros((k, d))
     if old_k:
         counts[:old_k], centroids[:old_k] = index._n, index._v
-    use_compactness = index._uses_compactness_stats
-    compactness = residuals = None
-    if use_compactness:
-        compactness = np.zeros(k)
-        residuals = np.zeros((k, d))
-        if old_k:
-            compactness[:old_k], residuals[:old_k] = index._CP, index._G
-    chunk = index._backend.chunk_statistics(
-        data, order, offsets, compactness=use_compactness,
-    )
-    merged = index._backend.merge_statistics(
-        counts[slots], centroids[slots],
-        compactness[slots] if use_compactness else None,
-        residuals[slots] if use_compactness else None,
-        *chunk,
-    )
-    counts[slots], centroids[slots] = merged[:2]
-    if use_compactness:
-        compactness[slots], residuals[slots] = merged[2:]
-
     # Every supported rebuild replaces derived arrays. The candidate shares
     # old caches only until that rebuild; no shared mutable field is changed.
     candidate = copy(index)
     candidate._label_map = copy(index._label_map)
     candidate._label_map.map = mapping
-    candidate._n = counts.tolist()
+    candidate._n = counts
     candidate._v = centroids
     candidate._n_clusters = k
-    candidate._n_samples = index._n_samples + len(data)
     candidate._dim = d
     candidate._is_setup = True
-    if use_compactness:
-        candidate._CP = compactness.tolist()
-        candidate._G = residuals
+    candidate._merge_batch_statistics(data, order, offsets, slots)
+    candidate._n = candidate._n.tolist()
+    candidate._n_samples = index._n_samples + len(data)
+    if not np.all(np.isfinite(candidate._v)):
+        raise ValueError("Batch update statistics exceed float64 range")
+    return candidate
+
+
+def merge_moments(index, data, order, offsets, slots, old_compactness, old_residuals):
+    """Merge centered scalar moments into a staged index's counts/centroids."""
+    compactness = residuals = None
+    if old_compactness is not None:
+        compactness = np.zeros(index._n_clusters)
+        residuals = np.zeros_like(index._v)
+        old_k = len(old_compactness)
+        if old_k:
+            compactness[:old_k], residuals[:old_k] = old_compactness, old_residuals
+    chunk = index._backend.chunk_statistics(
+        data, order, offsets, compactness=compactness is not None,
+    )
+    merged = index._backend.merge_statistics(
+        index._n[slots], index._v[slots],
+        compactness[slots] if compactness is not None else None,
+        residuals[slots] if residuals is not None else None,
+        *chunk,
+    )
+    index._n[slots], index._v[slots] = merged[:2]
+    if compactness is not None:
+        compactness[slots], residuals[slots] = merged[2:]
+        if not all(np.all(np.isfinite(value)) for value in (compactness, residuals)):
+            raise ValueError("Batch update statistics exceed float64 range")
+    return compactness, residuals
+
+
+def merge_default(index, data, order, offsets, slots):
+    """Populate shared compactness or centroid-only state on a staged index."""
+    compactness, residuals = merge_moments(
+        index, data, order, offsets, slots,
+        index._CP if index._uses_compactness_stats else None,
+        index._G if index._uses_compactness_stats else None,
+    )
+    if index._uses_compactness_stats:
+        index._CP, index._G = compactness.tolist(), residuals
         mean = centered_mean(data)
-        candidate._mu = (
+        index._mu = (
             mean if index._n_samples == 0 else
-            index._mu + (mean - index._mu) * (len(data) / candidate._n_samples)
+            index._mu + (mean - index._mu) * (len(data) / (index._n_samples + len(data)))
         )
-        if not all(np.all(np.isfinite(value)) for value in
-                   (compactness, residuals, candidate._mu)):
+        if not np.all(np.isfinite(index._mu)):
             raise ValueError("Batch update statistics exceed float64 range")
     else:
         # PS only uses counts and centroids; keep its common empty fields.
-        candidate._CP = []
-        candidate._G = np.zeros((0, d))
-    if not np.all(np.isfinite(centroids)):
-        raise ValueError("Batch update statistics exceed float64 range")
-    return candidate
+        index._CP = []
+        index._G = np.zeros((0, index._dim))
 
 
 def update_batch(index, data, labels):

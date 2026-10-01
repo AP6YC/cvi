@@ -74,10 +74,11 @@ partition after each chunk:
        value = index.update_batch(samples[start:start + 1024],
                                   labels[start:start + 1024])
 
-``CH``, ``WB``, ``DB``, ``XB``, ``GD43``, ``GD53``, and ``PS`` support this
-operation with NumPy and Numba. ``cSIL``, ``rCIP``, ``CONN``, and all JAX
-configurations raise ``NotImplementedError``. Numba uses the shared NumPy
-aggregation kernels and its existing compiled distance kernels.
+``CH``, ``WB``, ``DB``, ``XB``, ``GD43``, ``GD53``, ``PS``, and ``cSIL`` support
+this operation with NumPy and Numba. ``rCIP`` supports it with NumPy only.
+``CONN`` and all JAX configurations raise ``NotImplementedError``. Numba uses
+the shared NumPy aggregation kernels and compiled distance/dissimilarity
+kernels for the final rebuild.
 
 Each chunk contains only new observations; previous labels and observations
 remain in the accumulated partition. The method can initialize a fresh object
@@ -94,6 +95,19 @@ then merged into the existing cluster statistics. Floating-point reduction
 order differs from batch and sample updates; bitwise equivalence is not
 guaranteed. Legacy float32 batch initialization retains its original reduction
 precision, which later chunks cannot recover.
+
+``cSIL`` keeps centered compactness and residual sums through batch, sample,
+chunk, remove, merge, and split operations. Its dissimilarities are computed
+from these centered summaries, avoiding subtraction of large raw moments.
+Older serialized objects can recover available centered state from their
+stored dissimilarities, but cannot recover precision already lost.
+
+``rCIP`` combines unregularized sample covariances through centered scatter and
+applies its existing regularization once to the merged covariance. Its one-shot
+batch calculation also uses centered float64 covariance reductions. Covariance
+memory remains proportional to the number of clusters times the square of the
+feature count. Large coordinate offsets still limit centroid precision, so
+different chunk boundaries can introduce small numerical differences.
 
 No intermediate per-sample scores are produced. Use sample updates or JAX's
 sequential ``update_many`` when those scores are needed. Chunking amortizes

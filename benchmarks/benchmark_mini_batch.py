@@ -19,9 +19,10 @@ import numpy as np
 import scipy
 
 from src import cvi
+from .benchmark_kernels import load_baseline
 
 
-INDICES = ("CH", "WB", "DB", "XB", "GD43", "GD53", "PS")
+INDICES = ("CH", "WB", "DB", "XB", "GD43", "GD53", "PS", "cSIL", "rCIP")
 
 
 def run(index_type, backend, mode, data, labels, chunk_size):
@@ -55,9 +56,15 @@ def main():
     parser.add_argument("--chunk-sizes", nargs="+", type=int, default=[64, 1024, 8192])
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--seed", type=int, default=136)
-    parser.add_argument("--indices", nargs="+", choices=INDICES, default=INDICES)
+    parser.add_argument("--indices", nargs="+", choices=INDICES)
     parser.add_argument("--backend", choices=["numpy", "numba"], default="numpy")
+    parser.add_argument("--baseline", help="Saved cvi package to compare on identical inputs")
     args = parser.parse_args()
+    args.indices = args.indices or [
+        name for name in INDICES if args.backend in getattr(cvi, name).info.backends
+    ]
+    if any(args.backend not in getattr(cvi, name).info.backends for name in args.indices):
+        parser.error("Selected index does not support the requested backend")
     if (not 2 <= args.clusters <= args.samples or args.features < 1
             or args.repeats < 1 or min(args.chunk_sizes) < 1):
         parser.error("Require N >= K >= 2, d >= 1, repeats >= 1, and chunks >= 1")
@@ -106,6 +113,14 @@ def main():
     save()
     print(output / "run.json", flush=True)
     try:
+        versions = [("current", cvi)]
+        if args.baseline:
+            baseline = Path(args.baseline)
+            versions.append(("baseline", load_baseline(baseline)))
+            record["baseline_source_sha256"] = {
+                str(p.relative_to(baseline)): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in sorted(baseline.rglob("*.py"))
+            }
         rng = np.random.default_rng(args.seed)
         labels = np.r_[np.arange(args.clusters),
                        rng.integers(args.clusters, size=args.samples - args.clusters)]
@@ -115,10 +130,13 @@ def main():
         cases = [("batch", args.samples), ("stream", 1)]
         cases += [(mode, size) for size in args.chunk_sizes
                   for mode in ("scan_final", "mini_batch")]
-        for name in args.indices:
-            index_type = getattr(cvi, name)
+        for name, version, package in ((name, version, package) for name in args.indices
+                                       for version, package in versions):
+            index_type = getattr(package, name)
             expected = index_type().get_cvi(data, labels)
             for mode, size in cases:
+                if mode == "mini_batch" and not index_type(backend=args.backend).capabilities.mini_batch:
+                    continue
                 actual = run(index_type, args.backend, mode, data, labels, size)
                 np.testing.assert_allclose(actual, expected, rtol=1e-9, atol=1e-10)
                 times = []
@@ -136,12 +154,12 @@ def main():
                         tracemalloc.stop()
                 median = float(np.median(times))
                 record["results"].append(dict(
-                    index=name, mode=mode, chunk_size=size, seconds=times,
+                    index=name, version=version, mode=mode, chunk_size=size, seconds=times,
                     median_seconds=median, peak_traced_bytes=peak,
                     absolute_score_error=float(abs(actual - expected)),
                 ))
                 save()
-                print(f"{name},{mode},{size},{median * 1000:.3f} ms", flush=True)
+                print(f"{name},{version},{mode},{size},{median * 1000:.3f} ms", flush=True)
         record["status"] = "complete"
     except Exception as error:
         record["status"], record["failure"] = "failed", repr(error)
