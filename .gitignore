@@ -11,6 +11,10 @@
 _dev/
 **/_autosummary/
 
+# Generated benchmark records (figures remain versioned)
+benchmarks/results/**/*.json
+benchmarks/results/**/*.csv.gz
+
 # -----------------------------------------------------------------------------
 # PYTHON IGNORES
 # -----------------------------------------------------------------------------
