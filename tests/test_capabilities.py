@@ -16,15 +16,35 @@ ALL_OPERATIONS = cvi.CVICapabilities(
     merge=True,
     remove=True,
     split=True,
+    mini_batch=True,
 )
 
 
 @pytest.mark.parametrize(
     "index_type",
-    [index for index in cvi.MODULES if index is not cvi.CONN],
+    [cvi.CH, cvi.WB, cvi.DB, cvi.XB, cvi.GD43, cvi.GD53, cvi.PS],
 )
 def test_numpy_indices_support_all_operations(index_type):
     assert index_type().capabilities == ALL_OPERATIONS
+
+
+@pytest.mark.parametrize("index_type", [cvi.cSIL, cvi.rCIP])
+def test_remaining_numpy_indices_have_no_mini_batch_support(index_type):
+    assert index_type().capabilities == cvi.CVICapabilities(
+        batch=True, incremental=True, merge=True, remove=True, split=True,
+        mini_batch=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "index_type", [index for index in cvi.MODULES if "numba" in index.info.backends],
+)
+def test_numba_mini_batch_capability(monkeypatch, index_type):
+    monkeypatch.setattr(_base, "get_backend",
+                        lambda backend: SimpleNamespace(name=backend))
+    assert index_type(backend="numba").capabilities.mini_batch == (
+        index_type is not cvi.cSIL
+    )
 
 
 @pytest.mark.parametrize(
@@ -38,6 +58,7 @@ def test_conn_capabilities_follow_prototype_model(model_type, incremental):
         merge=True,
         remove=False,
         split=True,
+        mini_batch=False,
     )
 
 
@@ -55,6 +76,7 @@ def test_jax_capabilities_follow_capacity(monkeypatch, capacity, incremental):
             merge=False,
             remove=False,
             split=False,
+            mini_batch=False,
         )
     )
 

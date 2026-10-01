@@ -81,6 +81,12 @@ JAX batch and streaming APIs. All JAX modes require x64, and none support remove
 or merge. Numba retains remove/merge support for all eight supported indices,
 including the operations marked **Unchanged**.
 
+Aggregate ``update_batch`` is available for CH, WB, DB, XB, GD43, GD53, and PS
+with NumPy or Numba. Both backends use NumPy to summarize and merge chunks;
+Numba retains its compiled distance kernels for the final rebuild. This
+operation is not supported by JAX, whose ``update_many`` processes samples
+sequentially. ``capabilities.mini_batch`` reports aggregate update support.
+
 NumPy remains the default for every index. CONN's ``model_type`` selects its
 prototype learner separately from numerical ``backend`` selection; it does not
 enable the optional Numba or JAX numerical backends.

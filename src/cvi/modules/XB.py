@@ -35,6 +35,7 @@ class XB(_base.CVI):
         optimality="min",
         backends=("numpy", "numba", "jax"),
     )
+    _supports_batch_update = True
     _uses_compactness_stats = True
 
     def __init__(self, *, backend="numpy", capacity=None):

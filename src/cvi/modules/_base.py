@@ -19,6 +19,7 @@ from typing import (
 import numpy as np
 
 from ..backends import BACKEND_NAMES, get_backend
+from . import _batch
 
 # --------------------------------------------------------------------------- #
 # CLASSES
@@ -46,7 +47,9 @@ class CVICapabilities:
 
     Capabilities describe the selected numerical and prototype backends. They
     do not indicate whether the object has been initialized or whether optional
-    dependencies are installed.
+    dependencies are installed. ``batch`` describes one-shot ``get_cvi``
+    initialization; ``mini_batch`` describes cumulative ``update_batch``
+    aggregation, independently of sequential JAX ``update_many`` support.
     """
 
     batch: bool
@@ -54,6 +57,7 @@ class CVICapabilities:
     merge: bool
     remove: bool
     split: bool
+    mini_batch: bool = False
 
 
 class LabelMap():
@@ -125,6 +129,7 @@ class CVI():
 
     info: ClassVar[CVIInfo]
     _uses_compactness_stats: ClassVar[bool] = False
+    _supports_batch_update: ClassVar[bool] = False
 
     def __init__(self, *, backend="numpy", capacity=None):
         """
@@ -178,6 +183,7 @@ class CVI():
             merge=structural,
             remove=structural,
             split=structural,
+            mini_batch=self._supports_batch_update and self.backend != "jax",
         )
 
     @property
@@ -206,6 +212,52 @@ class CVI():
         self.__dict__.update(updates)
         self._label_map.map = mapping
         return output
+
+    def update_batch(self, data: np.ndarray, labels: np.ndarray) -> float:
+        """Append a labeled chunk and return the cumulative final score.
+
+        Supported by CH, WB, DB, XB, GD43, GD53, and PS with the NumPy or
+        Numba backend. Groups are summarized in float64 and merged directly;
+        intermediate per-sample scores are not computed. Existing batch,
+        sample, and chunk state can all be continued with this method.
+
+        Parameters
+        ----------
+        data : array-like, shape (n_samples, n_features)
+            Finite real observations, with at least one feature. The feature
+            count must match an initialized index.
+        labels : array-like, shape (n_samples,)
+            Integer cluster identifiers. New labels are appended in first-seen
+            order. Each row is a new observation; previous assignments remain.
+
+        Returns
+        -------
+        float
+            Score for all accumulated observations, or NaN without warning
+            while undefined. Empty chunks return the existing score and leave
+            even a fresh object uninitialized.
+
+        Raises
+        ------
+        NotImplementedError
+            If this index/backend does not support aggregate chunk updates.
+        ValueError
+            If inputs are invalid or summary statistics exceed float64 range.
+            Failed updates leave the object unchanged.
+
+        Notes
+        -----
+        Reduction order differs from one-shot batch and sequential updates;
+        bitwise equality is not guaranteed. Unlike legacy batch reductions,
+        float32 inputs are accumulated in float64. JAX ``update_many`` remains
+        a separate sequential scan with optional per-sample score history.
+        """
+        if not self.capabilities.mini_batch:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not support update_batch "
+                f"with backend={self.backend!r}"
+            )
+        return _batch.update_batch(self, data, labels)
 
     def __setstate__(self, state):
         """Treat objects serialized before backend selection as NumPy objects."""

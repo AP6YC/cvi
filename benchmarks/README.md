@@ -1,5 +1,28 @@
 # Numerical kernel benchmarks
 
+For aggregate mini-batch updates, run:
+
+```sh
+python -m benchmarks.benchmark_mini_batch --samples 20000 --clusters 24 --features 8 --chunk-sizes 64 1024 8192 --repeats 3
+```
+
+This covers CH, WB, DB, XB, GD43, GD53, and PS. Select `--backend numba` to
+include its existing distance kernels, or `--indices CH XB` for a smaller run.
+It compares one-shot batch initialization, per-sample scoring, sequential
+updates scored only at chunk boundaries, and `update_batch` aggregation.
+Every method uses the same seeded float64 data and its final score is checked
+against one-shot NumPy batch evaluation before timing. Each trial includes a
+fresh object, validation, updates, and scoring; imports, input generation, and
+IO are excluded. Numba timings are warmed and exclude compilation.
+
+Records include configuration, source hashes, environment, individual timings,
+and peak traced allocations. Each run (including failures) is saved under
+`benchmarks/results/mini_batch` and linked from `benchmarks/results/index.json`.
+Memory measurements exclude the resident input and untraced native allocations;
+they are not process RSS or out-of-core IO measurements. Vary sample, cluster,
+feature, and chunk counts to assess the intended workload. No timing is a CI
+threshold.
+
 Run from the repository root with the project's dependencies installed:
 
 ```sh

@@ -144,6 +144,29 @@ CVI objects accumulate state.
 Use a fresh object for each independent dataset or partition.
 A batch call may be followed by incremental samples, but the same object cannot be initialized with a second batch.
 
+For cumulative chunk updates, use `update_batch`:
+
+```python
+index = cvi.CH()
+assert index.capabilities.mini_batch
+for start in range(0, len(samples), 1024):
+    value = index.update_batch(samples[start:start + 1024],
+                               labels[start:start + 1024])
+```
+
+CH, WB, DB, XB, GD43, GD53, and PS support this with NumPy and Numba.
+Each chunk adds new observations and returns one score for all observations
+accumulated so far. Fresh, batch-initialized, and incrementally initialized
+objects are supported. Empty chunks are no-ops, new integer labels are allowed,
+and undefined scores return `nan` without warning. Inputs must be finite real
+data with a fixed feature count. Failed updates leave state unchanged.
+
+Chunk statistics accumulate in float64; reduction order and legacy float32
+batch precision can cause differences from batch or sample-by-sample results.
+Larger chunks trade memory and scoring frequency for throughput. No per-sample
+history is produced. cSIL, rCIP, CONN, and JAX configurations do not support
+`update_batch`; JAX's `update_many` retains its sequential scan semantics.
+
 > [!NOTE] NOTE
 > The `cvi` package assumes the Numpy **row-major** convention where rows are individual samples and columns are features.
 > A batch dataset is then `[n_samples, n_features]` large, and their corresponding labels are `[n_samples]` large.
@@ -164,12 +187,14 @@ support:
 
 ```python
 >>> cvi.CONN(model_type="KMeans").capabilities
-CVICapabilities(batch=True, incremental=False, merge=True, remove=False, split=True)
+CVICapabilities(batch=True, incremental=False, merge=True, remove=False, split=True, mini_batch=False)
 ```
 
 Capabilities describe the selected numerical and prototype backends. They do
 not indicate whether the object has been initialized or whether an optional
 dependency is installed.
+`batch` indicates one-shot batch evaluation; `mini_batch` indicates cumulative
+chunk aggregation with `update_batch`.
 
 ### Updating an Existing Partition
 
@@ -196,18 +221,18 @@ For input rules, index-selection guidance, references, legacy API information, a
 The operation support below describes the default NumPy backend. Optional
 backend coverage is listed separately.
 
-| Index | Prefer | Range | Batch | Incremental | Remove/merge/split |
-|---|---|---|---|---|---|
-| `CH` | Larger | `[0, ∞)` | Yes | Yes | Yes |
-| `CONN` | Larger | `[0, 1]` | Yes | FuzzyART backend only | Merge/split; no remove |
-| `cSIL` | Larger | `[-1, 1]` | Yes | Yes | Yes |
-| `DB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
-| `GD43` | Larger | `[0, ∞)` | Yes | Yes | Yes |
-| `GD53` | Larger | `[0, ∞)` | Yes | Yes | Yes |
-| `PS` | Larger | `[0, 1]` | Yes | Yes | Yes |
-| `rCIP` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
-| `WB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
-| `XB` | Smaller | `[0, ∞)` | Yes | Yes | Yes |
+| Index | Prefer | Range | Batch | Mini-batch | Incremental | Remove/merge/split |
+|---|---|---|---|---|---|---|
+| `CH` | Larger | `[0, ∞)` | Yes | Yes | Yes | Yes |
+| `CONN` | Larger | `[0, 1]` | Yes | No | FuzzyART backend only | Merge/split; no remove |
+| `cSIL` | Larger | `[-1, 1]` | Yes | No | Yes | Yes |
+| `DB` | Smaller | `[0, ∞)` | Yes | Yes | Yes | Yes |
+| `GD43` | Larger | `[0, ∞)` | Yes | Yes | Yes | Yes |
+| `GD53` | Larger | `[0, ∞)` | Yes | Yes | Yes | Yes |
+| `PS` | Larger | `[0, 1]` | Yes | Yes | Yes | Yes |
+| `rCIP` | Smaller | `[0, ∞)` | Yes | No | Yes | Yes |
+| `WB` | Smaller | `[0, ∞)` | Yes | Yes | Yes | Yes |
+| `XB` | Smaller | `[0, ∞)` | Yes | Yes | Yes | Yes |
 
 **Optional optimization coverage**
 

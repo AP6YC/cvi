@@ -247,6 +247,7 @@ class CONN(_base.CVI):
             merge=True,
             remove=False,
             split=True,
+            mini_batch=False,
         )
 
     def _init_conn_state(self):

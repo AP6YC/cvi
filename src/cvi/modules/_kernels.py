@@ -37,6 +37,71 @@ def batch_statistics(data, order, offsets, compactness=True):
     return counts, centroids, squared_errors
 
 
+def centered_mean(data):
+    """Reduce float64 data about one observation to limit offset roundoff."""
+    origin = data[0]
+    return origin + np.mean(data - origin, axis=0)
+
+
+def chunk_statistics(data, order, offsets, compactness=True):
+    """Summarize nonempty float64 groups, retaining centered residual sums.
+
+    Unlike legacy batch initialization, chunk updates always accumulate in
+    float64. Residuals account for rounded centroids when summaries are merged
+    or subsequently updated one sample at a time.
+    """
+    counts = np.diff(offsets)
+    centroids = np.empty((len(counts), data.shape[1]))
+    squared_errors = np.zeros(len(counts)) if compactness else None
+    residuals = np.zeros_like(centroids) if compactness else None
+    for ix in range(len(counts)):
+        subset = data[order[offsets[ix]:offsets[ix + 1]]]
+        centroids[ix] = centered_mean(subset)
+        if compactness:
+            centered = subset - centroids[ix]
+            squared_errors[ix] = np.sum(centered ** 2)
+            residuals[ix] = np.sum(centered, axis=0)
+    return counts, centroids, squared_errors, residuals
+
+
+def merge_statistics(counts, centroids, compactness, residuals,
+                     chunk_counts, chunk_centroids, chunk_compactness,
+                     chunk_residuals):
+    """Combine aligned summaries without modifying either input.
+
+    Zero old counts indicate new clusters. Translate both centered moments to
+    the rounded combined centroid, including their residual corrections.
+    """
+    combined_counts = counts + chunk_counts
+    combined_centroids = chunk_centroids.copy()
+    existing = counts > 0
+    combined_centroids[existing] = (
+        centroids[existing]
+        + (chunk_centroids[existing] - centroids[existing])
+        * (chunk_counts[existing] / combined_counts[existing])[:, None]
+    )
+    combined_compactness = combined_residuals = None
+    if compactness is not None:
+        combined_compactness = chunk_compactness.copy()
+        combined_residuals = chunk_residuals.copy()
+        left_shift = centroids[existing] - combined_centroids[existing]
+        right_shift = chunk_centroids[existing] - combined_centroids[existing]
+        combined_compactness[existing] += (
+            compactness[existing]
+            + counts[existing] * np.sum(left_shift ** 2, axis=1)
+            + chunk_counts[existing] * np.sum(right_shift ** 2, axis=1)
+            + 2 * np.sum(left_shift * residuals[existing], axis=1)
+            + 2 * np.sum(right_shift * chunk_residuals[existing], axis=1)
+        )
+        combined_residuals[existing] += (
+            residuals[existing]
+            + counts[existing, None] * left_shift
+            + chunk_counts[existing, None] * right_shift
+        )
+    return (combined_counts, combined_centroids, combined_compactness,
+            combined_residuals)
+
+
 def centroid_distances(centroids, centroid, squared=True):
     """Distances to one centroid, without a cancellation-prone Gram matrix."""
     distances = np.sum((centroids - centroid) ** 2, axis=1)

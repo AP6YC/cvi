@@ -53,6 +53,7 @@ models. It does not support ``remove``.
 
    cvi.CVI.capabilities
    cvi.CVI.get_cvi
+   cvi.CVI.update_batch
    cvi.CVI.update_many
    cvi.CVI.remove
    cvi.CVI.merge
@@ -62,8 +63,9 @@ Undefined results
 -----------------
 
 Every index returns ``numpy.nan`` when its criterion is not mathematically
-defined. An undefined batch evaluation also emits a ``RuntimeWarning``.
-Incremental updates and functional JAX calls return NaN without warnings. For
+defined. An undefined one-shot batch evaluation also emits a ``RuntimeWarning``.
+Incremental updates, mini-batch updates, and functional JAX calls return NaN
+without warnings. For
 CH, WB, and XB, fewer than two clusters or an exactly zero denominator makes
 the score undefined: WGSS for CH, BGSS for WB, and minimum centroid separation
 for XB. Denominators are checked exactly, with no epsilon adjustment.

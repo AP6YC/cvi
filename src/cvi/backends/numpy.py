@@ -9,6 +9,8 @@ class NumpyBackend:
     name = "numpy"
     grouped_rows = staticmethod(_kernels.grouped_rows)
     batch_statistics = staticmethod(_kernels.batch_statistics)
+    chunk_statistics = staticmethod(_kernels.chunk_statistics)
+    merge_statistics = staticmethod(_kernels.merge_statistics)
     centroid_distances = staticmethod(_kernels.centroid_distances)
     pairwise_centroid_distances = staticmethod(_kernels.pairwise_centroid_distances)
     minimum_off_diagonal = staticmethod(_kernels.minimum_off_diagonal)
