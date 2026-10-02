@@ -3,14 +3,11 @@ name: Test
 # on: [push]
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     tags: ["*"]
   pull_request:
 jobs:
   build:
-    permissions:
-      contents: read
-      id-token: write
     # runs-on: ubuntu-latest
     name: Python ${{ matrix.python-version }} - ${{ matrix.os }} - ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
@@ -56,14 +53,7 @@ jobs:
         run: |
           coverage xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v7
-        with:
-          # Fork and Dependabot PRs retain public tokenless uploads because
-          # their workflows cannot obtain an OIDC token with write permissions.
-          use_oidc: ${{ github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-          files: ./coverage.xml
-          disable_search: true
-          fail_ci_if_error: true
+        uses: codecov/codecov-action@v3
         # run: |
           # curl -Os https://uploader.codecov.io/latest/linux/codecov
           # chmod +x codecov
