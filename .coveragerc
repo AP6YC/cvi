@@ -1,4 +1,6 @@
 [run]
+source =
+    src/cvi
 omit =
     # Ignore compat modules
     src/cvi/compat/*
