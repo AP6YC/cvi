@@ -87,7 +87,9 @@ cSIL with NumPy or Numba, and for rCIP with NumPy. Both backends use NumPy to
 summarize and merge chunks; Numba uses compiled distance/dissimilarity kernels
 for the final rebuild. This
 operation is not supported by JAX, whose ``update_many`` processes samples
-sequentially. ``capabilities.mini_batch`` reports aggregate update support.
+sequentially. FuzzyART CONN also provides ``update_batch`` as a sequential
+wrapper around its existing incremental updates; its KMeans backends do not.
+``capabilities.mini_batch`` reports support for either chunk implementation.
 
 NumPy remains the default for every index. CONN's ``model_type`` selects its
 prototype learner separately from numerical ``backend`` selection; it does not

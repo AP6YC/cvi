@@ -49,7 +49,8 @@ class CVICapabilities:
     do not indicate whether the object has been initialized or whether optional
     dependencies are installed. ``batch`` describes one-shot ``get_cvi``
     initialization; ``mini_batch`` describes cumulative ``update_batch``
-    aggregation, independently of sequential JAX ``update_many`` support.
+    support (aggregation, or sequential updates for FuzzyART CONN),
+    independently of sequential JAX ``update_many`` support.
     """
 
     batch: bool
@@ -216,8 +217,10 @@ class CVI():
     def update_batch(self, data: np.ndarray, labels: np.ndarray) -> float:
         """Append a labeled chunk and return the cumulative final score.
 
-        Supported by all indices except CONN with NumPy, and by all indices
-        supporting Numba with that backend. JAX is not supported. Groups are
+        Supported with NumPy (CONN requires ``model_type="Fuzzy"``), and by
+        all indices supporting Numba with that backend. JAX is not supported.
+        FuzzyART CONN overrides this method with sequential incremental
+        updates; see :meth:`cvi.CONN.update_batch`. Other indices' groups are
         summarized in float64 and merged directly;
         intermediate per-sample scores are not computed. Existing batch,
         sample, and chunk state can all be continued with this method.
@@ -241,7 +244,7 @@ class CVI():
         Raises
         ------
         NotImplementedError
-            If this index/backend does not support aggregate chunk updates.
+            If this index/backend does not support chunk updates.
         ValueError
             If inputs are invalid or summary statistics exceed float64 range.
             Failed updates leave the object unchanged.

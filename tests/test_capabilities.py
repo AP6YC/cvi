@@ -48,7 +48,7 @@ def test_conn_capabilities_follow_prototype_model(model_type, incremental):
         merge=True,
         remove=False,
         split=True,
-        mini_batch=False,
+        mini_batch=incremental,
     )
 
 

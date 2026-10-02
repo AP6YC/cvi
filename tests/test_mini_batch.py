@@ -224,10 +224,20 @@ def test_overflow_leaves_state_unchanged():
     assert pickle.dumps(index) == before
 
 
-@pytest.mark.parametrize("model_type", ["Fuzzy", "KMeans", "MiniBatchKMeans"])
-def test_conn_is_unsupported(model_type):
-    with pytest.raises(NotImplementedError, match="update_batch"):
-        cvi.CONN(model_type=model_type).update_batch([[0., 1.]], [0])
+@pytest.mark.parametrize("model_type", ["KMeans", "MiniBatchKMeans"])
+@pytest.mark.parametrize("initialized", [False, True])
+def test_conn_kmeans_is_unsupported(model_type, initialized):
+    index = cvi.CONN(
+        model_type=model_type, kmeans_k=1,
+        kmeans_kwargs={"random_state": 0, "n_init": 1},
+    )
+    if initialized:
+        index.get_cvi(np.array([[0., 0.], [1., 1.]]), np.array([10, 20]))
+    before = pickle.dumps(index)
+    for data, labels in (([[0., 1.]], [0]), (np.empty((0, 2)), [])):
+        with pytest.raises(NotImplementedError, match="update_batch"):
+            index.update_batch(data, labels)
+        assert pickle.dumps(index) == before
 
 
 @pytest.mark.parametrize("index_type", [cvi.CH, cvi.WB, cvi.XB])

@@ -155,18 +155,24 @@ for start in range(0, len(samples), 1024):
 ```
 
 CH, WB, DB, XB, GD43, GD53, PS, and cSIL support this with NumPy and Numba;
-rCIP supports it with NumPy.
+rCIP supports it with NumPy. CONN with `model_type="Fuzzy"` provides a
+sequential convenience wrapper around its existing incremental updates.
 Each chunk adds new observations and returns one score for all observations
 accumulated so far. Fresh, batch-initialized, and incrementally initialized
 objects are supported. Empty chunks are no-ops, new integer labels are allowed,
 and undefined scores return `nan` without warning. Inputs must be finite real
 data with a fixed feature count. Failed updates leave state unchanged.
 
-Chunk statistics accumulate in float64; reduction order and legacy float32
-batch precision can cause differences from batch or sample-by-sample results.
+For the aggregating indices, chunk statistics accumulate in float64;
+reduction order and legacy float32 batch precision can cause differences
+from batch or sample-by-sample results.
 Larger chunks trade memory and scoring frequency for throughput. No per-sample
-history is produced. CONN and JAX configurations do not support
-`update_batch`; JAX's `update_many` retains its sequential scan semantics.
+history is produced. FuzzyART CONN processes every row and score in order,
+preserving the incremental learning rules. It requires already normalized
+input even with `normalize_batch=True`, and copies its state per chunk to
+preserve it on failure; this is a convenience API, not a throughput optimization.
+CONN's KMeans backends and all JAX configurations reject `update_batch`;
+JAX's `update_many` retains its sequential scan semantics.
 
 cSIL maintains centered statistics through subsequent sample and structural
 updates to avoid raw-moment cancellation. rCIP combines centered covariance
@@ -200,7 +206,7 @@ Capabilities describe the selected numerical and prototype backends. They do
 not indicate whether the object has been initialized or whether an optional
 dependency is installed.
 `batch` indicates one-shot batch evaluation; `mini_batch` indicates cumulative
-chunk aggregation with `update_batch`.
+chunk updates with `update_batch`, including sequential FuzzyART CONN updates.
 
 ### Updating an Existing Partition
 

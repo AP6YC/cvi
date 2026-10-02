@@ -76,9 +76,10 @@ partition after each chunk:
 
 ``CH``, ``WB``, ``DB``, ``XB``, ``GD43``, ``GD53``, ``PS``, and ``cSIL`` support
 this operation with NumPy and Numba. ``rCIP`` supports it with NumPy only.
-``CONN`` and all JAX configurations raise ``NotImplementedError``. Numba uses
-the shared NumPy aggregation kernels and compiled distance/dissimilarity
-kernels for the final rebuild.
+``CONN(model_type="Fuzzy")`` provides a sequential convenience wrapper;
+its KMeans backends and all JAX configurations raise ``NotImplementedError``.
+Numba uses the shared NumPy aggregation kernels and compiled
+distance/dissimilarity kernels for the final rebuild.
 
 Each chunk contains only new observations; previous labels and observations
 remain in the accumulated partition. The method can initialize a fresh object
@@ -90,11 +91,18 @@ allowed; an undefined cumulative score returns NaN without warning.
 
 Inputs must contain finite real numbers and one integer label per row. The
 complete update is staged before committing, so a failed call leaves the
-object unchanged. Chunks are summarized in float64 using centered moments,
-then merged into the existing cluster statistics. Floating-point reduction
-order differs from batch and sample updates; bitwise equivalence is not
+object unchanged. Except for FuzzyART CONN, chunks are summarized in float64
+using centered moments, then merged into the existing cluster statistics.
+Floating-point reduction order differs from batch and sample updates; bitwise equivalence is not
 guaranteed. Legacy float32 batch initialization retains its original reduction
 precision, which later chunks cannot recover.
+
+FuzzyART CONN calls the existing incremental update for every row in order,
+including all learning and scoring steps, and returns only the final score.
+Chunk inputs must already use a fixed ART input scale (normally ``[0, 1]``);
+``normalize_batch`` does not normalize chunks. The complete ART state is
+copied for each nonempty chunk to preserve it on failure, so this wrapper
+does not promise a speedup. See :doc:`conn`.
 
 ``cSIL`` keeps centered compactness and residual sums through batch, sample,
 chunk, remove, merge, and split operations. Its dissimilarities are computed
@@ -217,7 +225,8 @@ Capabilities describe the selected numerical and prototype backends. They do
 not indicate whether the object has been initialized or whether an optional
 dependency is installed.
 ``batch`` indicates one-shot initialization with ``get_cvi(samples, labels)``;
-``mini_batch`` indicates cumulative aggregation with ``update_batch``.
+``mini_batch`` indicates cumulative updates with ``update_batch``, including
+the sequential FuzzyART CONN wrapper.
 
 Acknowledgements
 ----------------

@@ -47,7 +47,9 @@ Common methods
 
 All indices inherit the common update interface from :class:`cvi.CVI`.
 ``CONN`` supports ``merge`` and a prototype-based ``split`` with all prototype
-models. It does not support ``remove``.
+models. It does not support ``remove``. Its :meth:`cvi.CONN.update_batch`
+override wraps the existing incremental updates for FuzzyART only; see
+:doc:`conn`.
 
 .. autosummary::
 
