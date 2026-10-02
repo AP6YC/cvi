@@ -39,7 +39,6 @@ class GD53(_base.CVI):
         optimality="max",
         backends=("numpy", "numba"),
     )
-    _supports_batch_update = True
     _uses_compactness_stats = True
 
     def __init__(self, *, backend="numpy"):

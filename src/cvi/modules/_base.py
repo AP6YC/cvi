@@ -130,7 +130,6 @@ class CVI():
 
     info: ClassVar[CVIInfo]
     _uses_compactness_stats: ClassVar[bool] = False
-    _supports_batch_update: ClassVar[bool] = False
 
     def __init__(self, *, backend="numpy", capacity=None):
         """
@@ -184,7 +183,7 @@ class CVI():
             merge=structural,
             remove=structural,
             split=structural,
-            mini_batch=self._supports_batch_update and self.backend != "jax",
+            mini_batch=self.backend != "jax",
         )
 
     @property

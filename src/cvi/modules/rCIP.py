@@ -35,7 +35,6 @@ class rCIP(_base.CVI):
         optimality="min",
         backends=("numpy",),
     )
-    _supports_batch_update = True
 
     def __init__(self, *, backend="numpy"):
         """

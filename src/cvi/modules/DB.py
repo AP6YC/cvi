@@ -35,7 +35,6 @@ class DB(_base.CVI):
         optimality="min",
         backends=("numpy", "numba"),
     )
-    _supports_batch_update = True
     _uses_compactness_stats = True
 
     def __init__(self, *, backend="numpy"):

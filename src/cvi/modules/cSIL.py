@@ -35,7 +35,6 @@ class cSIL(_base.CVI):
         optimality="max",
         backends=("numpy", "numba"),
     )
-    _supports_batch_update = True
 
     def __init__(self, *, backend="numpy"):
         """
