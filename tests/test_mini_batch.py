@@ -3,12 +3,13 @@
 import pickle
 import warnings
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
 
 import src.cvi as cvi
-from src.cvi.modules import _base
+from src.cvi.modules import _base, _batch
 
 
 SUPPORTED = [cvi.CH, cvi.WB, cvi.DB, cvi.XB, cvi.GD43, cvi.GD53, cvi.PS,
@@ -224,6 +225,57 @@ def test_overflow_leaves_state_unchanged():
     assert pickle.dumps(index) == before
 
 
+@pytest.mark.parametrize("initialized", [False, True])
+@pytest.mark.parametrize("invalid", [np.nan, np.inf])
+@pytest.mark.parametrize("index_type, field", [
+    (cvi.PS, 1),  # Centroids, without compactness statistics.
+    (cvi.CH, 2),  # Compactness.
+    (cvi.CH, 3),  # Residual sums.
+])
+def test_nonfinite_merged_moments_leave_state_unchanged(
+    index_type, field, initialized, invalid, monkeypatch,
+):
+    index = index_type()
+    if initialized:
+        index.update_batch([[0., 1.], [1., 0.], [2., 3.]], [10, 10, 20])
+    before = pickle.dumps(index)
+    merge = index._backend.merge_statistics
+
+    def nonfinite_merge(*args, **kwargs):
+        result = merge(*args, **kwargs)
+        result[field][0] = invalid
+        return result
+
+    # A backend can return non-finite results without raising a NumPy error.
+    # Check the public rejection and rollback contract at that boundary.
+    with monkeypatch.context() as patch:
+        patch.setattr(type(index._backend), "merge_statistics",
+                      staticmethod(nonfinite_merge))
+        with pytest.raises(ValueError, match="float64 range"):
+            index.update_batch([[9., 8.]], [999])
+    assert pickle.dumps(index) == before
+    index.update_batch([[9., 8.]], [999])
+    assert index._n_samples == (4 if initialized else 1)
+    assert 999 in index._label_map.map
+
+
+@pytest.mark.parametrize("initialized", [False, True])
+@pytest.mark.parametrize("invalid", [np.nan, np.inf])
+def test_nonfinite_global_mean_leaves_state_unchanged(initialized, invalid, monkeypatch):
+    index = cvi.CH()
+    if initialized:
+        index.update_batch([[0., 1.], [1., 0.], [2., 3.]], [10, 10, 20])
+    before = pickle.dumps(index)
+    with monkeypatch.context() as patch:
+        patch.setattr(_batch, "centered_mean", Mock(return_value=np.full(2, invalid)))
+        with pytest.raises(ValueError, match="float64 range"):
+            index.update_batch([[9., 8.]], [999])
+    assert pickle.dumps(index) == before
+    index.update_batch([[9., 8.]], [999])
+    assert index._n_samples == (4 if initialized else 1)
+    np.testing.assert_array_equal(index._mu, [3., 3.] if initialized else [9., 8.])
+
+
 @pytest.mark.parametrize("model_type", ["KMeans", "MiniBatchKMeans"])
 @pytest.mark.parametrize("initialized", [False, True])
 def test_conn_kmeans_is_unsupported(model_type, initialized):
@@ -282,14 +334,13 @@ def test_degenerate_partition_matches_existing_definition(index_type, backend):
 
 @pytest.mark.parametrize("index_type", SUPPORTED)
 def test_aggregate_path_does_not_scan_samples(index_type, monkeypatch):
-    def unexpected_scan(*args, **kwargs):
-        raise AssertionError("aggregate updates must not call _param_inc")
-
-    monkeypatch.setattr(index_type, "_param_inc", unexpected_scan)
+    scan = Mock(side_effect=AssertionError("aggregate updates must not call _param_inc"))
+    monkeypatch.setattr(index_type, "_param_inc", scan)
     data, labels = dataset()
     index = index_type()
     index.update_batch(data[:37], labels[:37])
     index.update_batch(data[37:], labels[37:])
+    scan.assert_not_called()
     assert_partition(index, data, labels)
 
 

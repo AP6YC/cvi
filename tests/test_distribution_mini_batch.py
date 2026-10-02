@@ -59,6 +59,37 @@ def test_csil_large_offset_mixed_updates(initial, backend):
     assert_csil_distances(index, np.vstack((data, data[:3])), np.r_[labels, labels[:3]])
 
 
+@pytest.mark.parametrize("initial", ["batch", "stream", "chunk"])
+def test_csil_remove_to_singleton_then_continue(initial, backend):
+    data = 1e12 + np.array([[0., 2.], [2., 4.], [8., 10.], [10., 12.]])
+    labels = np.array([10, 10, 20, 20])
+    index = cvi.cSIL(backend=backend)
+    if initial == "batch":
+        index.get_cvi(data, labels)
+    elif initial == "stream":
+        for sample, label in zip(data, labels):
+            index.get_cvi(sample, int(label))
+    else:
+        index.update_batch(data, labels)
+
+    index.remove(data[0], 10)
+    data, labels = data[1:], labels[1:]
+    slot = index._label_map.map[10]
+    assert index._n[slot] == 1
+    assert index._centered_CP[slot] == 0.0
+    np.testing.assert_array_equal(index._residuals[slot], np.zeros(2))
+    np.testing.assert_array_equal(index._v[slot], data[0])
+    assert_csil_distances(index, data, labels)
+
+    sample = 1e12 + np.array([4., 6.])
+    index.get_cvi(sample, 10)
+    data, labels = np.vstack((data, sample)), np.r_[labels, 10]
+    assert_csil_distances(index, data, labels)
+    chunk = 1e12 + np.array([[6., 8.], [12., 14.]])
+    index.update_batch(chunk, [10, 20])
+    assert_csil_distances(index, np.vstack((data, chunk)), np.r_[labels, 10, 20])
+
+
 @pytest.mark.parametrize("initial", ["empty", "batch", "stream"])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_rcip_translation_invariant_covariance(initial, dtype):
@@ -112,6 +143,32 @@ def test_rcip_regularizes_once_and_preserves_singletons():
     index.update_batch([[4., 5., 6.]], [90])
     expected = np.full((3, 3), 2.) + index._delta_term
     np.testing.assert_allclose(index._sigma[:, :, 1], expected, rtol=2e-12, atol=2e-12)
+
+
+@pytest.mark.parametrize("initialized", [False, True])
+@pytest.mark.parametrize("invalid", [np.nan, np.inf])
+def test_rcip_nonfinite_covariance_leaves_state_unchanged(initialized, invalid, monkeypatch):
+    index = cvi.rCIP()
+    if initialized:
+        index.update_batch([[0., 1.], [1., 0.], [2., 3.]], [10, 10, 20])
+    before = pickle.dumps(index)
+    merge = index._backend.merge_covariances
+
+    def nonfinite_merge(*args, **kwargs):
+        counts, centroids, covariance = merge(*args, **kwargs)
+        covariance[0] = invalid
+        return counts, centroids, covariance
+
+    with monkeypatch.context() as patch:
+        patch.setattr(type(index._backend), "merge_covariances",
+                      staticmethod(nonfinite_merge))
+        with pytest.raises(ValueError, match="float64 range"):
+            index.update_batch([[9., 8.]], [999])
+    assert pickle.dumps(index) == before
+    index.update_batch([[9., 8.]], [999])
+    assert index._n_samples == (4 if initialized else 1)
+    slot = index._label_map.map[999]
+    np.testing.assert_array_equal(index._sigma[:, :, slot], index._delta_term)
 
 
 @pytest.mark.parametrize("initialized", [False, True])
