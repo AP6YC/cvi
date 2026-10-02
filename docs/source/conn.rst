@@ -59,6 +59,47 @@ are optional and initialized only for ``model_type="Fuzzy"``. Conversely,
 Stream order and those parameters can therefore affect the learned prototypes
 and the resulting criterion trajectory.
 
+Chunk updates with FuzzyART
+------------------------------
+
+``update_batch`` is a convenience wrapper for the FuzzyART incremental path.
+It calls the existing single-sample update for each row in order, including
+the special first-two-sample initialization, prototype learning, and scoring.
+It returns only the final score. Changing chunk boundaries preserves the
+same learning trajectory as individual updates in the same order:
+
+.. doctest:: conn_fuzzy
+   :skipif: __import__("importlib.util").util.find_spec("artlib") is None
+
+   >>> import numpy as np
+   >>> import cvi
+   >>> samples = np.array([[0., 0.], [0., 1.], [1., 0.], [1., 1.]])
+   >>> labels = np.array([10, 10, 20, 20])
+   >>> index = cvi.CONN(model_type="Fuzzy")
+   >>> index.capabilities.mini_batch
+   True
+   >>> first = index.update_batch(samples[:1], labels[:1])
+   >>> np.isnan(first).item()
+   True
+   >>> index.update_batch(samples[1:], labels[1:])
+   0.125
+
+Chunks may initialize an empty index or continue after batch initialization,
+individual samples, other chunks, or prototype merge/split operations. New
+integer labels are accepted. Empty chunks leave the state unchanged; an
+undefined score returns NaN without warning.
+
+As with incremental input, chunks must already use the ART input scale,
+normally ``[0, 1]``. ``normalize_batch=True`` applies only to one-shot
+``get_cvi`` batch initialization, never to ``update_batch``. When continuing
+from a normalized batch, apply the same fixed scaling to subsequent samples.
+
+The wrapper validates the entire chunk and stages updates on a copy of the
+complete state, including ART, so a failed call leaves the index unchanged.
+Copying adds time and memory per chunk; this API does not aggregate learning
+or promise a speedup. KMeans and MiniBatchKMeans keep
+``capabilities.mini_batch=False`` and reject ``update_batch``.
+
 Moving prototypes
 -----------------
 
@@ -88,5 +129,6 @@ Limitations
 -----------
 
 ``CONN`` does not implement :meth:`cvi.CVI.remove`.
-The KMeans and MiniBatchKMeans models reject incremental samples. Use a new
-object when changing backend or evaluating another independent partition.
+The KMeans and MiniBatchKMeans models reject incremental samples and chunk
+updates. Use a new object when changing backend or evaluating another
+independent partition.

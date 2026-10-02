@@ -33,6 +33,7 @@ class PS(_base.CVI):
         optimality="max",
         backends=("numpy", "numba"),
     )
+
     def __init__(self, *, backend="numpy"):
         """
         Partition Separation (PS) initialization routine.
