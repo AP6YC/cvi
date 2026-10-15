@@ -32,11 +32,11 @@ import sklearn
 from sklearn.metrics import calinski_harabasz_score, davies_bouldin_score
 
 from src import cvi
+from ._datasets import SEED, make_balanced_gaussian_stream
 
 
 SAMPLE_SIZES = (100, 250, 500, 1_000, 2_000, 4_000, 6_000, 8_000, 10_000)
 REPEATS = 5
-SEED = 318
 INDEX_NAMES = tuple(module.__name__.split(".")[-1] for module in cvi.MODULES)
 SKLEARN_SCORES = {
     "CH": calinski_harabasz_score,
@@ -53,16 +53,7 @@ METHOD_COLORS = {
 
 def make_dataset() -> tuple[np.ndarray, np.ndarray]:
     """Interleave ten Gaussian blobs so every prefix is cluster-balanced."""
-    rng = np.random.default_rng(SEED)
-    centers = np.array([(x, y) for y in (0.28, 0.72)
-                        for x in (0.10, 0.30, 0.50, 0.70, 0.90)])
-    labels = np.tile(np.arange(10), SAMPLE_SIZES[-1] // 10)
-    points = centers[labels] + rng.normal(0.0, 0.022, (len(labels), 2))
-    # Fuzzy ART requires [0, 1]. A single, fixed affine domain is used by all
-    # methods and sizes; no per-prefix preprocessing enters a timing.
-    if not np.all((points >= 0.0) & (points <= 1.0)):
-        raise ValueError("Synthetic points escaped the Fuzzy ART input domain")
-    return points, labels
+    return make_balanced_gaussian_stream(SAMPLE_SIZES[-1], seed=SEED)
 
 
 def compute(name: str, method: str, points: np.ndarray,
