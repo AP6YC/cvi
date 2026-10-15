@@ -93,6 +93,16 @@ assert index._artmap is None
 assert "artlib" not in sys.modules
 fuzzy = cvi.CONN(model_type="Fuzzy")
 assert fuzzy._artmap is None
+assert fuzzy.capabilities.mini_batch
+assert np.isnan(fuzzy.update_batch(np.empty((0, 2)), []))
+try:
+    fuzzy.update_batch([[0., 0.]], [10])
+except ImportError as error:
+    assert 'pip install "cvi[art]"' in str(error)
+else:
+    raise AssertionError("Missing dependency must reject nonempty chunks")
+assert fuzzy._is_setup is False
+assert fuzzy._label_map.map == {}
 try:
     fuzzy.get_cvi(np.array([0., 0.]), 10)
 except ImportError as error:

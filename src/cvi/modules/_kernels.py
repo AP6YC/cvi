@@ -37,6 +37,71 @@ def batch_statistics(data, order, offsets, compactness=True):
     return counts, centroids, squared_errors
 
 
+def centered_mean(data):
+    """Reduce float64 data about one observation to limit offset roundoff."""
+    origin = data[0]
+    return origin + np.mean(data - origin, axis=0)
+
+
+def chunk_statistics(data, order, offsets, compactness=True):
+    """Summarize nonempty float64 groups, retaining centered residual sums.
+
+    Unlike legacy batch initialization, chunk updates always accumulate in
+    float64. Residuals account for rounded centroids when summaries are merged
+    or subsequently updated one sample at a time.
+    """
+    counts = np.diff(offsets)
+    centroids = np.empty((len(counts), data.shape[1]))
+    squared_errors = np.zeros(len(counts)) if compactness else None
+    residuals = np.zeros_like(centroids) if compactness else None
+    for ix in range(len(counts)):
+        subset = data[order[offsets[ix]:offsets[ix + 1]]]
+        centroids[ix] = centered_mean(subset)
+        if compactness:
+            centered = subset - centroids[ix]
+            squared_errors[ix] = np.sum(centered ** 2)
+            residuals[ix] = np.sum(centered, axis=0)
+    return counts, centroids, squared_errors, residuals
+
+
+def merge_statistics(counts, centroids, compactness, residuals,
+                     chunk_counts, chunk_centroids, chunk_compactness,
+                     chunk_residuals):
+    """Combine aligned summaries without modifying either input.
+
+    Zero old counts indicate new clusters. Translate both centered moments to
+    the rounded combined centroid, including their residual corrections.
+    """
+    combined_counts = counts + chunk_counts
+    combined_centroids = chunk_centroids.copy()
+    existing = counts > 0
+    combined_centroids[existing] = (
+        centroids[existing]
+        + (chunk_centroids[existing] - centroids[existing])
+        * (chunk_counts[existing] / combined_counts[existing])[:, None]
+    )
+    combined_compactness = combined_residuals = None
+    if compactness is not None:
+        combined_compactness = chunk_compactness.copy()
+        combined_residuals = chunk_residuals.copy()
+        left_shift = centroids[existing] - combined_centroids[existing]
+        right_shift = chunk_centroids[existing] - combined_centroids[existing]
+        combined_compactness[existing] += (
+            compactness[existing]
+            + counts[existing] * np.sum(left_shift ** 2, axis=1)
+            + chunk_counts[existing] * np.sum(right_shift ** 2, axis=1)
+            + 2 * np.sum(left_shift * residuals[existing], axis=1)
+            + 2 * np.sum(right_shift * chunk_residuals[existing], axis=1)
+        )
+        combined_residuals[existing] += (
+            residuals[existing]
+            + counts[existing, None] * left_shift
+            + chunk_counts[existing, None] * right_shift
+        )
+    return (combined_counts, combined_centroids, combined_compactness,
+            combined_residuals)
+
+
 def centroid_distances(centroids, centroid, squared=True):
     """Distances to one centroid, without a cancellation-prone Gram matrix."""
     distances = np.sum((centroids - centroid) ** 2, axis=1)
@@ -79,6 +144,7 @@ def silhouette_batch_statistics(data, order, offsets, centroids, compactness):
     n_clusters = len(centroids)
     raw_compactness = []
     raw_sums = np.zeros_like(centroids)
+    residuals = np.zeros_like(centroids)
     dissimilarities = pairwise_centroid_distances(centroids)
     for ix in range(n_clusters):
         subset = data[order[offsets[ix]:offsets[ix + 1]], :]
@@ -86,8 +152,53 @@ def silhouette_batch_statistics(data, order, offsets, centroids, compactness):
         raw_compactness.append(np.sum(subset ** 2))
         raw_sums[ix] = np.sum(subset, axis=0)
         residual = np.sum(subset - centroids[ix], axis=0)
+        residuals[ix] = residual
         correction = 2 * np.sum(
             (centroids[ix] - centroids) * residual, axis=1,
         )
         dissimilarities[ix] += (compactness[ix] + correction) / count
-    return raw_compactness, raw_sums, dissimilarities
+    return raw_compactness, raw_sums, dissimilarities, residuals
+
+
+def silhouette_from_moments(centroids, compactness, residuals, counts):
+    """Mean squared cluster-to-centroid distances from centered summaries."""
+    values = pairwise_centroid_distances(centroids)
+    for i in range(len(centroids)):
+        correction = 2 * np.sum((centroids[i] - centroids) * residuals[i], axis=1)
+        values[i] += (compactness[i] + correction) / counts[i]
+    return values
+
+
+def covariance_statistics(data, order, offsets):
+    """Float64 means and unregularized sample covariances of nonempty groups."""
+    counts = np.diff(offsets)
+    centroids = np.empty((len(counts), data.shape[1]))
+    covariances = np.zeros((len(counts), data.shape[1], data.shape[1]))
+    for i, count in enumerate(counts):
+        subset = np.asarray(data[order[offsets[i]:offsets[i + 1]]], dtype=np.float64)
+        shifted = subset - subset[0]
+        mean = np.mean(shifted, axis=0)
+        centroids[i] = subset[0] + mean
+        if count > 1:
+            centered = shifted - mean
+            covariances[i] = (centered.T @ centered) / (count - 1)
+    return counts, centroids, covariances
+
+
+def merge_covariances(counts, centroids, covariances,
+                      chunk_counts, chunk_centroids, chunk_covariances):
+    """Merge unregularized covariances by combining their centered scatter."""
+    combined_counts = counts + chunk_counts
+    combined_centroids = chunk_centroids.copy()
+    combined_covariances = chunk_covariances.copy()
+    existing = counts > 0
+    a, b, n = counts[existing], chunk_counts[existing], combined_counts[existing]
+    difference = chunk_centroids[existing] - centroids[existing]
+    combined_centroids[existing] = centroids[existing] + difference * (b / n)[:, None]
+    combined_covariances[existing] = (
+        (a - 1)[:, None, None] * covariances[existing]
+        + (b - 1)[:, None, None] * chunk_covariances[existing]
+        + (a * (b / n))[:, None, None]
+        * difference[:, :, None] * difference[:, None, :]
+    ) / (n - 1)[:, None, None]
+    return combined_counts, combined_centroids, combined_covariances

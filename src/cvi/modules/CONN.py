@@ -27,6 +27,7 @@ References
 
 # Standard library imports
 from collections import defaultdict
+from copy import deepcopy
 from typing import Dict, Literal, Optional, Sequence, Union
 import numbers
 
@@ -35,7 +36,7 @@ import numpy as np
 from sklearn.cluster import KMeans, MiniBatchKMeans
 
 # Local imports
-from . import _base
+from . import _base, _batch
 
 
 def __getattr__(name):
@@ -247,7 +248,44 @@ class CONN(_base.CVI):
             merge=True,
             remove=False,
             split=True,
+            mini_batch=self.model_type == "Fuzzy",
         )
+
+    def update_batch(self, data: np.ndarray, labels: np.ndarray) -> float:
+        """Append a chunk through the existing FuzzyART incremental updates.
+
+        Supported only with ``model_type="Fuzzy"``. Rows are processed in
+        their supplied order, exactly as repeated single-sample ``get_cvi``
+        calls, including prototype learning, initialization, and scoring.
+        Only the final score is returned; no aggregate speedup is promised.
+
+        Inputs follow :meth:`cvi.CVI.update_batch` shape and dtype rules.
+        Samples must already use the incremental ART input scale, normally
+        [0, 1]. ``normalize_batch`` does not normalize these chunks. Use the
+        same fixed scaling when continuing from a one-shot batch.
+
+        Empty chunks are no-ops. New labels are accepted in first-seen order,
+        and undefined scores return NaN without warning. Updates are staged
+        on a copy of the complete state, including the ART model, so failures
+        leave the object unchanged. This adds copying time and memory per
+        chunk. KMeans and MiniBatchKMeans raise ``NotImplementedError``.
+        """
+
+        if not self.capabilities.mini_batch:
+            raise NotImplementedError(
+                "CONN update_batch requires model_type='Fuzzy'; "
+                f"received {self.model_type!r}"
+            )
+        data, labels = _batch._validate(self, data, labels)
+        if len(data) == 0:
+            return float(self.criterion_value)
+        self._check_sample_normalized(data)
+
+        candidate = deepcopy(self)
+        for sample, label in zip(data, labels):
+            candidate.get_cvi(sample, int(label))
+        self.__dict__.update(candidate.__dict__)
+        return float(self.criterion_value)
 
     def _init_conn_state(self):
         """

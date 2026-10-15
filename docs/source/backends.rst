@@ -37,8 +37,9 @@ cSIL batch dissimilarities. Dtype-sensitive means and raw-moment reductions
 remain in NumPy. Unsupported array types (including float16 and non-native
 byte order) use NumPy for the affected operations. Floating-point rounding may
 differ; bitwise equivalence is not guaranteed. Undefined criteria return NaN.
-Unchanged paths, including CH/WB, GD53, and cSIL sample updates and remove/merge
-operations, are not accelerated. DB, GD43, PS, and XB use compiled
+CH/WB and GD53 sample updates and structural operations are not accelerated.
+cSIL sample updates also use NumPy; cSIL chunk updates and structural operations
+use compiled centered dissimilarity rebuilds. DB, GD43, PS, and XB use compiled
 centroid-distance kernels during sample updates and after remove/merge.
 Batch CH/WB compile grouping, compactness, and centroid-to-mean distances;
 GD53 compiles grouping and compactness. Batch DB, GD43, and XB compile grouping,

@@ -23,7 +23,7 @@
    * - ``cSIL``
      - Yes
      - Unchanged
-     - Unchanged
+     - Dissimilarities
      - Unavailable
      - Unavailable
    * - ``DB``
@@ -73,13 +73,23 @@
 operation is compiled. **Distances** means centroid-distance kernels are
 compiled while other update logic remains in Python/NumPy. **Unchanged** means
 the operation is supported with ``backend="numba"`` but uses its existing NumPy
-implementation. **Unavailable** means the index rejects that numerical backend.
+implementation. **Dissimilarities** means cSIL's centered dissimilarity matrix
+rebuild is compiled. **Unavailable** means the index rejects that numerical backend.
 
 **Capacity** means JAX sample additions and ``update_many`` chunks require a
 positive ``capacity`` at construction. CH, WB, and XB also provide functional
 JAX batch and streaming APIs. All JAX modes require x64, and none support remove
 or merge. Numba retains remove/merge support for all eight supported indices,
 including the operations marked **Unchanged**.
+
+Aggregate ``update_batch`` is available for CH, WB, DB, XB, GD43, GD53, PS, and
+cSIL with NumPy or Numba, and for rCIP with NumPy. Both backends use NumPy to
+summarize and merge chunks; Numba uses compiled distance/dissimilarity kernels
+for the final rebuild. This
+operation is not supported by JAX, whose ``update_many`` processes samples
+sequentially. FuzzyART CONN also provides ``update_batch`` as a sequential
+wrapper around its existing incremental updates; its KMeans backends do not.
+``capabilities.mini_batch`` reports support for either chunk implementation.
 
 NumPy remains the default for every index. CONN's ``model_type`` selects its
 prototype learner separately from numerical ``backend`` selection; it does not

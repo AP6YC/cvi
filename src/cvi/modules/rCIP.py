@@ -35,6 +35,7 @@ class rCIP(_base.CVI):
         optimality="min",
         backends=("numpy",),
     )
+
     def __init__(self, *, backend="numpy"):
         """
         (Renyi's) representative Cross Information Potential (rCIP) initialization routine.
@@ -138,6 +139,7 @@ class rCIP(_base.CVI):
         Incremental parameter update for the (Renyi's) representative Cross Information Potential (rCIP) CVI.
         """
 
+        sample = np.asarray(sample, dtype=np.float64)
         # Get the internal label corresponding to the provided label
         i_label = self._label_map.get_internal_label(label)
 
@@ -183,8 +185,8 @@ class rCIP(_base.CVI):
         else:
             n_new = self._n[i_label] + 1
             v_new = (
-                (1 - 1 / n_new) * self._v[i_label, :]
-                + (1 / n_new) * sample
+                self._v[i_label, :]
+                + (sample - self._v[i_label, :]) / n_new
             )
             diff_x_v = sample - self._v[i_label, :]
             sigma_new = (
@@ -223,27 +225,35 @@ class rCIP(_base.CVI):
         # Group samples once while retaining first-seen cluster order.
         u, order, offsets = self._setup_batch_groups(labels)
         self._n_clusters = len(u)
-        counts, self._v, _ = self._backend.batch_statistics(
-            data, order, offsets, compactness=False,
+        counts, self._v, covariances = self._backend.covariance_statistics(
+            data, order, offsets,
         )
         self._n = counts.tolist()
         self._G = np.zeros((0, self._dim))
         self._CP = None
-        self._sigma = np.zeros((self._dim, self._dim, self._n_clusters))
-
-        for ix in range(self._n_clusters):
-            subset = data[order[offsets[ix]:offsets[ix + 1]], :]
-            if self._n[ix] > 1:
-                self._sigma[:, :, ix] = (
-                    (1 / (self._n[ix] - 1)) * (
-                        np.transpose(subset) @ subset
-                        - self._n[ix] * np.outer(self._v[ix, :], self._v[ix, :])
-                    ) + self._delta_term
-                )
-            else:
-                self._sigma[:, :, ix] = self._delta_term
+        self._sigma = np.moveaxis(covariances + self._delta_term, 0, 2).copy()
 
         self._D = self._information_matrix()
+
+    def _merge_batch_statistics(self, data, order, offsets, slots):
+        """Merge centered covariance summaries, applying regularization once."""
+        old_k = self._sigma.shape[2]
+        covariances = np.zeros((self._n_clusters, self._dim, self._dim))
+        if old_k:
+            covariances[:old_k] = np.moveaxis(self._sigma, 2, 0) - self._delta_term
+        if self._n_samples == 0:
+            self._delta_term = np.eye(self._dim) * 10.0 ** (-12.0 / self._dim)
+            self._constant = 1 / np.sqrt((2 * np.pi) ** self._dim)
+        chunk = self._backend.covariance_statistics(data, order, offsets)
+        counts, centroids, merged = self._backend.merge_covariances(
+            self._n[slots], self._v[slots], covariances[slots], *chunk,
+        )
+        self._n[slots], self._v[slots], covariances[slots] = counts, centroids, merged
+        self._sigma = np.moveaxis(covariances + self._delta_term, 0, 2).copy()
+        if not np.all(np.isfinite(self._sigma)):
+            raise ValueError("Batch update statistics exceed float64 range")
+        self._CP = None
+        self._G = np.empty((0, self._dim))
 
     @staticmethod
     def _stabilize_covariance(covariance: np.ndarray) -> np.ndarray:
@@ -293,7 +303,7 @@ class rCIP(_base.CVI):
             return
 
         n_new = n_old - 1
-        v_new = (n_old * v_old - sample) / n_new
+        v_new = v_old + (v_old - sample) / n_new
 
         if n_new == 1:
             sigma_new = self._delta_term.copy()
@@ -330,7 +340,7 @@ class rCIP(_base.CVI):
         n_new = n_target + n_source
         v_target = self._v[target_i, :].copy()
         v_source = self._v[source_i, :].copy()
-        v_new = (n_target * v_target + n_source * v_source) / n_new
+        v_new = v_target + (v_source - v_target) * (n_source / n_new)
         covariance_target = self._sigma[:, :, target_i] - self._delta_term
         covariance_source = self._sigma[:, :, source_i] - self._delta_term
         difference = v_source - v_target
@@ -367,8 +377,8 @@ class rCIP(_base.CVI):
         n_remainder = n_parent - count
         v_parent = self._v[retained_i, :].copy()
         v_remainder = (
-            n_parent * v_parent - count * centroid
-        ) / n_remainder
+            v_parent + (v_parent - centroid) * (count / n_remainder)
+        )
         covariance_parent = (
             self._sigma[:, :, retained_i] - self._delta_term
         )
