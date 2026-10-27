@@ -11,7 +11,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base
+from . import _base, _trial
 
 
 # PS object definition
@@ -53,67 +53,67 @@ class PS(_base.CVI):
         self._beta_t = 0.0
         self._PS_i = np.zeros(0)
 
-    @_base._add_docs(_base._param_inc_doc)
-    def _param_inc(self, sample: np.ndarray, label: int):
-        """
-        Incremental parameter update for the Partition Separation (PS) CVI.
-        """
+    def _plan_add_index(self, plan):
+        """Squared distances from each prospective centroid to the others."""
+        plan.rows = self._candidate_rows(
+            plan,
+            lambda slot: self._backend.centroid_distances(
+                self._v, plan.v_new[slot],
+            ),
+        )
 
-        # Get the internal label corresponding to the provided label
-        i_label = self._label_map.get_internal_label(label)
+    def _apply_add_index(self, plan, slot, i_label, new):
+        """Write the planned distance row."""
+        if plan.fresh:
+            self._D = np.zeros((1, 1))
+            return
+        self._D = self._apply_pairwise_row(self._D, plan.rows[slot], i_label, new)
 
-        # Increment the local number of samples count
-        n_samples_new = self._n_samples + 1
+    def _score_add(self, plan):
+        """Partition Separation score of each plan slot."""
+        existing, cand = plan.existing, plan.cand
+        slots = np.flatnonzero(existing)
+        k_old = self._n_clusters
+        k = self._trial_cluster_counts(plan)
 
-        # Check if the module has been setup, then set the mu accordingly
-        if self._n_samples == 0:
-            self._setup(sample)
+        counts = np.asarray(self._n, dtype=np.float64)
+        largest = np.maximum(np.max(counts), plan.n_new)
+        count_terms = (np.sum(counts) + 1) / largest
 
-        # IF NEW CLUSTER LABEL
-        # Correct for python 0-indexing
-        if i_label > self._n_clusters - 1:
-            n_new = 1
-            v_new = sample
-            if self._n_clusters == 0:
-                D_new = np.zeros((1, 1))
+        nearest = np.minimum(
+            _trial.extremes_without(
+                _trial.row_extremes(self._D, largest=False),
+                np.where(existing, cand, -1),
+            ),
+            plan.rows,
+        )
+        own = np.min(_trial.masked_self(plan.rows, plan, np.inf), axis=1)
+        nearest[slots, cand[existing]] = own[existing]
+
+        mean = np.mean(self._v, axis=0)
+        beta = np.empty(plan.n_slots)
+        for slot in range(plan.n_slots):
+            v_new = plan.v_new[slot]
+            if existing[slot]:
+                i = cand[slot]
+                mean_new = mean + (v_new - self._v[i]) / k_old
+                spread = self._backend.centroid_distances(self._v, mean_new)
+                spread[i] = np.sum((v_new - mean_new) ** 2)
+                beta[slot] = np.mean(spread)
             else:
-                D_new = np.zeros((self._n_clusters + 1, self._n_clusters + 1))
-                D_new[0:self._n_clusters, 0:self._n_clusters] = self._D
-                d_column_new = np.zeros(self._n_clusters + 1)
-                d_column_new[:-1] = self._backend.centroid_distances(
-                    self._v, v_new,
-                )
-                D_new[i_label, :] = d_column_new
-                D_new[:, i_label] = d_column_new
+                mean_new = (k_old * mean + v_new) / (k_old + 1)
+                spread = self._backend.centroid_distances(self._v, mean_new)
+                beta[slot] = (
+                    np.sum(spread) + np.sum((v_new - mean_new) ** 2)
+                ) / (k_old + 1)
 
-            # Update 1-D parameters with list appends
-            self._n_clusters += 1
-            self._n.append(n_new)
-
-            # Update 2-D parameters with numpy vstacks
-            self._v = np.vstack([self._v, v_new])
-            self._D = D_new
-
-        # ELSE OLD CLUSTER LABEL
-        else:
-            n_new = self._n[i_label] + 1
-            v_new = (
-                (1 - 1 / n_new) * self._v[i_label, :]
-                + (1 / n_new) * sample
-            )
-            d_column_new = self._backend.centroid_distances(
-                self._v, v_new,
-            )
-            d_column_new[i_label] = 0.0
-
-            # Update parameters
-            self._n[i_label] = n_new
-            self._v[i_label, :] = v_new
-            self._D[i_label, :] = d_column_new
-            self._D[:, i_label] = d_column_new
-
-        # Update the parameters that do not depend on label novelty
-        self._n_samples = n_samples_new
+        separation = (
+            np.sum(np.exp(-nearest / beta[:, None]), axis=1)
+            + np.where(existing, 0.0, np.exp(-own / beta))
+        )
+        scores = count_terms - separation
+        scores[(k < 2) | ~(beta > 0.0)] = np.nan
+        return scores
 
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):

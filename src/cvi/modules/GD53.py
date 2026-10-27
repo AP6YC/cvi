@@ -14,7 +14,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base
+from . import _base, _trial
 
 
 # GD53 object definition
@@ -88,105 +88,35 @@ class GD53(_base.CVI):
         np.fill_diagonal(matrix, 0.0)
         return matrix
 
-    @_base._add_docs(_base._param_inc_doc)
-    def _param_inc(self, sample: np.ndarray, label: int):
-        """
-        Incremental parameter update for the Generalized Dunn's Index 53 (GD53) CVI.
-        """
+    def _plan_add_index(self, plan):
+        """Dispersion between each prospective cluster and the others."""
+        compactness = np.asarray(self._CP, dtype=np.float64)
+        counts = np.asarray(self._n)
+        plan.rows = self._candidate_rows(
+            plan,
+            lambda slot: (
+                (plan.CP_new[slot] + compactness)
+                / (plan.n_new[slot] + counts)
+            ),
+        )
 
-        # Get the internal label corresponding to the provided label
-        i_label = self._label_map.get_internal_label(label)
+    def _apply_add_index(self, plan, slot, i_label, new):
+        """Write the planned dispersion row."""
+        if plan.fresh:
+            self._D = np.zeros((1, 1))
+            return
+        self._D = self._apply_pairwise_row(self._D, plan.rows[slot], i_label, new)
 
-        # Increment the local number of samples count
-        n_samples_new = self._n_samples + 1
-
-        # Check if the module has been setup, then set the mu accordingly
-        if self._n_samples == 0:
-            self._setup(sample)
-        else:
-            self._mu = (
-                (1 - 1/n_samples_new) * self._mu
-                + (1/n_samples_new) * sample
-            )
-
-        # IF NEW CLUSTER LABEL
-        # Correct for python 0-indexing
-        if i_label > self._n_clusters - 1:
-            n_new = 1
-            v_new = sample
-            CP_new = 0.0
-            G_new = np.zeros(self._dim)
-            if self._n_clusters == 0:
-                D_new = np.zeros((1, 1))
-            else:
-                D_new = np.zeros((self._n_clusters + 1, self._n_clusters + 1))
-                D_new[0:self._n_clusters, 0:self._n_clusters] = self._D
-                d_column_new = np.zeros(self._n_clusters + 1)
-                if self._n_clusters < 64:
-                    for jx in range(self._n_clusters):
-                        d_column_new[jx] = (
-                            (CP_new + self._CP[jx]) / (n_new + self._n[jx])
-                        )
-                else:
-                    d_column_new[:-1] = self._dispersion_row(
-                        self._CP, self._n, CP_new, n_new,
-                    )
-                D_new[i_label, :] = d_column_new
-                D_new[:, i_label] = d_column_new
-
-            # Update 1-D parameters with list appends
-            self._n_clusters += 1
-            self._n.append(n_new)
-            self._CP.append(CP_new)
-
-            # Update 2-D parameters with numpy vstacks
-            self._v = np.vstack([self._v, v_new])
-            self._G = np.vstack([self._G, G_new])
-            self._D = D_new
-
-        # ELSE OLD CLUSTER LABEL
-        else:
-            n_new = self._n[i_label] + 1
-            v_new = (
-                (1 - 1 / n_new) * self._v[i_label, :]
-                + (1 / n_new) * sample
-            )
-            delta_v = self._v[i_label, :] - v_new
-            diff_x_v = sample - v_new
-            CP_new = (
-                self._CP[i_label]
-                + np.inner(diff_x_v, diff_x_v)
-                + self._n[i_label] * np.inner(delta_v, delta_v)
-                + 2 * np.inner(delta_v, self._G[i_label, :])
-            )
-            G_new = (
-                self._G[i_label, :]
-                + diff_x_v
-                + self._n[i_label] * delta_v
-            )
-            if self._n_clusters < 64:
-                d_column_new = np.zeros(self._n_clusters)
-                for jx in range(self._n_clusters):
-                    if jx != i_label:
-                        d_column_new[jx] = (
-                            (CP_new + self._CP[jx]) / (n_new + self._n[jx])
-                        )
-            else:
-                d_column_new = self._dispersion_row(
-                    self._CP, self._n, CP_new, n_new,
-                )
-                d_column_new[i_label] = 0.0
-
-            # Update parameters
-            self._n[i_label] = n_new
-            self._v[i_label, :] = v_new
-            self._CP[i_label] = CP_new
-            self._G[i_label, :] = G_new
-            self._D[i_label, :] = d_column_new
-            self._D[:, i_label] = d_column_new
-
-        # Update the parameters that do not depend on label novelty
-        self._n_samples = n_samples_new
+    def _score_add(self, plan):
+        """Generalized Dunn score of each plan slot."""
+        intra = 2 * _trial.max_without(
+            np.divide(self._CP, self._n), plan, plan.CP_new / plan.n_new,
+        )
+        inter = _trial.trial_min_off_diagonal(self._D, plan.rows, plan)
+        k = self._trial_cluster_counts(plan)
+        scores = inter / intra
+        scores[(k < 2) | ~(intra > 0.0)] = np.nan
+        return scores
 
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):

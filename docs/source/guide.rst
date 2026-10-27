@@ -60,6 +60,34 @@ The same object may also receive incremental samples after its initial batch
 call. Feature dimensionality must remain constant throughout the object's
 lifetime.
 
+Trial operations and moves
+--------------------------
+
+``get_cvi``, ``remove``, ``merge``, ``split``, and ``move`` accept a keyword-only
+``commit`` argument. With ``commit=False`` they return the score the operation
+would produce and leave the object unchanged. With a one-dimensional sample,
+``get_cvi`` and ``move`` also accept a 1-D array of candidate labels and return
+one score per label. An unseen label creates a new cluster, and undefined scores
+are NaN:
+
+.. code-block:: python
+
+   scores = index.get_cvi(sample, candidate_labels, commit=False)
+   for label, score in zip(candidate_labels, scores):
+       if index.is_better(score, index.criterion_value):
+           index.get_cvi(sample, label)
+           break
+
+The object keeps the state computed by its most recent trial, so a following
+committed call with the same operation and arguments applies it without
+recomputation. ``move(sample, old_label, new_label)`` commits exactly the state
+of ``remove`` followed by ``get_cvi``, atomically; moving a sample to its own
+label is a no-op. ``is_better(new, old, tol=0.0)`` follows ``info.optimality``,
+accepts ties, and treats NaN as acceptance. ``n_clusters``, ``n_samples``, and
+``labels`` are read-only accessors; ``clone()`` returns an unfitted copy of the
+configuration and ``reset()`` clears the data in place. ``CONN`` and JAX
+configurations do not support trials or moves.
+
 Mini-batch updates
 ------------------
 
@@ -219,14 +247,15 @@ support:
 .. doctest::
 
    >>> cvi.CONN(model_type="KMeans").capabilities
-   CVICapabilities(batch=True, incremental=False, merge=True, remove=False, split=True, mini_batch=False)
+   CVICapabilities(batch=True, incremental=False, merge=True, remove=False, split=True, mini_batch=False, trial=False, move=False)
 
 Capabilities describe the selected numerical and prototype backends. They do
 not indicate whether the object has been initialized or whether an optional
 dependency is installed.
 ``batch`` indicates one-shot initialization with ``get_cvi(samples, labels)``;
 ``mini_batch`` indicates cumulative updates with ``update_batch``, including
-the sequential FuzzyART CONN wrapper.
+the sequential FuzzyART CONN wrapper. ``trial`` indicates scoring operations
+with ``commit=False``, and ``move`` indicates sample reassignment with ``move``.
 
 Acknowledgements
 ----------------

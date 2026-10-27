@@ -12,7 +12,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base
+from . import _base, _trial
 
 
 # DB object definition
@@ -68,96 +68,51 @@ class DB(_base.CVI):
         # DB-specific setup
         self._mu = sample
 
-    @_base._add_docs(_base._param_inc_doc)
-    def _param_inc(self, sample: np.ndarray, label: int):
-        """
-        Incremental parameter update for the Davies-Bouldin (DB) CVI.
-        """
+    def _plan_add_index(self, plan):
+        """Prospective scatter and squared centroid distances."""
+        plan.S_new = plan.CP_new / plan.n_new
+        plan.rows = self._candidate_rows(
+            plan,
+            lambda slot: self._backend.centroid_distances(
+                self._v, plan.v_new[slot],
+            ),
+        )
 
-        # Get the internal label corresponding to the provided label
-        i_label = self._label_map.get_internal_label(label)
-
-        # Increment the local number of samples count
-        n_samples_new = self._n_samples + 1
-
-        # Check if the module has been setup, then set the mu accordingly
-        if self._n_samples == 0:
-            self._setup(sample)
+    def _apply_add_index(self, plan, slot, i_label, new):
+        """Write the planned scatter and distance row."""
+        if plan.fresh:
+            self._S.append(0.0)
+            self._D = np.zeros((1, 1))
+            return
+        if new:
+            self._S.append(0.0)
         else:
-            self._mu = (
-                (1 - 1/n_samples_new) * self._mu
-                + (1/n_samples_new) * sample
-            )
+            self._S[i_label] = float(plan.S_new[slot])
+        self._D = self._apply_pairwise_row(self._D, plan.rows[slot], i_label, new)
 
-        # IF NEW CLUSTER LABEL
-        # Correct for python 0-indexing
-        if i_label > self._n_clusters - 1:
-            n_new = 1
-            v_new = sample
-            CP_new = 0.0
-            G_new = np.zeros(self._dim)
-            S_new = 0.0
-            if self._n_clusters == 0:
-                D_new = np.zeros((1, 1))
-            else:
-                D_new = np.zeros((self._n_clusters + 1, self._n_clusters + 1))
-                D_new[0:self._n_clusters, 0:self._n_clusters] = self._D
-                d_column_new = np.zeros(self._n_clusters + 1)
-                d_column_new[:-1] = self._backend.centroid_distances(
-                    self._v, v_new,
-                )
-                D_new[i_label, :] = d_column_new
-                D_new[:, i_label] = d_column_new
+    def _score_add(self, plan):
+        """Davies-Bouldin score of each plan slot.
 
-            # Update 1-D parameters with list appends
-            self._n_clusters += 1
-            self._n.append(n_new)
-            self._CP.append(CP_new)
-            self._S.append(S_new)
-
-            # Update 2-D parameters with numpy vstacks
-            self._v = np.vstack([self._v, v_new])
-            self._G = np.vstack([self._G, G_new])
-            self._D = D_new
-
-        # ELSE OLD CLUSTER LABEL
-        else:
-            n_new = self._n[i_label] + 1
-            v_new = (
-                (1 - 1 / n_new) * self._v[i_label, :]
-                + (1 / n_new) * sample
-            )
-            delta_v = self._v[i_label, :] - v_new
-            diff_x_v = sample - v_new
-            CP_new = (
-                self._CP[i_label]
-                + np.inner(diff_x_v, diff_x_v)
-                + self._n[i_label] * np.inner(delta_v, delta_v)
-                + 2 * np.inner(delta_v, self._G[i_label, :])
-            )
-            G_new = (
-                self._G[i_label, :]
-                + diff_x_v
-                + self._n[i_label] * delta_v
-            )
-            S_new = CP_new / n_new
-            d_column_new = self._backend.centroid_distances(
-                self._v, v_new,
-            )
-            d_column_new[i_label] = 0.0
-
-            # Update parameters
-            self._n[i_label] = n_new
-            self._v[i_label, :] = v_new
-            self._CP[i_label] = CP_new
-            self._G[i_label, :] = G_new
-            self._S[i_label] = S_new
-            self._D[i_label, :] = d_column_new
-            # self._D[:, i_label] = np.tranpose(d_column_new)
-            self._D[:, i_label] = d_column_new
-
-        # Update the parameters that do not depend on label novelty
-        self._n_samples = n_samples_new
+        Only one cluster's row and column of R change, so each row's maximum
+        is its largest entry outside the changed column, or the new entry.
+        """
+        existing, cand = plan.existing, plan.cand
+        slots = np.flatnonzero(existing)
+        scatter = np.asarray(self._S, dtype=np.float64)
+        ratios = (scatter[:, None] + scatter[None, :]) / self._D
+        others = _trial.extremes_without(
+            _trial.row_extremes(ratios, largest=True),
+            np.where(existing, cand, -1),
+        )
+        cross = (scatter[None, :] + plan.S_new[:, None]) / plan.rows
+        maxima = np.maximum(others, cross)
+        own = np.max(_trial.masked_self(cross, plan, -np.inf), axis=1)
+        maxima[slots, cand[existing]] = own[existing]
+        k = self._trial_cluster_counts(plan)
+        scores = (np.sum(maxima, axis=1) + np.where(existing, 0.0, own)) / k
+        separation = _trial.trial_min_off_diagonal(self._D, plan.rows, plan)
+        scores[(k < 2) | ~(separation > 0.0)] = np.nan
+        return scores
 
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):

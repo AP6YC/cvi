@@ -745,13 +745,22 @@ class CONN(_base.CVI):
         self.criterion_value = self._intra_conn * (1.0 - self._inter_conn)
         self._sync_base_cluster_count()
 
-    def merge(self, target_label: int, source_label: int) -> float:
+    def merge(
+        self,
+        target_label: int,
+        source_label: int,
+        *,
+        commit: bool = True,
+    ) -> float:
         """Move every source prototype into the target cluster.
 
         The target external label is retained. Prototype-level connectivity
         and prototype parameters remain unchanged; label metrics are rebuilt.
+        CONN does not support trial operations, so ``commit`` must be True.
         """
 
+        if not commit:
+            self._require_trial()
         self._require_prototype_operation()
         if target_label == source_label:
             raise ValueError("Merge requires two different cluster labels")
@@ -794,14 +803,19 @@ class CONN(_base.CVI):
         retained_label: int,
         new_label: int,
         prototype_ids: Sequence[int],
+        *,
+        commit: bool = True,
     ) -> float:
         """Move a proper subset of a cluster's prototypes to a new label.
 
         ``prototype_ids`` are global indices into the selected backend's
         prototype list. Samples assigned to moved prototypes follow their
-        new cluster label.
+        new cluster label. CONN does not support trial operations, so
+        ``commit`` must be True.
         """
 
+        if not commit:
+            self._require_trial()
         self._require_prototype_operation()
         retained_i = self._label_map.get_existing_label(retained_label)
         if new_label in self._label_map.map:

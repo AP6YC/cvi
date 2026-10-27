@@ -12,7 +12,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base, _batch
+from . import _base, _trial, _batch
 
 
 # cSIL object definition
@@ -93,49 +93,155 @@ class cSIL(_base.CVI):
         )
         self._centered_CP = compactness.tolist()
 
-    @_base._add_docs(_base._param_inc_doc)
-    def _param_inc(self, sample: np.ndarray, label: int):
-        """Update centered moments and just the affected dissimilarity row/column."""
+    def _plan_add_statistics(self, plan):
+        """Centered and raw moments for every plan slot."""
         self._ensure_centered_state()
-        sample = np.asarray(sample, dtype=np.float64)
-        i = self._label_map.get_internal_label(label)
-        if self._n_samples == 0:
-            self._setup(sample)
-            self._residuals = np.empty((0, self._dim))
-        if i == self._n_clusters:
-            self._n.append(1)
-            self._v = np.vstack((self._v, sample))
-            self._centered_CP.append(0.0)
-            self._residuals = np.vstack((self._residuals, np.zeros(self._dim)))
-            self._CP.append(np.inner(sample, sample))
-            self._G = np.vstack((self._G, sample))
-            matrix = np.zeros((i + 1, i + 1))
-            matrix[:i, :i] = self._S
-            self._S = matrix
-            self._n_clusters += 1
-        else:
-            n = self._n[i]
-            center = self._v[i] + (sample - self._v[i]) / (n + 1)
+        self._plan_centroids(plan, shift_form=True)
+        x, cand, existing = plan.x, plan.cand, plan.existing
+        squared_norm = np.inner(x, x)
+        if plan.n_slots == 1:
+            self._plan_single_moments(plan, squared_norm)
+            return
+        plan.Q_new = np.zeros(plan.n_slots)
+        plan.r_new = np.zeros((plan.n_slots, len(x)))
+        plan.raw_CP_new = np.full(plan.n_slots, squared_norm)
+        plan.raw_G_new = np.tile(x, (plan.n_slots, 1))
+        if existing.any():
+            i = cand[existing]
+            n = plan.n_old[existing]
+            center = plan.v_new[existing]
             shift = self._v[i] - center
-            difference = sample - center
-            self._centered_CP[i] += (
-                np.dot(difference, difference) + n * np.dot(shift, shift)
-                + 2 * np.dot(shift, self._residuals[i])
+            difference = x - center
+            residuals = self._residuals[i]
+            plan.Q_new[existing] = np.asarray(self._centered_CP)[i] + (
+                _trial.row_dot(difference, difference)
+                + n * _trial.row_dot(shift, shift)
+                + 2 * _trial.row_dot(shift, residuals)
             )
-            self._residuals[i] += difference + n * shift
-            self._n[i], self._v[i] = n + 1, center
-            self._CP[i] += np.inner(sample, sample)
-            self._G[i] += sample
-        self._n_samples += 1
-        differences = self._v[i] - self._v
-        distances = np.einsum("ij,ij->i", differences, differences)
-        self._S[i, :] = distances + (
-            self._centered_CP[i] + 2 * (differences @ self._residuals[i])
-        ) / self._n[i]
-        self._S[:, i] = distances + (
-            np.asarray(self._centered_CP)
-            - 2 * np.einsum("ij,ij->i", differences, self._residuals)
-        ) / np.asarray(self._n)
+            plan.r_new[existing] = residuals + (difference + n[:, None] * shift)
+            plan.raw_CP_new[existing] = (
+                np.asarray(self._CP, dtype=np.float64)[i] + squared_norm
+            )
+            plan.raw_G_new[existing] = self._G[i] + x
+
+    def _plan_single_moments(self, plan, squared_norm):
+        """One-slot form of the moment update, using plain 1-D arithmetic."""
+        x = plan.x
+        if plan.existing[0]:
+            i = int(plan.cand[0])
+            n = plan.n_old[0]
+            center = plan.v_new[0]
+            shift = self._v[i] - center
+            difference = x - center
+            residuals = self._residuals[i]
+            Q_new = self._centered_CP[i] + (
+                _trial.dot(difference, difference)
+                + n * _trial.dot(shift, shift)
+                + 2 * _trial.dot(shift, residuals)
+            )
+            r_new = residuals + (difference + n * shift)
+            raw_CP_new = self._CP[i] + squared_norm
+            raw_G_new = self._G[i] + x
+        else:
+            Q_new, r_new = 0.0, np.zeros(len(x))
+            raw_CP_new, raw_G_new = squared_norm, x
+        plan.Q_new = np.asarray([Q_new], dtype=np.float64)
+        plan.r_new = r_new.reshape(1, -1).astype(np.float64, copy=True)
+        plan.raw_CP_new = np.asarray([raw_CP_new], dtype=np.float64)
+        plan.raw_G_new = raw_G_new.reshape(1, -1).astype(np.float64, copy=True)
+
+    def _plan_add_index(self, plan):
+        """Prospective dissimilarity row and column of each slot."""
+        compactness = np.asarray(self._centered_CP)
+        counts = np.asarray(self._n)
+        plan.rows = np.empty((plan.n_slots, self._n_clusters))
+        plan.cols = np.empty((plan.n_slots, self._n_clusters))
+        for slot in range(plan.n_slots):
+            differences = plan.v_new[slot] - self._v
+            distances = np.einsum("ij,ij->i", differences, differences)
+            plan.rows[slot] = distances + (
+                plan.Q_new[slot] + 2 * (differences @ plan.r_new[slot])
+            ) / plan.n_new[slot]
+            plan.cols[slot] = distances + (
+                compactness
+                - 2 * np.einsum("ij,ij->i", differences, self._residuals)
+            ) / counts
+        existing = plan.existing
+        own = plan.Q_new / plan.n_new
+        slots = np.flatnonzero(existing)
+        plan.rows[slots, plan.cand[existing]] = own[existing]
+        plan.cols[slots, plan.cand[existing]] = own[existing]
+
+    def _apply_add_index(self, plan, slot, i_label, new):
+        """Write planned moments and the dissimilarity row and column."""
+        if plan.fresh:
+            self._centered_CP = []
+            self._residuals = np.empty((0, self._dim))
+        if new:
+            self._centered_CP.append(float(plan.Q_new[slot]))
+            self._residuals = np.vstack((self._residuals, plan.r_new[slot]))
+            self._CP.append(float(plan.raw_CP_new[slot]))
+            self._G = np.vstack((self._G, plan.raw_G_new[slot]))
+            k = self._S.shape[0]
+            matrix = np.zeros((k + 1, k + 1))
+            matrix[:k, :k] = self._S
+            if not plan.fresh:
+                matrix[k, :k] = plan.rows[slot]
+                matrix[:k, k] = plan.cols[slot]
+            matrix[k, k] = plan.Q_new[slot] / plan.n_new[slot]
+            self._S = matrix
+        else:
+            self._centered_CP[i_label] = float(plan.Q_new[slot])
+            self._residuals[i_label] = plan.r_new[slot]
+            self._CP[i_label] = float(plan.raw_CP_new[slot])
+            self._G[i_label] = plan.raw_G_new[slot]
+            self._S[i_label, :] = plan.rows[slot]
+            self._S[:, i_label] = plan.cols[slot]
+
+    @staticmethod
+    def _silhouettes(within, between):
+        """Silhouette coefficients, zero where both terms vanish."""
+        denominator = np.maximum(within, between)
+        return np.divide(
+            between - within,
+            denominator,
+            out=np.zeros(np.broadcast(within, between).shape),
+            where=denominator != 0.0,
+        )
+
+    def _score_add(self, plan):
+        """Centroid-based silhouette score of each plan slot.
+
+        Adding to cluster i changes row i (its samples) and column i (its
+        centroid) of S; every other column's minimum is updated from its
+        best entry outside row i.
+        """
+        existing, cand = plan.existing, plan.cand
+        slots = np.flatnonzero(existing)
+        within = np.tile(np.diag(self._S), (plan.n_slots, 1))
+        between = np.minimum(
+            _trial.extremes_without(
+                _trial.row_extremes(self._S.T, largest=False),
+                np.where(existing, cand, -1),
+            ),
+            plan.rows,
+        )
+        own_within = plan.Q_new / plan.n_new
+        own_between = np.min(
+            _trial.masked_self(plan.cols, plan, np.inf), axis=1,
+        )
+        within[slots, cand[existing]] = own_within[existing]
+        between[slots, cand[existing]] = own_between[existing]
+        totals = (
+            np.sum(self._silhouettes(within, between), axis=1)
+            + np.where(
+                existing, 0.0, self._silhouettes(own_within, own_between),
+            )
+        )
+        k = self._trial_cluster_counts(plan)
+        scores = totals / k
+        scores[k < 2] = np.nan
+        return scores
 
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
