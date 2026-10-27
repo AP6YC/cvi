@@ -572,3 +572,72 @@ def test_import_does_not_import_artlib():
         "assert not any(name.split('.')[0] == 'artlib' for name in sys.modules)"
     )
     subprocess.run([sys.executable, "-c", code], cwd=REPO_ROOT, check=True)
+
+
+# --------------------------------------------------------------------------- #
+# Edge cases and helpers
+# --------------------------------------------------------------------------- #
+
+
+def test_clone_supports_subclasses_and_older_pickles():
+    class Custom(cvi.CH):
+        pass
+
+    index = Custom(backend="numba") if "numba" in sys.modules else Custom()
+    clone = index.clone()
+    assert type(clone) is Custom and clone.backend == index.backend
+
+    legacy = cvi.CH()
+    del legacy.__dict__["_init_params"]
+    assert legacy.clone().backend == "numpy" and legacy.reset().n_samples == 0
+
+
+def test_invalid_trial_inputs_raise_without_changes():
+    data, labels = blobs()
+    index = build(cvi.CH, data, labels)
+    before = copy.deepcopy(index)
+    with pytest.raises(ValueError, match="one-dimensional array"):
+        index.get_cvi(data[0], np.asarray([[10, 20]]), commit=False)
+    with pytest.raises(ValueError, match="features"):
+        index.get_cvi(data[0][:2], 10, commit=False)
+    with pytest.raises(ValueError, match="ndim=4"):
+        index.get_cvi(data[None, None], 10, commit=False)
+    with pytest.raises(ValueError, match="Repeated batch"):
+        index.get_cvi(data, labels, commit=False)
+    assert_same_state(index, before)
+
+
+def test_undefined_batch_trial_warns_like_a_batch_commit():
+    data = np.ones((4, 2))
+    labels = np.asarray([0, 0, 1, 1])
+    index = cvi.CH()
+    with pytest.warns(RuntimeWarning, match="undefined"):
+        assert np.isnan(index.get_cvi(data, labels, commit=False))
+    with pytest.warns(RuntimeWarning, match="undefined"):
+        assert np.isnan(index.get_cvi(data, labels))
+
+
+def test_stale_plan_is_rejected():
+    data, labels = blobs()
+    index = build(cvi.CH, data[:-1], labels[:-1])
+    plan = index._plan_add(data[-1], [99], score=False)
+    index.get_cvi(data[-1], 99)
+    with pytest.raises(RuntimeError, match="no longer matches"):
+        index._apply_add(plan, 0, 99)
+
+
+def test_trial_helpers():
+    from src.cvi.modules import _trial
+
+    a = np.arange(3.0)
+    assert _trial.same_arguments((a, 1, None), (a.copy(), 1, None))
+    assert not _trial.same_arguments((a,), (a, 1))
+    assert not _trial.same_arguments((a,), (list(a),))
+    assert not _trial.same_arguments((a,), (a[:2],))
+    assert not _trial.same_arguments((None,), (0,))
+    assert not _trial.same_arguments((1,), (2,))
+    assert not _trial.same_arguments((a.tolist(),), ([0.0, 1.0],))
+    assert not _trial.same_arguments(([a, a],), ([a.copy(), a],))  # ambiguous
+    assert _trial.top_two([]) == (-np.inf, -1, -np.inf)
+    assert _trial.top_two([3.0]) == (3.0, 0, -np.inf)
+    assert _trial.min_off_diagonal_excluding(np.zeros((1, 1)))[0] == np.inf
