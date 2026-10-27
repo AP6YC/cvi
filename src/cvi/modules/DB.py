@@ -12,7 +12,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base
+from . import _base, _trial
 
 
 # DB object definition
@@ -67,6 +67,52 @@ class DB(_base.CVI):
 
         # DB-specific setup
         self._mu = sample
+
+    def _plan_add_index(self, plan):
+        """Prospective scatter and squared centroid distances."""
+        plan.S_new = plan.CP_new / plan.n_new
+        plan.rows = self._candidate_rows(
+            plan,
+            lambda slot: self._backend.centroid_distances(
+                self._v, plan.v_new[slot],
+            ),
+        )
+
+    def _apply_add_index(self, plan, slot, i_label, new):
+        """Write the planned scatter and distance row."""
+        if plan.fresh:
+            self._S.append(0.0)
+            self._D = np.zeros((1, 1))
+            return
+        if new:
+            self._S.append(0.0)
+        else:
+            self._S[i_label] = float(plan.S_new[slot])
+        self._D = self._apply_pairwise_row(self._D, plan.rows[slot], i_label, new)
+
+    def _score_add(self, plan):
+        """Davies-Bouldin score of each plan slot.
+
+        Only one cluster's row and column of R change, so each row's maximum
+        is its largest entry outside the changed column, or the new entry.
+        """
+        existing, cand = plan.existing, plan.cand
+        slots = np.flatnonzero(existing)
+        scatter = np.asarray(self._S, dtype=np.float64)
+        ratios = (scatter[:, None] + scatter[None, :]) / self._D
+        others = _trial.extremes_without(
+            _trial.row_extremes(ratios, largest=True),
+            np.where(existing, cand, -1),
+        )
+        cross = (scatter[None, :] + plan.S_new[:, None]) / plan.rows
+        maxima = np.maximum(others, cross)
+        own = np.max(_trial.masked_self(cross, plan, -np.inf), axis=1)
+        maxima[slots, cand[existing]] = own[existing]
+        k = self._trial_cluster_counts(plan)
+        scores = (np.sum(maxima, axis=1) + np.where(existing, 0.0, own)) / k
+        separation = _trial.trial_min_off_diagonal(self._D, plan.rows, plan)
+        scores[(k < 2) | ~(separation > 0.0)] = np.nan
+        return scores
 
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):

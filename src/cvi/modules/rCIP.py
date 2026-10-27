@@ -133,6 +133,55 @@ class rCIP(_base.CVI):
             matrix[j, i] = values
         return matrix
 
+    def _plan_add_statistics(self, plan):
+        """Counts, centroids and regularized covariances for every slot."""
+        self._plan_centroids(plan, shift_form=True)
+        x, cand, existing = plan.x, plan.cand, plan.existing
+        if plan.fresh:
+            return
+        plan.sigma_new = np.tile(self._delta_term, (plan.n_slots, 1, 1))
+        for slot in np.flatnonzero(existing):
+            i = cand[slot]
+            n_new = plan.n_new[slot]
+            diff_x_v = x - self._v[i, :]
+            plan.sigma_new[slot] = (
+                ((n_new - 2) / (n_new - 1))
+                * (self._sigma[:, :, i] - self._delta_term)
+                + (1 / n_new) * (np.outer(diff_x_v, diff_x_v))
+                + self._delta_term
+            )
+
+    def _plan_add_index(self, plan):
+        """Information potentials between each prospective cluster and the others."""
+        plan.rows = self._candidate_rows(
+            plan,
+            lambda slot: self._information_row(
+                plan.v_new[slot], plan.sigma_new[slot],
+            ),
+        )
+
+    def _apply_add_index(self, plan, slot, i_label, new):
+        """Write the planned covariance and information-potential row."""
+        self._constant = 1 / np.sqrt((2 * np.pi) ** self._dim)
+        if new:
+            self._sigma = np.dstack((self._sigma, self._delta_term))
+        else:
+            self._sigma[:, :, i_label] = plan.sigma_new[slot]
+        if plan.fresh:
+            self._D = np.zeros((1, 1))
+            return
+        self._D = self._apply_pairwise_row(self._D, plan.rows[slot], i_label, new)
+
+    def _score_add(self, plan):
+        """rCIP score of each plan slot."""
+        existing, cand = plan.existing, plan.cand
+        total = np.sum(self._D) + 2 * np.sum(plan.rows, axis=1)
+        total[existing] -= 2 * np.sum(self._D[cand[existing]], axis=1)
+        k = self._trial_cluster_counts(plan)
+        scores = 0.5 * total
+        scores[k < 2] = np.nan
+        return scores
+
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
         """

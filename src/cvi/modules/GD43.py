@@ -14,7 +14,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base
+from . import _base, _trial
 
 
 # GD43 object definition
@@ -71,6 +71,33 @@ class GD43(_base.CVI):
 
         # GD43-specific setup
         self._mu = sample
+
+    def _plan_add_index(self, plan):
+        """Distances from each prospective centroid to the others."""
+        plan.rows = self._candidate_rows(
+            plan,
+            lambda slot: self._backend.centroid_distances(
+                self._v, plan.v_new[slot], squared=False,
+            ),
+        )
+
+    def _apply_add_index(self, plan, slot, i_label, new):
+        """Write the planned distance row."""
+        if plan.fresh:
+            self._D = np.zeros((1, 1))
+            return
+        self._D = self._apply_pairwise_row(self._D, plan.rows[slot], i_label, new)
+
+    def _score_add(self, plan):
+        """Generalized Dunn score of each plan slot."""
+        intra = 2 * _trial.max_without(
+            np.divide(self._CP, self._n), plan, plan.CP_new / plan.n_new,
+        )
+        inter = _trial.trial_min_off_diagonal(self._D, plan.rows, plan)
+        k = self._trial_cluster_counts(plan)
+        scores = inter / intra
+        scores[(k < 2) | ~(intra > 0.0)] = np.nan
+        return scores
 
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):

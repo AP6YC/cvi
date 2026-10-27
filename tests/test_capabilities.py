@@ -17,6 +17,8 @@ ALL_OPERATIONS = cvi.CVICapabilities(
     remove=True,
     split=True,
     mini_batch=True,
+    trial=True,
+    move=True,
 )
 
 

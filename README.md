@@ -43,6 +43,8 @@ Please see the [documentation][docs-stable-url] for detailed usage.
   - [Implemented Indices](#implemented-indices)
 - [Optimizations](#optimizations)
 - [Merge, Remove, and Split Operations](#merge-remove-and-split-operations)
+  - [Trial Mode and Moves](#trial-mode-and-moves)
+  - [Lifecycle and Accessors](#lifecycle-and-accessors)
   - [Optional FuzzyART CONN Backend](#optional-fuzzyart-conn-backend)
   - [Optional Numba Acceleration](#optional-numba-acceleration)
   - [Optional JAX Batch Backend](#optional-jax-batch-backend)
@@ -199,7 +201,7 @@ support:
 
 ```python
 >>> cvi.CONN(model_type="KMeans").capabilities
-CVICapabilities(batch=True, incremental=False, merge=True, remove=False, split=True, mini_batch=False)
+CVICapabilities(batch=True, incremental=False, merge=True, remove=False, split=True, mini_batch=False, trial=False, move=False)
 ```
 
 Capabilities describe the selected numerical and prototype backends. They do
@@ -207,19 +209,25 @@ not indicate whether the object has been initialized or whether an optional
 dependency is installed.
 `batch` indicates one-shot batch evaluation; `mini_batch` indicates cumulative
 chunk updates with `update_batch`, including sequential FuzzyART CONN updates.
+`trial` indicates scoring operations without applying them (`commit=False`),
+and `move` indicates sample reassignment with `move`.
 
 ### Updating an Existing Partition
 
-Initialized indices support adding samples. Most also support removing samples
-and merging clusters without replaying the full dataset via `remove` and `merge`:
+Initialized indices support adding samples. Most also support removing samples,
+moving samples between clusters, and merging clusters without replaying the
+full dataset via `remove`, `move`, and `merge`:
 
 ```python
 value = index.get_cvi(new_sample, new_label)
 value = index.remove(existing_sample, existing_label)
+value = index.move(existing_sample, existing_label, other_label)
 value = index.merge(target_label=20, source_label=10)
 ```
 
-Both methods update the object in place and return its new criterion value.
+These methods update the object in place and return its new criterion value.
+Each also accepts `commit=False` to score the operation without applying it; see
+[Trial Mode and Moves](#trial-mode-and-moves).
 Removing the final sample of a cluster deletes that cluster, while `merge` retains `target_label` and deletes `source_label`.
 The caller is responsible for ensuring that a removed sample belongs to the supplied label.
 `CONN` supports merge but does not support remove.
@@ -317,6 +325,83 @@ Removing the final sample of a cluster deletes that cluster, while `merge` retai
 `CONN` also supports merge and split, with split selecting global prototype IDs
 instead of supplying sample statistics. See the [CONN guide][conn-guide].
 The caller is responsible for ensuring that a removed sample belongs to the supplied label.
+
+### Trial Mode and Moves
+
+Every incremental operation (`get_cvi`, `remove`, `merge`, `split`, and `move`)
+takes a keyword-only `commit` argument, `True` by default. With `commit=False`
+the call returns the score the operation *would* produce and leaves the object
+unchanged. A label that has not been seen yet means "create a new cluster".
+Scores are NaN while the index is undefined (for example, with fewer than two
+clusters).
+
+```python
+# Score one candidate without changing the index.
+score = index.get_cvi(sample, label, commit=False)
+
+# Score several candidate labels at once: one score per label.
+scores = index.get_cvi(sample, np.array([10, 20, 30, 99]), commit=False)
+
+# Reassign a sample, or score several destinations for it.
+scores = index.move(sample, old_label, np.array([10, 20, 99]), commit=False)
+value = index.move(sample, old_label, 20)
+```
+
+Vectorized candidates are accepted only with `commit=False` and a
+one-dimensional sample, so the batch form of `get_cvi` (two-dimensional data
+with one label per row) stays unambiguous. Committing always requires a scalar
+label. Vectorized scoring shares work across candidates. For example, CH and
+WB score all `K` candidates in `O(K·d)`. Indices built on pairwise centroid
+statistics (DB, XB, GD43, GD53, PS, cSIL, rCIP) need each candidate's new row,
+so they cost `O(K²·d)` for `K` candidates but still avoid rebuilding the full
+pairwise matrix for each one.
+
+**Committing after a trial does not recompute.** Each object keeps the state
+computed by its most recent trial. If the next committing call is the same
+operation with the same arguments, it applies that state directly instead of
+recomputing it. For `get_cvi` and `move`, the same arguments means the same
+sample (and old label), with the committed label among the scored candidates.
+Any other mutation discards the stored state.
+The typical accept-first-candidate loop is therefore one vectorized trial plus
+one cheap commit:
+
+```python
+scores = index.get_cvi(sample, candidates, commit=False)
+for label, score in zip(candidates, scores):
+    if index.is_better(score, index.criterion_value):
+        index.get_cvi(sample, label)  # reuses the trial's computed state
+        break
+```
+
+The stored trial state is private and is not pickled. Apart from it, a trial
+leaves every attribute of the object unchanged.
+
+`move(sample, old_label, new_label)` reassigns one sample. A committed move
+leaves exactly the state of `remove(sample, old_label)` followed by
+`get_cvi(sample, new_label)`. The move is applied atomically: when it empties
+a singleton cluster, no intermediate state is visible, and a failed move leaves
+the object unchanged. Moving a sample to its own label is a no-op that returns
+the current score.
+
+`is_better(new, old, tol=0.0)` compares two scores in the index's preferred
+direction (`info.optimality`). Ties are accepted (`>=` for maximized indices,
+`<=` for minimized ones). A NaN on either side counts as acceptance.
+
+`CONN` and JAX configurations report `trial=False` and `move=False` in their
+`capabilities` and raise `NotImplementedError` for `commit=False` and `move`.
+
+### Lifecycle and Accessors
+
+```python
+index.n_clusters  # number of tracked clusters
+index.n_samples   # number of represented samples
+index.labels      # known external labels, in first-seen order
+
+fresh = index.clone()  # new, unfitted object with the same configuration
+index.reset()          # clear all data, keeping configuration and backend
+index.get_cvi(samples, labels)  # batch initialization works again after reset
+```
+
 `cvi` comes with some optimizations in the form of various backends that you can switch between for faster performance depending on your use-case.
 
 ### Optional FuzzyART CONN Backend
