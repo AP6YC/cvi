@@ -54,41 +54,57 @@ def build(cvi_type, data, labels):
     return index
 
 
-def assert_same_value(a, b, path="state"):
-    """Exact recursive comparison of CVI state values."""
+def assert_same_value(a, b, path="state", rtol=0.0):
+    """Recursive comparison of CVI state values (exact unless rtol > 0)."""
     if isinstance(a, _base.LabelMap) or isinstance(b, _base.LabelMap):
         assert type(a) is type(b), path
         assert a.map == b.map, path
     elif isinstance(a, np.ndarray) or isinstance(b, np.ndarray):
         a, b = np.asarray(a), np.asarray(b)
         assert a.shape == b.shape, path
-        np.testing.assert_array_equal(a, b, err_msg=path)
+        if rtol and a.dtype.kind == "f":
+            np.testing.assert_allclose(a, b, rtol=rtol, atol=1e-12,
+                                       equal_nan=True, err_msg=path)
+        else:
+            np.testing.assert_array_equal(a, b, err_msg=path)
     elif isinstance(a, (list, tuple)):
         assert isinstance(b, (list, tuple)) and len(a) == len(b), path
         for ix, (left, right) in enumerate(zip(a, b)):
-            assert_same_value(left, right, f"{path}[{ix}]")
+            assert_same_value(left, right, f"{path}[{ix}]", rtol)
     elif isinstance(a, dict):
         assert isinstance(b, dict) and a.keys() == b.keys(), path
         for key in a:
-            assert_same_value(a[key], b[key], f"{path}.{key}")
+            assert_same_value(a[key], b[key], f"{path}.{key}", rtol)
     elif isinstance(a, float) or isinstance(b, float):
-        np.testing.assert_equal(a, b, err_msg=path)
+        if rtol:
+            np.testing.assert_allclose(a, b, rtol=rtol, atol=1e-12,
+                                       equal_nan=True, err_msg=path)
+        else:
+            np.testing.assert_equal(a, b, err_msg=path)
     elif type(a).__module__.startswith("src.cvi.backends"):
         assert type(a) is type(b), path
     elif hasattr(a, "__dict__") and not isinstance(a, type):
         assert type(a) is type(b), path
-        assert_same_value(vars(a), vars(b), path)
+        assert_same_value(vars(a), vars(b), path, rtol)
     else:
         assert a == b, path
 
 
-def assert_same_state(actual, expected):
-    """All state except the private trial memo is identical."""
+def assert_same_state(actual, expected, rtol=0.0):
+    """All state except the private trial memo matches.
+
+    Exact by default. Comparisons between the plain-commit path and the
+    trial (plan) path pass a tight ``rtol``, since the two compute the same
+    formulas with possibly different floating-point reduction order.
+    """
     left = {k: v for k, v in actual.__dict__.items() if k != "_trial_memo"}
     right = {k: v for k, v in expected.__dict__.items() if k != "_trial_memo"}
     assert left.keys() == right.keys()
     for key in left:
-        assert_same_value(left[key], right[key], key)
+        assert_same_value(left[key], right[key], key, rtol)
+
+
+CROSS_PATH = 1e-12
 
 
 def assert_close(actual, expected):
@@ -150,7 +166,20 @@ def test_commit_after_trial_reuses_plan_and_matches_direct_commit(cvi_type):
         assert memoized._trial_memo is not None
         memoized.get_cvi(data[-1], label)
         assert memoized._trial_memo is None
-        assert_same_state(memoized, direct)
+        assert_same_state(memoized, direct, rtol=CROSS_PATH)
+
+
+@pytest.mark.parametrize("cvi_type", backend_cases(), indirect=True)
+def test_plain_commits_do_not_use_the_trial_path(cvi_type, monkeypatch):
+    data, labels = blobs()
+    index = build(cvi_type, data[:-2], labels[:-2])
+
+    def fail(*args, **kwargs):
+        raise AssertionError("plain commits must use _param_inc")
+
+    monkeypatch.setattr(index, "_plan_add", fail)
+    index.get_cvi(data[-2], int(labels[-2]))
+    index.move(data[-2], int(labels[-2]), 99)
 
 
 @pytest.mark.parametrize("cvi_type", backend_cases(), indirect=True)
@@ -267,7 +296,7 @@ def test_vectorized_move_matches_scalar_trials_and_memoized_commit(cvi_type):
     direct.move(sample, old, target)
     index.move(sample, old, candidates, commit=False)
     index.move(sample, old, target)
-    assert_same_state(index, direct)
+    assert_same_state(index, direct, rtol=CROSS_PATH)
 
 
 @pytest.mark.parametrize("cvi_type", backend_cases(), indirect=True)
@@ -297,7 +326,7 @@ def test_move_out_of_singleton_is_atomic_and_matches_sequence(cvi_type):
     assert_close(trial[0], expected.criterion_value)
     assert index.n_clusters == 4
     index.move(data[0], 40, 10)
-    assert_same_state(index, expected)
+    assert_same_state(index, expected, rtol=CROSS_PATH)
     assert 40 not in index.labels
 
 

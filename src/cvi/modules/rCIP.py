@@ -182,6 +182,81 @@ class rCIP(_base.CVI):
         scores[k < 2] = np.nan
         return scores
 
+    @_base._add_docs(_base._param_inc_doc)
+    def _param_inc(self, sample: np.ndarray, label: int):
+        """
+        Incremental parameter update for the (Renyi's) representative Cross Information Potential (rCIP) CVI.
+        """
+
+        sample = np.asarray(sample, dtype=np.float64)
+        # Get the internal label corresponding to the provided label
+        i_label = self._label_map.get_internal_label(label)
+
+        # Increment the local number of samples count
+        n_samples_new = self._n_samples + 1
+
+        # Check if the module has been setup, then set the mu accordingly
+        if self._n_samples == 0:
+            self._setup(sample)
+
+        self._constant = 1 / np.sqrt((2 * np.pi) ** self._dim)
+
+        # IF NEW CLUSTER LABEL
+        # Correct for python 0-indexing
+        if i_label > self._n_clusters - 1:
+            n_new = 1
+            v_new = sample
+            sigma_new = self._delta_term
+            if self._n_clusters == 0:
+                D_new = np.zeros((1, 1))
+            else:
+                D_new = np.zeros((self._n_clusters + 1, self._n_clusters + 1))
+                D_new[0:self._n_clusters, 0:self._n_clusters] = self._D
+                d_column_new = np.zeros(self._n_clusters + 1)
+                d_column_new[:-1] = self._information_row(
+                    v_new, sigma_new,
+                )
+                D_new[i_label, :] = d_column_new
+                D_new[:, i_label] = d_column_new
+
+            # Update 1-D parameters with list appends
+            self._n_clusters += 1
+            self._n.append(n_new)
+
+            # Update 2-D parameters with numpy vstack
+            self._v = np.vstack([self._v, v_new])
+            self._D = D_new
+
+            # Update 3-D parameters with numpy dstack
+            self._sigma = np.dstack((self._sigma, sigma_new))
+
+        # ELSE OLD CLUSTER LABEL
+        else:
+            n_new = self._n[i_label] + 1
+            v_new = (
+                self._v[i_label, :]
+                + (sample - self._v[i_label, :]) / n_new
+            )
+            diff_x_v = sample - self._v[i_label, :]
+            sigma_new = (
+                ((n_new - 2) / (n_new - 1))
+                * (self._sigma[:, :, i_label] - self._delta_term)
+                + (1 / n_new) * (np.outer(diff_x_v, diff_x_v))
+                + self._delta_term
+            )
+            d_column_new = self._information_row(v_new, sigma_new)
+            d_column_new[i_label] = 0.0
+
+            # Update parameters
+            self._n[i_label] = n_new
+            self._v[i_label, :] = v_new
+            self._sigma[:, :, i_label] = sigma_new
+            self._D[i_label, :] = d_column_new
+            self._D[:, i_label] = d_column_new
+
+        # Update the parameters that do not depend on label novelty
+        self._n_samples = n_samples_new
+
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         """

@@ -508,6 +508,16 @@ class CVI():
         return order, offsets
 
     @abstractmethod
+    def _param_inc(self, sample: np.ndarray, label: int):
+        """Plain committing addition (used when no matching trial exists).
+
+        Trials and commits after a matching trial use the separate
+        ``_plan_add``/``_apply_add`` path instead; tests keep the two in
+        agreement.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         raise NotImplementedError
 
@@ -1101,13 +1111,6 @@ class CVI():
     def _apply_add_index(self, plan, slot, i_label, new):
         """Index-specific part of applying one plan slot."""
 
-    def _param_inc(self, sample: np.ndarray, label: int):
-        """
-        Incremental parameter update: plan one candidate, then apply it.
-        """
-        plan = self._plan_add(sample, [label], score=False)
-        self._apply_add(plan, 0, label)
-
     def _trial_within(self, plan):
         """Within-group sum of squares for each slot."""
         total = sum(self._CP)
@@ -1427,10 +1430,10 @@ class CVI():
             self._forget_trial()
             if cached is not None and new_label in cached[1].slot_of:
                 staged, plan = cached
+                staged._apply_add(plan, plan.slot_of[new_label], new_label)
             else:
                 staged = self._removed_copy(sample, old_label, old_i)
-                plan = staged._plan_add(sample, [new_label], score=False)
-            staged._apply_add(plan, plan.slot_of[new_label], new_label)
+                staged._param_inc(sample, new_label)
             staged._evaluate()
             self._adopt(staged)
             return self.criterion_value

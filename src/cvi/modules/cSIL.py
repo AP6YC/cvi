@@ -243,6 +243,50 @@ class cSIL(_base.CVI):
         scores[k < 2] = np.nan
         return scores
 
+    @_base._add_docs(_base._param_inc_doc)
+    def _param_inc(self, sample: np.ndarray, label: int):
+        """Update centered moments and just the affected dissimilarity row/column."""
+        self._ensure_centered_state()
+        sample = np.asarray(sample, dtype=np.float64)
+        i = self._label_map.get_internal_label(label)
+        if self._n_samples == 0:
+            self._setup(sample)
+            self._residuals = np.empty((0, self._dim))
+        if i == self._n_clusters:
+            self._n.append(1)
+            self._v = np.vstack((self._v, sample))
+            self._centered_CP.append(0.0)
+            self._residuals = np.vstack((self._residuals, np.zeros(self._dim)))
+            self._CP.append(np.inner(sample, sample))
+            self._G = np.vstack((self._G, sample))
+            matrix = np.zeros((i + 1, i + 1))
+            matrix[:i, :i] = self._S
+            self._S = matrix
+            self._n_clusters += 1
+        else:
+            n = self._n[i]
+            center = self._v[i] + (sample - self._v[i]) / (n + 1)
+            shift = self._v[i] - center
+            difference = sample - center
+            self._centered_CP[i] += (
+                np.dot(difference, difference) + n * np.dot(shift, shift)
+                + 2 * np.dot(shift, self._residuals[i])
+            )
+            self._residuals[i] += difference + n * shift
+            self._n[i], self._v[i] = n + 1, center
+            self._CP[i] += np.inner(sample, sample)
+            self._G[i] += sample
+        self._n_samples += 1
+        differences = self._v[i] - self._v
+        distances = np.einsum("ij,ij->i", differences, differences)
+        self._S[i, :] = distances + (
+            self._centered_CP[i] + 2 * (differences @ self._residuals[i])
+        ) / self._n[i]
+        self._S[:, i] = distances + (
+            np.asarray(self._centered_CP)
+            - 2 * np.einsum("ij,ij->i", differences, self._residuals)
+        ) / np.asarray(self._n)
+
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         """

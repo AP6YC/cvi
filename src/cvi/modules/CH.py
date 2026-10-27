@@ -117,6 +117,77 @@ class CH(_base.CVI):
         scores[(k < 2) | ~(within > 0.0)] = np.nan
         return scores
 
+    @_base._add_docs(_base._param_inc_doc)
+    def _param_inc(self, sample: np.ndarray, label: int):
+        """
+        Incremental parameter update for the Calinski-Harabasz (CH) CVI.
+        """
+
+        # Get the internal label corresponding to the provided label
+        i_label = self._label_map.get_internal_label(label)
+
+        # Increment the local number of samples count
+        n_samples_new = self._n_samples + 1
+
+        # Check if the module has been setup, then set the mu accordingly
+        if self._n_samples == 0:
+            self._setup(sample)
+        else:
+            self._mu = (
+                (1 - 1/n_samples_new) * self._mu
+                + (1/n_samples_new) * sample
+            )
+
+        # IF NEW CLUSTER LABEL
+        # Correct for python 0-indexing
+        if i_label > self._n_clusters - 1:
+            n_new = 1
+            v_new = sample
+            CP_new = 0.0
+            G_new = np.zeros(self._dim)
+
+            # Update 1-D parameters with list appends
+            self._n_clusters += 1
+            self._n.append(n_new)
+            self._CP.append(CP_new)
+
+            # Update 2-D parameters with numpy vstacks
+            self._v = np.vstack([self._v, v_new])
+            self._G = np.vstack([self._G, G_new])
+
+        # ELSE OLD CLUSTER LABEL
+        else:
+            n_new = self._n[i_label] + 1
+            v_new = (
+                (1 - 1 / n_new) * self._v[i_label, :]
+                + (1 / n_new) * sample
+            )
+            delta_v = self._v[i_label, :] - v_new
+            diff_x_v = sample - v_new
+            CP_new = (
+                self._CP[i_label]
+                + np.inner(diff_x_v, diff_x_v)
+                + self._n[i_label] * np.inner(delta_v, delta_v)
+                + 2 * np.inner(delta_v, self._G[i_label, :])
+            )
+            G_new = (
+                self._G[i_label, :]
+                + diff_x_v
+                + self._n[i_label] * delta_v
+            )
+            # Update parameters
+            self._n[i_label] = n_new
+            self._v[i_label, :] = v_new
+            self._CP[i_label] = CP_new
+            self._G[i_label, :] = G_new
+
+        # Update the parameters that do not depend on label novelty
+        self._n_samples = n_samples_new
+        # self._mu = mu_new
+        self._SEP = np.asarray(self._n) * self._backend.centroid_distances(
+            self._v, self._mu,
+        )
+
     @_base._add_docs(_base._param_batch_doc)
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         """
