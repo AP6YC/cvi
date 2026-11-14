@@ -77,6 +77,48 @@ class WB(_base.CVI):
         self._SEP = np.zeros([self._dim])
         self._mu = sample
 
+    def _plan_add_index(self, plan):
+        """Separation terms against the prospective global mean."""
+        plan.sep_base = np.asarray(self._n) * self._backend.centroid_distances(
+            self._v, plan.mu_new,
+        )
+        plan.sep_new = plan.n_new * self._backend.centroid_distances(
+            plan.v_new, plan.mu_new,
+        )
+
+    def _trial_between(self, plan):
+        """Between-group sum of squares for each plan slot."""
+        total = np.sum(plan.sep_base)
+        between = total + plan.sep_new
+        existing = plan.existing
+        between[existing] = (
+            total - plan.sep_base[plan.cand[existing]] + plan.sep_new[existing]
+        )
+        return between
+
+    def _apply_add_index(self, plan, slot, i_label, new):
+        """Update separation terms from the plan."""
+        if plan.fresh:
+            self._SEP = np.asarray(self._n) * self._backend.centroid_distances(
+                self._v, self._mu,
+            )
+            return
+        separation = plan.sep_base.copy()
+        if new:
+            separation = np.append(separation, plan.sep_new[slot])
+        else:
+            separation[i_label] = plan.sep_new[slot]
+        self._SEP = separation
+
+    def _score_add(self, plan):
+        """WB score of each plan slot."""
+        within = self._trial_within(plan)
+        between = self._trial_between(plan)
+        k = self._trial_cluster_counts(plan)
+        scores = (within / between) * k
+        scores[(k < 2) | ~(between > 0.0)] = np.nan
+        return scores
+
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
         """

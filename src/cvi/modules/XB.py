@@ -12,7 +12,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base
+from . import _base, _trial
 
 
 # XB object definition
@@ -72,6 +72,31 @@ class XB(_base.CVI):
         # XB-specific setup
         self._SEP = np.zeros([self._dim])
         self._mu = sample
+
+    def _plan_add_index(self, plan):
+        """Squared distances from each prospective centroid to the others."""
+        plan.rows = self._candidate_rows(
+            plan,
+            lambda slot: self._backend.centroid_distances(
+                self._v, plan.v_new[slot],
+            ),
+        )
+
+    def _apply_add_index(self, plan, slot, i_label, new):
+        """Write the planned distance row."""
+        if plan.fresh:
+            self._D = np.zeros((1, 1))
+            return
+        self._D = self._apply_pairwise_row(self._D, plan.rows[slot], i_label, new)
+
+    def _score_add(self, plan):
+        """Xie-Beni score of each plan slot."""
+        within = self._trial_within(plan)
+        separation = _trial.trial_min_off_diagonal(self._D, plan.rows, plan)
+        k = self._trial_cluster_counts(plan)
+        scores = within / ((self._n_samples + 1) * separation)
+        scores[(k < 2) | ~(separation > 0.0)] = np.nan
+        return scores
 
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):

@@ -14,7 +14,7 @@ References
 import numpy as np
 
 # Local imports
-from . import _base
+from . import _base, _trial
 
 
 # GD53 object definition
@@ -87,6 +87,36 @@ class GD53(_base.CVI):
                   / (counts[:, None] + counts[None, :]))
         np.fill_diagonal(matrix, 0.0)
         return matrix
+
+    def _plan_add_index(self, plan):
+        """Dispersion between each prospective cluster and the others."""
+        compactness = np.asarray(self._CP, dtype=np.float64)
+        counts = np.asarray(self._n)
+        plan.rows = self._candidate_rows(
+            plan,
+            lambda slot: (
+                (plan.CP_new[slot] + compactness)
+                / (plan.n_new[slot] + counts)
+            ),
+        )
+
+    def _apply_add_index(self, plan, slot, i_label, new):
+        """Write the planned dispersion row."""
+        if plan.fresh:
+            self._D = np.zeros((1, 1))
+            return
+        self._D = self._apply_pairwise_row(self._D, plan.rows[slot], i_label, new)
+
+    def _score_add(self, plan):
+        """Generalized Dunn score of each plan slot."""
+        intra = 2 * _trial.max_without(
+            np.divide(self._CP, self._n), plan, plan.CP_new / plan.n_new,
+        )
+        inter = _trial.trial_min_off_diagonal(self._D, plan.rows, plan)
+        k = self._trial_cluster_counts(plan)
+        scores = inter / intra
+        scores[(k < 2) | ~(intra > 0.0)] = np.nan
+        return scores
 
     @_base._add_docs(_base._param_inc_doc)
     def _param_inc(self, sample: np.ndarray, label: int):
