@@ -104,7 +104,9 @@ def merge_statistics(counts, centroids, compactness, residuals,
 
 def centroid_distances(centroids, centroid, squared=True):
     """Distances to one centroid, without a cancellation-prone Gram matrix."""
-    distances = np.sum((centroids - centroid) ** 2, axis=1)
+    # np.add.reduce is np.sum without its Python dispatch, which dominates
+    # on the short rows of one streaming update.
+    distances = np.add.reduce((centroids - centroid) ** 2, axis=1)
     return distances if squared else np.sqrt(distances)
 
 
