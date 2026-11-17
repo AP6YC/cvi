@@ -28,6 +28,21 @@ they are not process RSS or out-of-core IO measurements. Vary sample, cluster,
 feature, and chunk counts to assess the intended workload. No timing is a CI
 threshold.
 
+## Streaming commit timing
+
+To time plain streaming commits (one `get_cvi` update without scoring) per
+index, optionally against another checkout on identical inputs:
+
+```sh
+git worktree add /tmp/cvi-develop develop
+OPENBLAS_NUM_THREADS=1 python -m benchmarks.benchmark_streaming_add --baseline /tmp/cvi-develop
+```
+
+Each package runs in its own subprocess and rounds alternate between them, so
+drift in machine load affects both. It reports the median over rounds of each
+round's best per-sample time and writes nothing to disk. Use `--clusters`,
+`--features` and `--indices` to vary the workload.
+
 ## Batch versus incremental timing figure
 
 Generate a 12-panel figure for all ten public CVIs, a scatter plot of the

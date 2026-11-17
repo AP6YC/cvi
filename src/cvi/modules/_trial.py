@@ -8,10 +8,14 @@ valid while that state is unchanged.
 
 import numpy as np
 
+if hasattr(np, "vecdot"):
+    _row_inner = np.vecdot
+else:  # pragma: no cover - NumPy < 2.0
+    def _row_inner(left, right):
+        return np.asarray([np.inner(a, b) for a, b in zip(left, right)])
+
 _ONE = np.zeros(1, dtype=np.intp)
-_NONE = np.zeros(0, dtype=np.intp)
 _ONE.flags.writeable = False
-_NONE.flags.writeable = False
 
 
 class AddPlan:
@@ -21,49 +25,95 @@ class AddPlan:
     label, plus a single slot (internal label ``-1``) shared by every
     previously unseen label, since each of those creates an identical cluster.
     Index-specific statistics are attached as attributes by the CVI.
+
+    A one-label plan (every plain commit) keeps its per-slot values in
+    one-element lists, which are much cheaper to build and index than 1-row
+    arrays; :meth:`vectorize` turns them into arrays before scoring. Lists
+    are therefore reserved for per-slot values.
     """
 
     def __init__(self, sample, labels, mapping, fresh):
         self.x = sample
         self.fresh = fresh
-        if len(labels) == 1:
-            # The committing path plans one label; skip the grouping work.
-            label = labels[0]
-            self.cand = np.asarray([mapping.get(label, -1)], dtype=np.intp)
-            inverse = np.zeros(1, dtype=np.intp)
-            self.slot_of = {label: 0}
-        else:
-            internal = np.fromiter(
-                (mapping.get(label, -1) for label in labels),
-                dtype=np.intp, count=len(labels),
-            )
-            self.cand, inverse = np.unique(internal, return_inverse=True)
-            self.slot_of = {}
-            for label, slot in zip(labels, inverse.tolist()):
-                self.slot_of.setdefault(label, slot)
-        self._inverse = inverse
-        self.n_slots = len(self.cand)
-        self.existing = self.cand >= 0
-        if self.n_slots == 1:
-            self.existing_slots = _ONE if self.existing[0] else _NONE
-        else:
-            self.existing_slots = np.flatnonzero(self.existing)
-        self.existing_labels = self.cand[self.existing_slots]
+        # Index-specific rows against the current clusters; set only when the
+        # plan is scored, and otherwise computed for the applied slot alone.
+        self.rows = None
         self.scores = None
+        if len(labels) == 1:
+            label = labels[0]
+            self.cand = [mapping.get(label, -1)]
+            self.slot_of = {label: 0}
+            self.n_slots = 1
+            self._inverse = _ONE
+            return
+        internal = np.fromiter(
+            (mapping.get(label, -1) for label in labels),
+            dtype=np.intp, count=len(labels),
+        )
+        self.cand, self._inverse = np.unique(internal, return_inverse=True)
+        self.slot_of = {}
+        for label, slot in zip(labels, self._inverse.tolist()):
+            self.slot_of.setdefault(label, slot)
+        self.n_slots = len(self.cand)
+        self._index_slots()
+
+    def _index_slots(self):
+        self.existing = self.cand >= 0
+        self.existing_slots = np.flatnonzero(self.existing)
+        self.existing_labels = self.cand[self.existing_slots]
+
+    def vectorize(self):
+        """Convert one-element per-slot lists into arrays for scoring."""
+        for name, value in list(vars(self).items()):
+            if isinstance(value, list):
+                setattr(self, name, np.asarray(value))
+        if not hasattr(self, "existing"):
+            self._index_slots()
 
     def scores_for_candidates(self):
         """Scores in the order the candidate labels were supplied."""
         return self.scores[self._inverse]
 
 
-def dot(left, right):
-    """Inner product of two vectors, summed exactly as :func:`row_dot` does."""
-    return np.einsum("i,i->", left, right)
+def inner_products(vectors):
+    """``np.inner`` for vectors, or its row-wise form for 2-D arrays.
+
+    ``np.vecdot`` runs the same inner-product loop as ``np.inner`` on every
+    row, so a one-slot update (as streamed since 0.7) and the same slot of a
+    many-slot plan agree bit for bit.
+    """
+    return np.inner if vectors.ndim == 1 else _row_inner
 
 
-def row_dot(left, right):
-    """Row-wise inner products of two equally shaped 2-D arrays."""
-    return np.einsum("ij,ij->i", left, right)
+def centroid_update(centroid, sample, count, shift_form=False):
+    """Centroid(s) after adding ``sample``; ``count`` is the new count.
+
+    ``centroid`` is one vector with a scalar count, or one row per slot with
+    a column of counts.
+    """
+    if shift_form:
+        return centroid + (sample - centroid) / count
+    return (1 - 1 / count) * centroid + (1 / count) * sample
+
+
+def compactness_update(compactness, moment, centroid, centroid_new, sample,
+                       count):
+    """Compactness and first-moment term after adding ``sample``.
+
+    ``count`` is the count before the addition: a scalar for one vector, or
+    one entry per row.
+    """
+    delta_v = centroid - centroid_new
+    diff_x_v = sample - centroid_new
+    inner = inner_products(diff_x_v)
+    column = count if diff_x_v.ndim == 1 else count[:, None]
+    compactness_new = (
+        compactness
+        + inner(diff_x_v, diff_x_v)
+        + count * inner(delta_v, delta_v)
+        + 2 * inner(delta_v, moment)
+    )
+    return compactness_new, moment + diff_x_v + column * delta_v
 
 
 def min_off_diagonal_excluding(matrix):

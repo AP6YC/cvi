@@ -508,16 +508,6 @@ class CVI():
         return order, offsets
 
     @abstractmethod
-    def _param_inc(self, sample: np.ndarray, label: int):
-        """Plain committing addition (used when no matching trial exists).
-
-        Trials and commits after a matching trial use the separate
-        ``_plan_add``/``_apply_add`` path instead; tests keep the two in
-        agreement.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
     def _param_batch(self, data: np.ndarray, labels: np.ndarray):
         raise NotImplementedError
 
@@ -968,7 +958,11 @@ class CVI():
 
     def _plan_add(self, sample, labels, *, score):
         """Compute, without mutation, the state of adding ``sample`` to each
-        candidate label, and optionally the resulting scores."""
+        candidate label, and optionally the resulting scores.
+
+        Unscored plans hold only the shared statistics; the index-specific
+        part needed to apply a slot is then computed for that slot alone.
+        """
         plan = _trial.AddPlan(
             np.asarray(sample, dtype=np.float64),
             labels,
@@ -976,37 +970,37 @@ class CVI():
             fresh=self._n_samples == 0,
         )
         self._plan_add_statistics(plan)
-        if not plan.fresh:
-            self._plan_add_index(plan)
         if score:
+            plan.vectorize()
             if plan.fresh:
                 plan.scores = np.full(plan.n_slots, np.nan)
             else:
+                self._plan_add_index(plan)
                 with np.errstate(divide="ignore", invalid="ignore"):
                     plan.scores = self._score_add(plan)
         return plan
 
+    def _param_inc(self, sample: np.ndarray, label: int):
+        """Incremental parameter update: plan one label, then apply it."""
+        self._apply_add(self._plan_add(sample, (label,), score=False), 0, label)
+
     def _plan_centroids(self, plan, shift_form=False):
         """Counts and centroids for every plan slot."""
-        x, slots, internal = plan.x, plan.existing_slots, plan.existing_labels
+        x = plan.x
         if plan.n_slots == 1:
-            # Committing plans one label; plain 1-D arithmetic is much
-            # cheaper here and evaluates the same expressions elementwise.
-            if len(slots):
-                i = int(internal[0])
+            # One slot: the same update on plain 1-D arithmetic, which is much
+            # cheaper than gathering and scattering 1-row arrays.
+            i = plan.cand[0]
+            if i >= 0:
                 n_old = self._n[i]
-                n_new = n_old + 1
-                v = self._v[i]
-                if shift_form:
-                    v_new = v + (x - v) / n_new
-                else:
-                    v_new = (1 - 1 / n_new) * v + (1 / n_new) * x
+                v_new = _trial.centroid_update(
+                    self._v[i], x, n_old + 1, shift_form,
+                )
             else:
-                n_old, n_new, v_new = 0, 1, x
-            plan.n_old = np.asarray([n_old], dtype=np.int64)
-            plan.n_new = np.asarray([n_new], dtype=np.int64)
-            plan.v_new = v_new.reshape(1, -1).astype(np.float64, copy=True)
+                n_old, v_new = 0, x
+            plan.n_old, plan.n_new, plan.v_new = [n_old], [n_old + 1], [v_new]
             return
+        slots, internal = plan.existing_slots, plan.existing_labels
         plan.n_old = np.zeros(plan.n_slots, dtype=np.int64)
         plan.v_new = np.empty((plan.n_slots, len(x)))
         plan.v_new[:] = x
@@ -1014,57 +1008,39 @@ class CVI():
             plan.n_old[slots] = [self._n[i] for i in internal.tolist()]
         plan.n_new = plan.n_old + 1
         if len(slots):
-            v = self._v[internal]
-            n_new = plan.n_new[slots][:, None]
-            if shift_form:
-                plan.v_new[slots] = v + (x - v) / n_new
-            else:
-                plan.v_new[slots] = (1 - 1 / n_new) * v + (1 / n_new) * x
+            plan.v_new[slots] = _trial.centroid_update(
+                self._v[internal], x, plan.n_new[slots][:, None], shift_form,
+            )
 
     def _plan_add_statistics(self, plan):
         """Counts, centroids and, if used, compactness and the global mean."""
         self._plan_centroids(plan)
         if not self._uses_compactness_stats:
             return
-        x, slots, internal = plan.x, plan.existing_slots, plan.existing_labels
+        x = plan.x
         if plan.n_slots == 1:
-            if len(slots):
-                i = int(internal[0])
-                n = plan.n_old[0]
-                v_new = plan.v_new[0]
-                G = self._G[i]
-                delta_v = self._v[i] - v_new
-                diff_x_v = x - v_new
-                CP_new = (
-                    self._CP[i]
-                    + _trial.dot(diff_x_v, diff_x_v)
-                    + n * _trial.dot(delta_v, delta_v)
-                    + 2 * _trial.dot(delta_v, G)
+            i = plan.cand[0]
+            if i >= 0:
+                CP_new, G_new = _trial.compactness_update(
+                    self._CP[i], self._G[i], self._v[i], plan.v_new[0], x,
+                    self._n[i],
                 )
-                G_new = G + diff_x_v + n * delta_v
             else:
                 CP_new, G_new = 0.0, np.zeros(len(x))
-            plan.CP_new = np.asarray([CP_new], dtype=np.float64)
-            plan.G_new = G_new.reshape(1, -1)
+            plan.CP_new, plan.G_new = [CP_new], [G_new]
         else:
+            slots, internal = plan.existing_slots, plan.existing_labels
             plan.CP_new = np.zeros(plan.n_slots)
             plan.G_new = np.zeros((plan.n_slots, len(x)))
             if len(slots):
-                n = plan.n_old[slots]
-                v_old = self._v[internal]
-                v_new = plan.v_new[slots]
-                G = self._G[internal]
                 CP = np.asarray([self._CP[i] for i in internal.tolist()],
                                 dtype=np.float64)
-                delta_v = v_old - v_new
-                diff_x_v = x - v_new
-                plan.CP_new[slots] = (
-                    CP
-                    + _trial.row_dot(diff_x_v, diff_x_v)
-                    + n * _trial.row_dot(delta_v, delta_v)
-                    + 2 * _trial.row_dot(delta_v, G)
+                plan.CP_new[slots], plan.G_new[slots] = (
+                    _trial.compactness_update(
+                        CP, self._G[internal], self._v[internal],
+                        plan.v_new[slots], x, plan.n_old[slots],
+                    )
                 )
-                plan.G_new[slots] = G + diff_x_v + n[:, None] * delta_v
         n_samples_new = self._n_samples + 1
         plan.mu_new = (
             x.copy() if plan.fresh else
@@ -1072,7 +1048,16 @@ class CVI():
         )
 
     def _plan_add_index(self, plan):
-        """Index-specific statistics of an initialized plan (default: none)."""
+        """Index-specific statistics needed to score a plan.
+
+        By default, the rows of every slot against the current clusters.
+        """
+        plan.rows = self._candidate_rows(plan)
+
+    def _add_row(self, plan, slot):
+        """One slot's index-specific row against the current clusters, or
+        None for an index without one."""
+        return None
 
     def _score_add(self, plan):
         """Score every slot of an initialized plan."""
@@ -1080,36 +1065,43 @@ class CVI():
 
     def _apply_add(self, plan, slot, label):
         """Apply one slot of a plan computed against the current state."""
-        x = plan.x
-        if self._n_samples == 0:
-            self._setup(x)
+        fresh = plan.fresh
         new = label not in self._label_map.map
-        if new != (plan.cand[slot] < 0) or plan.fresh != (self._n_samples == 0):
+        if new != (plan.cand[slot] < 0) or fresh != (self._n_samples == 0):
             raise RuntimeError("The trial plan no longer matches the CVI state")
-        i = self._label_map.get_internal_label(label)
-        n_new = int(plan.n_new[slot])
-        if new:
-            self._n.append(n_new)
-            self._v = np.vstack([self._v, plan.v_new[slot]])
+        if fresh:
+            self._setup(plan.x)
+            row = None
         else:
-            self._n[i] = n_new
-            self._v[i, :] = plan.v_new[slot]
+            # Rows are taken against the clusters as they are before the update.
+            row = self._planned_row(plan, slot)
+        i = self._label_map.get_internal_label(label)
+        v_new = plan.v_new[slot]
+        if new:
+            self._n.append(int(plan.n_new[slot]))
+            self._v = np.vstack([self._v, v_new])
+            self._n_clusters += 1
+        else:
+            self._n[i] = int(plan.n_new[slot])
+            self._v[i, :] = v_new
         if self._uses_compactness_stats:
             if new:
-                self._CP.append(float(plan.CP_new[slot]))
+                self._CP.append(plan.CP_new[slot])
                 self._G = np.vstack([self._G, plan.G_new[slot]])
             else:
-                self._CP[i] = float(plan.CP_new[slot])
+                self._CP[i] = plan.CP_new[slot]
                 self._G[i, :] = plan.G_new[slot]
-            if not plan.fresh:
+            if not fresh:
                 self._mu = plan.mu_new
-        if new:
-            self._n_clusters += 1
-        self._apply_add_index(plan, slot, i, new)
+        self._apply_add_index(plan, slot, i, new, row)
         self._n_samples += 1
 
-    def _apply_add_index(self, plan, slot, i_label, new):
-        """Index-specific part of applying one plan slot."""
+    def _apply_add_index(self, plan, slot, i_label, new, row):
+        """Index-specific part of applying one plan slot.
+
+        ``row`` is the slot's row from :meth:`_planned_row`, or None for the
+        first sample.
+        """
 
     def _trial_within(self, plan):
         """Within-group sum of squares for each slot."""
@@ -1124,13 +1116,23 @@ class CVI():
         """Number of clusters after each slot's addition."""
         return self._n_clusters + (~plan.existing).astype(np.int64)
 
-    def _candidate_rows(self, plan, row):
-        """Stack ``row(slot)`` for every slot; zero existing self entries."""
+    def _candidate_rows(self, plan):
+        """Stack :meth:`_add_row` for every slot; zero existing self entries."""
         rows = np.empty((plan.n_slots, self._n_clusters))
         for slot in range(plan.n_slots):
-            rows[slot] = row(slot)
+            rows[slot] = self._add_row(plan, slot)
         rows[plan.existing_slots, plan.existing_labels] = 0.0
         return rows
+
+    def _planned_row(self, plan, slot):
+        """One slot's row: from a scored plan, or computed for that slot."""
+        if plan.rows is not None:
+            return plan.rows[slot]
+        row = self._add_row(plan, slot)
+        i = plan.cand[slot]
+        if row is not None and i >= 0:
+            row[i] = 0.0
+        return row
 
     def _apply_pairwise_row(self, matrix, row, i_label, new):
         """Replace or append one symmetric row of a pairwise matrix."""
