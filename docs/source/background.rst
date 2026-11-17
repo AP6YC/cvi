@@ -15,7 +15,7 @@ If you're still confused, read onward!
 Problem Statement
 -----------------
 
-Consider the following: say that you have an unlabeled dataset filled with vectors of features but no predefined "bins" that you could organize these sampels into.
+Consider the following: say that you have an unlabeled dataset filled with vectors of features but no predefined "bins" that you could organize these samples into.
 The desired end result is both a statement of how many bins of samples you have and a vector of labels corresponding to each sample prescribing which bin that sample belongs to.
 Both of these statements are generally equivalent beyond some edge cases, but it is worth noting the distinction.
 
@@ -75,6 +75,25 @@ A batch CVI computes its sufficient statistics from a complete dataset.
 Incremental CVIs update corresponding statistics one sample at a time, making
 them suitable for streaming clustering and online monitoring without retaining
 and recomputing the full history.
+
+The animations below track CH, DB, and cSIL as labeled samples arrive. Faded
+points have not arrived yet. Solid traces are the incremental values and dashed
+lines are the batch value for the complete dataset. Each dataset is streamed in
+class order and then in a fixed random order; the Iris CVIs use all four
+standardized features, with PCA only for plotting.
+
+.. image:: _static/readme/incremental-cvi-synthetic-class-order.gif
+   :alt: Incremental CVIs on class-ordered synthetic Gaussian blobs
+   :width: 49%
+.. image:: _static/readme/incremental-cvi-synthetic-shuffled.gif
+   :alt: Incremental CVIs on shuffled synthetic Gaussian blobs
+   :width: 49%
+.. image:: _static/readme/incremental-cvi-iris-class-order.gif
+   :alt: Incremental CVIs on the class-ordered Iris dataset
+   :width: 49%
+.. image:: _static/readme/incremental-cvi-iris-shuffled.gif
+   :alt: Incremental CVIs on the shuffled Iris dataset
+   :width: 49%
 
 For the non-CONN indices in this package, batch and incremental
 processing represent the same criterion calculation. Small floating-point

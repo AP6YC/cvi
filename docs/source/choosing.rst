@@ -6,14 +6,9 @@ Values from different index families are not on a common scale, so compare
 candidate partitions with the same index rather than comparing one index's
 number directly with another's.
 
-The following operation support describes the default NumPy backend. Every
-listed index supports batch evaluation.
-Aggregate mini-batch updates through ``update_batch`` are supported by ``CH``,
-``WB``, ``DB``, ``XB``, ``GD43``, ``GD53``, ``PS``, and ``cSIL`` with NumPy or
-Numba, and by ``rCIP`` with NumPy.
-``CONN(model_type="Fuzzy")`` supports the same method as a sequential
-convenience wrapper; its KMeans backends do not support chunk updates.
-Check ``index.capabilities.mini_batch`` before using them; see :doc:`guide`.
+Every index supports batch evaluation. The table below describes the default
+NumPy backend; see :doc:`backends` for Numba and JAX coverage and
+``index.capabilities`` for the exact operations a configuration supports.
 
 .. list-table:: Implemented indices
    :header-rows: 1
@@ -35,8 +30,8 @@ Check ``index.capabilities.mini_batch`` before using them; see :doc:`guide`.
      - Connectivity
      - Larger
      - ``[0, 1]``
-     - FuzzyART Backend Only
-     - No
+     - FuzzyART backend only
+     - Merge/split only
    * - ``cSIL``
      - Centroid-based Silhouette
      - Larger
@@ -85,11 +80,6 @@ Check ``index.capabilities.mini_batch`` before using them; see :doc:`guide`.
      - ``[0, inf)``
      - Yes
      - Yes
-
-.. include:: _backend_coverage.rstinc
-
-See :doc:`backends` for installation, accelerated kernels, precision rules,
-and compilation costs. Backend availability does not guarantee a speedup.
 
 ``CH``, ``DB``, ``GD43``, ``GD53``, ``WB``, and ``XB`` summarize variants of
 within-cluster compactness and between-cluster separation. ``cSIL`` offers a

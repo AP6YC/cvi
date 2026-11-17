@@ -5,18 +5,14 @@
 ``cvi``: Cluster Validity Indices in Python
 ===========================================
 
-These pages serve as the official documentation for the ``cvi`` Python package, the Python implementation of the `ClusterValidityIndices.jl <https://github.com/AP6YC/ClusterValidityIndices.jl>`_ Julia package.
+``cvi`` scores hard partitions when reference labels are unavailable. It
+evaluates a complete labeled dataset at once, or keeps the score up to date as
+samples arrive, with the same result either way. It is the Python counterpart
+of the `ClusterValidityIndices.jl <https://github.com/AP6YC/ClusterValidityIndices.jl>`_
+Julia package.
 
-``cvi`` provides batch and incremental cluster validity indices (CVIs) for evaluating
-hard partitions when reference labels are unavailable.
-The package offers a shared stateful interface for processing complete datasets (in a batch) or monitoring a clustering stream over time (incrementally).
-
-Cluster Validity Indices (CVIs) tackle the problem of judging the performance of an unsupervised/clustering algorithm without the availability of truth or supervisory labels, resulting in metrics of under- or over-partitioning.
-Furthermore, Incremental CVIs (ICVIs) are variants of these ordinarily batch algorithms that enable an online and computationally tractable method of evaluating the performance of a clustering algorithm as it clusters while being numerically equivalent to their batch counterparts.
-
-Start with :doc:`guide`, then use :doc:`choosing` to select an index.
-``CONN`` has a specialized prototype-based interface covered in :doc:`conn`.
-
+New to CVIs? Read :doc:`background`. Otherwise, start with :doc:`guide`, then
+use :doc:`choosing` to pick an index.
 
 .. toctree::
    :maxdepth: 1
@@ -24,14 +20,32 @@ Start with :doc:`guide`, then use :doc:`choosing` to select an index.
 
    background
    guide
-   backends
+   operations
    choosing
+   backends
    conn
    api
    legacy
 
+Acknowledgements
+----------------
+
+The implementations are largely derived from
+`ClusterValidityIndices.jl <https://github.com/AP6YC/ClusterValidityIndices.jl>`_,
+by the same authors:
+
+* Sasha Petrenko - petrenkos@mst.edu - `github.com/AP6YC <https://github.com/AP6YC>`_
+* Nik Melton - nmmz76@mst.edu - `github.com/NiklasMelton <https://github.com/NiklasMelton>`_
+
+Related Python packages: `validclust <https://github.com/crew102/validclust>`_
+and `clusterval <https://github.com/Nuno09/clusterval>`_.
+
+The logo uses the `Ethnocentric <https://www.1001fonts.com/ethnocentric-font.html>`_
+font and the `cluster computing icon <https://www.flaticon.com/free-icon/cluster_5464694>`_
+by IconBaandar on Flaticon.
+
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
