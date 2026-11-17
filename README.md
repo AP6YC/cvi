@@ -27,10 +27,20 @@ Batch and incremental cluster validity indices (CVIs) for hard partitions in Pyt
 
 You clustered your data. Without true labels, how do you know whether the result is any good?
 A cluster validity index scores a partition using only the samples and the labels your algorithm assigned.
+The score rates the partition's quality by that index's definition: some indices are better when larger and others when smaller, but moving a score toward its optimum always means a better partition in the sense that index measures.
+Indices look for different things, such as tight clusters, wide gaps between them, or balanced sizes. See [Choosing an index](https://AP6YC.github.io/cvi/main/choosing.html) for what each one rewards.
+
 `cvi` computes these scores for a whole dataset at once, or keeps them up to date one sample at a time as a stream is clustered, with the same result either way.
 
+The animations below show CH, DB, and cSIL updating as samples arrive (solid lines) and landing on the batch value for the full dataset (dashed lines).
+The top row streams synthetic Gaussian blobs and the bottom row the Iris dataset, first in class order and then shuffled.
+
 <p align="center">
+  <img src="https://media.githubusercontent.com/media/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-synthetic-class-order.gif" alt="Incremental CVIs on class-ordered synthetic Gaussian blobs" width="49%">
   <img src="https://media.githubusercontent.com/media/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-synthetic-shuffled.gif" alt="Incremental CVIs on shuffled synthetic Gaussian blobs" width="49%">
+</p>
+<p align="center">
+  <img src="https://media.githubusercontent.com/media/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-iris-class-order.gif" alt="Incremental CVIs on the class-ordered Iris dataset" width="49%">
   <img src="https://media.githubusercontent.com/media/AP6YC/cvi/develop/docs/source/_static/readme/incremental-cvi-iris-shuffled.gif" alt="Incremental CVIs on the shuffled Iris dataset" width="49%">
 </p>
 
@@ -62,9 +72,11 @@ for sample, label in zip(samples, labels):
     value = index.get_cvi(sample, int(label))
 ```
 
-CVI objects hold state, so use a new one for each partition you evaluate.
-An initialized index can also `remove` samples, `move` them between clusters, and `merge` or `split` clusters without replaying the data.
-Pass `commit=False` to any of these to get the score an operation would produce without applying it.
+Besides batch evaluation, every index has an incremental version that keeps running statistics for each cluster instead of the data.
+Because it holds state, an index can also `remove` samples, `move` them between clusters, and `merge` or `split` clusters without replaying the data, and `commit=False` scores any of these without applying it.
+A batch call leaves the same state behind, so these work after a batch too.
+Use a new object for each partition you evaluate.
+See [Batch and incremental evaluation](https://AP6YC.github.io/cvi/main/batch_incremental.html) for when to use each.
 
 ## Indices
 
@@ -86,8 +98,9 @@ Pass `commit=False` to any of these to get the score an operation would produce 
 The [documentation][docs-stable-url] covers:
 
 - [Getting started](https://AP6YC.github.io/cvi/main/guide.html): input rules and index metadata
+- [Batch and incremental evaluation](https://AP6YC.github.io/cvi/main/batch_incremental.html): how the two compare and when to use each
 - [Updating a partition](https://AP6YC.github.io/cvi/main/operations.html): remove, merge, split, trial scoring, moves, and mini-batches
-- [Choosing an index](https://AP6YC.github.io/cvi/main/choosing.html): what each index measures and when it is defined
+- [Choosing an index](https://AP6YC.github.io/cvi/main/choosing.html): how to read a score and what each index rewards
 - [Backends](https://AP6YC.github.io/cvi/main/backends.html): Numba and JAX, with benchmarks
 - [Using CONN](https://AP6YC.github.io/cvi/main/conn.html), which has its own setup requirements
 

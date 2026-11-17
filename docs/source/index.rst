@@ -11,6 +11,24 @@ samples arrive, with the same result either way. It is the Python counterpart
 of the `ClusterValidityIndices.jl <https://github.com/AP6YC/ClusterValidityIndices.jl>`_
 Julia package.
 
+The animations below show CH, DB, and cSIL updating as samples arrive (solid
+lines) and landing on the batch value for the full dataset (dashed lines). The
+top row streams synthetic Gaussian blobs and the bottom row the Iris dataset,
+first in class order and then shuffled.
+
+.. image:: _static/readme/incremental-cvi-synthetic-class-order.gif
+   :alt: Incremental CVIs on class-ordered synthetic Gaussian blobs
+   :width: 49%
+.. image:: _static/readme/incremental-cvi-synthetic-shuffled.gif
+   :alt: Incremental CVIs on shuffled synthetic Gaussian blobs
+   :width: 49%
+.. image:: _static/readme/incremental-cvi-iris-class-order.gif
+   :alt: Incremental CVIs on the class-ordered Iris dataset
+   :width: 49%
+.. image:: _static/readme/incremental-cvi-iris-shuffled.gif
+   :alt: Incremental CVIs on the shuffled Iris dataset
+   :width: 49%
+
 New to CVIs? Read :doc:`background`. Otherwise, start with :doc:`guide`, then
 use :doc:`choosing` to pick an index.
 
@@ -20,6 +38,7 @@ use :doc:`choosing` to pick an index.
 
    background
    guide
+   batch_incremental
    operations
    choosing
    backends

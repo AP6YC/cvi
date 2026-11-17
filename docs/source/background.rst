@@ -71,35 +71,10 @@ each implementation.
 Batch and Incremental Evaluation
 --------------------------------
 
-A batch CVI computes its sufficient statistics from a complete dataset.
-Incremental CVIs update corresponding statistics one sample at a time, making
-them suitable for streaming clustering and online monitoring without retaining
-and recomputing the full history.
-
-The animations below track CH, DB, and cSIL as labeled samples arrive. Faded
-points have not arrived yet. Solid traces are the incremental values and dashed
-lines are the batch value for the complete dataset. Each dataset is streamed in
-class order and then in a fixed random order; the Iris CVIs use all four
-standardized features, with PCA only for plotting.
-
-.. image:: _static/readme/incremental-cvi-synthetic-class-order.gif
-   :alt: Incremental CVIs on class-ordered synthetic Gaussian blobs
-   :width: 49%
-.. image:: _static/readme/incremental-cvi-synthetic-shuffled.gif
-   :alt: Incremental CVIs on shuffled synthetic Gaussian blobs
-   :width: 49%
-.. image:: _static/readme/incremental-cvi-iris-class-order.gif
-   :alt: Incremental CVIs on the class-ordered Iris dataset
-   :width: 49%
-.. image:: _static/readme/incremental-cvi-iris-shuffled.gif
-   :alt: Incremental CVIs on the shuffled Iris dataset
-   :width: 49%
-
-For the non-CONN indices in this package, batch and incremental
-processing represent the same criterion calculation. Small floating-point
-differences may arise from operation order. ``CONN`` is different: it also
-learns prototypes, and its batch KMeans backends are distinct from its
-incremental FuzzyART backend. See :doc:`conn` for those semantics.
+A batch CVI computes its statistics from a complete dataset. An incremental CVI
+updates the same statistics one sample at a time, which suits streaming
+clustering and online monitoring. See :doc:`batch_incremental` for how the two
+compare.
 
 Interpreting Values
 -------------------

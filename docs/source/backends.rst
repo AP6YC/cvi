@@ -288,6 +288,8 @@ work on padded arrays. Prefer chunks for throughput; individual Python calls
 can cost more than NumPy. See ``benchmarks/benchmark_jax_stream.py`` for
 synchronized compilation, resident chunk, and object timings.
 
+.. _benchmarks:
+
 Benchmarks
 ----------
 

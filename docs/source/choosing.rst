@@ -1,10 +1,81 @@
 Choosing an Index
 =================
 
-Each cluster validity index emphasizes different properties of a partition.
-Values from different index families are not on a common scale, so compare
-candidate partitions with the same index rather than comparing one index's
-number directly with another's.
+Reading a score
+---------------
+
+A CVI turns a partition into a single number that rates its quality by that
+index's own definition of a good partition. Some indices are maximized and
+some are minimized: a larger Calinski–Harabasz value is better, while a
+smaller Davies–Bouldin value is better. Each object's ``info.optimality``
+says which (``"max"`` or ``"min"``), and ``index.is_better(new, old)``
+compares two scores in the right direction. Pushing a score toward its optimum,
+for example by choosing between candidate partitions, gives a better partition
+in the sense that index measures.
+
+Because each index defines quality differently, two indices can disagree about
+which partition is better, and their values are not on a common scale. Compare
+partitions with the same index, and choose the index whose idea of quality fits
+your data.
+
+What each index measures
+------------------------
+
+Most indices balance **compactness** (how tightly each cluster's samples sit
+around its centroid) against **separation** (how far apart clusters are). They
+differ in how they summarize each one, which changes what they reward.
+
+``CH`` (Calinski–Harabasz), maximized
+   Ratio of between-cluster to within-cluster sum of squares, scaled by the
+   sample and cluster counts. It looks at the partition as a whole and favors
+   compact, well-separated, roughly spherical clusters.
+
+``WB`` (Within/Between), minimized
+   Within-cluster over between-cluster sum of squares, multiplied by the number
+   of clusters. It uses the same statistics as CH, but the multiplier penalizes
+   adding clusters more directly.
+
+``XB`` (Xie–Beni), minimized
+   Total within-cluster sum of squares divided by the smallest distance between
+   any two centroids. A single pair of nearby clusters makes the score worse,
+   so it penalizes partitions that split one cluster in two.
+
+``DB`` (Davies–Bouldin), minimized
+   For each cluster, finds the other cluster it is most easily confused with,
+   using the ratio of their combined spread to their centroid distance, then
+   averages those worst cases. It rewards every cluster being distinct from its
+   nearest neighbor, not just the partition on average.
+
+``GD43`` and ``GD53`` (Generalized Dunn), maximized
+   Smallest separation between any two clusters divided by the spread of the
+   widest cluster. Both are governed by the worst cases. GD43 measures
+   separation as centroid distance; GD53 measures it from the pooled spread of
+   each pair of clusters around their own centroids.
+
+``PS`` (Partition Separation), maximized
+   Sums a per-cluster term that rises with the cluster's size relative to the
+   largest cluster and with its distance to the nearest other centroid. It
+   favors balanced cluster sizes as well as separation.
+
+``cSIL`` (Centroid-based Silhouette), maximized
+   A silhouette computed with centroids instead of every pair of samples,
+   comparing each cluster's spread around its own centroid with how close the
+   nearest other cluster comes to it. Its bounded range makes values easy to
+   read on their own.
+
+``rCIP`` (Representative Cross Information Potential), minimized
+   Adds up the overlap between Gaussian models of each pair of clusters, built
+   from their centroids and covariances. Because it uses covariances, it
+   accounts for cluster shape and orientation, not only distance.
+
+``CONN`` (Connectivity), maximized
+   Learns prototypes of the data and measures how strongly neighboring
+   prototypes connect within clusters versus across them. Unlike the others, it
+   can recognize clusters that are not convex. It has its own setup
+   requirements; see :doc:`conn`.
+
+Summary
+-------
 
 Every index supports batch evaluation. The table below describes the default
 NumPy backend; see :doc:`backends` for Numba and JAX coverage and
@@ -81,12 +152,8 @@ NumPy backend; see :doc:`backends` for Numba and JAX coverage and
      - Yes
      - Yes
 
-``CH``, ``DB``, ``GD43``, ``GD53``, ``WB``, and ``XB`` summarize variants of
-within-cluster compactness and between-cluster separation. ``cSIL`` offers a
-bounded, centroid-based silhouette measure. ``PS`` measures partition
-separation, while ``rCIP`` uses distributional information. ``CONN`` is the
-specialized choice when connectivity between learned prototypes is important;
-see :doc:`conn` before using it.
+When is a score defined?
+------------------------
 
 The value ``numpy.nan`` is used when an index is not yet defined, including
 many one-cluster states. When monitoring a stream, consider the trajectory
