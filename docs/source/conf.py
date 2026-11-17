@@ -92,3 +92,6 @@ smv_outputdir_format = '{ref.name}'
 # Prefer remote refs in CI, since GitHub Actions reliably has origin/main
 # and origin/develop after fetching.
 smv_prefer_remote_refs = True
+
+# Flaticon rejects automated requests with 403.
+linkcheck_ignore = [r"https://www\.flaticon\.com/.*"]

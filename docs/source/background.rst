@@ -15,7 +15,7 @@ If you're still confused, read onward!
 Problem Statement
 -----------------
 
-Consider the following: say that you have an unlabeled dataset filled with vectors of features but no predefined "bins" that you could organize these sampels into.
+Consider the following: say that you have an unlabeled dataset filled with vectors of features but no predefined "bins" that you could organize these samples into.
 The desired end result is both a statement of how many bins of samples you have and a vector of labels corresponding to each sample prescribing which bin that sample belongs to.
 Both of these statements are generally equivalent beyond some edge cases, but it is worth noting the distinction.
 
@@ -71,16 +71,10 @@ each implementation.
 Batch and Incremental Evaluation
 --------------------------------
 
-A batch CVI computes its sufficient statistics from a complete dataset.
-Incremental CVIs update corresponding statistics one sample at a time, making
-them suitable for streaming clustering and online monitoring without retaining
-and recomputing the full history.
-
-For the non-CONN indices in this package, batch and incremental
-processing represent the same criterion calculation. Small floating-point
-differences may arise from operation order. ``CONN`` is different: it also
-learns prototypes, and its batch KMeans backends are distinct from its
-incremental FuzzyART backend. See :doc:`conn` for those semantics.
+A batch CVI computes its statistics from a complete dataset. An incremental CVI
+updates the same statistics one sample at a time, which suits streaming
+clustering and online monitoring. See :doc:`batch_incremental` for how the two
+compare.
 
 Interpreting Values
 -------------------

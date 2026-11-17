@@ -1,9 +1,99 @@
 Backends
 ========
 
-`cvi` comes with some optimizations in the form of various backends that you can switch between for faster performance depending on your use-case.
+NumPy is the default backend. Numba and JAX are optional and are selected per
+object with ``backend=``.
 
-.. include:: _backend_coverage.rstinc
+.. list-table:: Optional optimization coverage
+   :header-rows: 1
+   :widths: 10 15 20 20 15 20
+
+   * - Index
+     - Numba batch
+     - Numba sample updates
+     - Numba remove/merge
+     - JAX batch
+     - JAX streaming
+   * - ``CH``
+     - Yes
+     - Unchanged
+     - Unchanged
+     - Yes
+     - Capacity
+   * - ``CONN``
+     - Unavailable
+     - Unavailable
+     - Unavailable
+     - Unavailable
+     - Unavailable
+   * - ``cSIL``
+     - Yes
+     - Unchanged
+     - Dissimilarities
+     - Unavailable
+     - Unavailable
+   * - ``DB``
+     - Yes
+     - Distances
+     - Distances
+     - Unavailable
+     - Unavailable
+   * - ``GD43``
+     - Yes
+     - Distances
+     - Distances
+     - Unavailable
+     - Unavailable
+   * - ``GD53``
+     - Yes
+     - Unchanged
+     - Unchanged
+     - Unavailable
+     - Unavailable
+   * - ``PS``
+     - Yes
+     - Distances
+     - Distances
+     - Unavailable
+     - Unavailable
+   * - ``rCIP``
+     - Unavailable
+     - Unavailable
+     - Unavailable
+     - Unavailable
+     - Unavailable
+   * - ``WB``
+     - Yes
+     - Unchanged
+     - Unchanged
+     - Yes
+     - Capacity
+   * - ``XB``
+     - Yes
+     - Distances
+     - Distances
+     - Yes
+     - Capacity
+
+**Yes** means compiled batch kernels are available; it does not mean that every
+operation is compiled. **Distances** means centroid-distance kernels are
+compiled while other update logic remains in Python/NumPy. **Unchanged** means
+the operation is supported with ``backend="numba"`` but uses its existing NumPy
+implementation. **Dissimilarities** means cSIL's centered dissimilarity matrix
+rebuild is compiled. **Unavailable** means the index rejects that numerical backend.
+
+**Capacity** means JAX sample additions and ``update_many`` chunks require a
+positive ``capacity`` at construction. CH, WB, and XB also provide functional
+JAX batch and streaming APIs. All JAX modes require x64, and none support remove
+or merge. Numba retains remove/merge support for all eight supported indices,
+including the operations marked **Unchanged**.
+
+``update_batch`` is covered in :doc:`operations`. JAX does not support it;
+JAX's ``update_many`` processes samples sequentially.
+
+CONN's ``model_type`` selects its
+prototype learner separately from numerical ``backend`` selection; it does not
+enable the optional Numba or JAX numerical backends.
 
 Backend availability does not guarantee a speedup. The sections below describe
 which kernels are compiled and when compilation or transfer costs matter.
@@ -197,3 +287,14 @@ XB additionally stores a square distance matrix. A large capacity increases
 work on padded arrays. Prefer chunks for throughput; individual Python calls
 can cost more than NumPy. See ``benchmarks/benchmark_jax_stream.py`` for
 synchronized compilation, resident chunk, and object timings.
+
+.. _benchmarks:
+
+Benchmarks
+----------
+
+The ``benchmarks/`` directory contains reproducible timing experiments; see
+``benchmarks/README.md`` for instructions. Batch and incremental timings:
+
+.. image:: https://media.githubusercontent.com/media/AP6YC/cvi/develop/benchmarks/results/batch_incremental/timing_figure.png
+   :alt: Batch and incremental timing benchmarks
